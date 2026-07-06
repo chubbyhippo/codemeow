@@ -48,15 +48,25 @@ describe('ModesKeypadSpec', () => {
     assert.equal(s.pressEsc(), false, 'the host may fall through to its own escape');
   });
 
-  it('given a read-only document then keys behave like MOTION', async () => {
+  it('given a read-only document then all motions work and the modify commands are inert', async () => {
+    // like Emacs: a read-only buffer stays in NORMAL — motions, selections
+    // and save all work; only text changes gate (meow--allow-modify-p)
     const s = freshSpec();
     s.given('two lines', '<caret>one\ntwo');
     s.givenReadOnly();
     await s.whenKeys('j');
     assert.equal(s.caretLine(), 1);
-    await s.whenKeys('w'); // selection commands are swallowed in MOTION
-    s.thenNoSelection();
+    await s.whenKeys('kw');
+    s.thenSelection('one');
+    await s.whenKeys('s'); // meow-kill: gated silently — nothing at all happens
     s.thenText('one\ntwo');
+    s.thenSelection('one');
+    await s.whenKeys('y'); // meow-save is a copy, not a modification: it works
+    s.thenClipboard('one');
+    await s.whenKeys('d'); // meow-delete: Emacs' "Buffer is read-only" — inert
+    await s.whenKeys('p'); // meow-yank: same
+    s.thenText('one\ntwo');
+    s.thenMode(MeowMode.NORMAL);
   });
 
   it('given SPC then KEYPAD opens and a digit becomes the count for the next command', async () => {

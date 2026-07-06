@@ -18,14 +18,18 @@
 import { MeowMode } from './state';
 
 /**
- * Which editors get meow, by document scheme. File and untitled buffers (and
- * the SCM commit box — like IdeaVim's `ideavimsupport=dialog`) get NORMAL;
- * documents VS Code renders read-only get MOTION; inputs that need their own
- * keys keep native editing. VS Code does not expose an editor's read-only
- * flag, so this scheme list is the honest approximation.
+ * Which editors get meow, by document scheme. Everything that attaches gets
+ * NORMAL — like Emacs, where read-only buffers keep the full layout and the
+ * modify commands gate themselves (meow--allow-modify-p, see edits): the
+ * read-only schemes (a diff's git side, the output panel, the cheatsheet)
+ * navigate, select and search with every meow key. Inputs that need their
+ * own keys keep native editing. VS Code does not expose an editor's
+ * read-only flag, so the scheme list is the honest approximation feeding
+ * EditorPort.isWritable. MOTION exists for mmap setups but nothing attaches
+ * to it by default.
  */
 
-const MOTION_SCHEMES = new Set(['git', 'output', 'codemeow']);
+const READONLY_SCHEMES = new Set(['git', 'output', 'codemeow']);
 
 const SKIP_SCHEMES = new Set([
   'comment', // review-comment inputs: effectively one-line dialogs
@@ -34,10 +38,9 @@ const SKIP_SCHEMES = new Set([
 
 export function attachMode(scheme: string): MeowMode | null {
   if (SKIP_SCHEMES.has(scheme)) return null;
-  if (MOTION_SCHEMES.has(scheme)) return MeowMode.MOTION;
   return MeowMode.NORMAL;
 }
 
 export function isWritableScheme(scheme: string): boolean {
-  return !MOTION_SCHEMES.has(scheme);
+  return !READONLY_SCHEMES.has(scheme);
 }

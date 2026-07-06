@@ -31,6 +31,24 @@ import * as GrabMod from './grab';
  * never invalidates the offsets still to come.
  */
 
+/**
+ * meow--allow-modify-p (meow-util.el): read-only buffers keep the full
+ * NORMAL layout, but the text-changing commands are inert. meow gates
+ * kill/change/backspace/replace into SILENT no-ops; delete/yank/open (and
+ * swap-grab) instead fail with Emacs' "Buffer is read-only" error —
+ * surfaced here as a hint.
+ */
+export function allowModify(ctx: Ctx): boolean {
+  return ctx.port.isWritable();
+}
+
+/** @return true when the edit must be blocked — telling the user why. */
+export function blockedReadOnly(ctx: Ctx): boolean {
+  if (allowModify(ctx)) return false;
+  ctx.ui.hint('Buffer is read-only');
+  return true;
+}
+
 export const commands: Map<string, MeowCommand> = new Map([
   ['meow-insert', (ctx: Ctx) => insert(ctx)],
   ['meow-append', (ctx: Ctx) => append(ctx)],
@@ -93,6 +111,7 @@ function append(ctx: Ctx): void {
 
 /** Open a line below the caret's line and enter INSERT there. */
 async function openBelow(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
   Sel.collapse(ctx); // meow-open-below never cancels, the RET just deactivates
   const text = ctx.port.getText();
   const eol = lineEnd(text, lineOfOffset(text, Sel.primary(ctx).active));
@@ -105,6 +124,7 @@ async function openBelow(ctx: Ctx): Promise<void> {
 
 /** Open a line above the caret's line and enter INSERT there. */
 async function openAbove(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
   Sel.collapse(ctx); // as in openBelow: no history clearing
   const text = ctx.port.getText();
   const bol = lineStart(text, lineOfOffset(text, Sel.primary(ctx).active));
@@ -116,6 +136,7 @@ async function openAbove(ctx: Ctx): Promise<void> {
 }
 
 async function change(ctx: Ctx): Promise<void> {
+  if (!allowModify(ctx)) return; // meow gates change silently
   const text = ctx.port.getText();
   const prim = Sel.primary(ctx);
   // fallback meow-change-char at point-max: nothing happens, not even INSERT
@@ -133,6 +154,7 @@ async function change(ctx: Ctx): Promise<void> {
 }
 
 async function del(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
   const text = ctx.port.getText();
   await editCarets(ctx, (sel, lo, hi) => {
     if (lo !== hi) return { edit: { start: lo, end: hi, text: '' }, sel: { anchor: lo, active: lo } };
@@ -143,6 +165,7 @@ async function del(ctx: Ctx): Promise<void> {
 }
 
 async function backwardDelete(ctx: Ctx): Promise<void> {
+  if (!allowModify(ctx)) return; // meow gates backspace silently
   await editCarets(ctx, (sel, lo, hi) => {
     if (lo !== hi) return { edit: { start: lo, end: hi, text: '' }, sel: { anchor: lo, active: lo } };
     if (lo > 0) return { edit: { start: lo - 1, end: lo, text: '' }, sel: { anchor: lo - 1, active: lo - 1 } };
@@ -165,6 +188,7 @@ function killRange(ctx: Ctx, sel: SelRange, textLen: number): { lo: number; hi: 
 }
 
 async function kill(ctx: Ctx): Promise<void> {
+  if (!allowModify(ctx)) return; // meow gates kill silently
   const st = ctx.st;
   const text = ctx.port.getText();
   const prim = Sel.primary(ctx);
@@ -247,6 +271,7 @@ async function save(ctx: Ctx): Promise<void> {
 
 /** meow-yank: insert the clipboard at every cursor, cursor lands after it. */
 async function yank(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
   const clip = await ctx.clipboard.read();
   if (clip === undefined || clip === '') return;
   await editCarets(ctx, (sel) => ({
@@ -257,6 +282,7 @@ async function yank(ctx: Ctx): Promise<void> {
 
 /** meow-replace: selection := clipboard; the clipboard stays intact. */
 async function replace(ctx: Ctx): Promise<void> {
+  if (!allowModify(ctx)) return; // meow gates replace silently
   if (!Sel.hasSelection(Sel.primary(ctx))) return;
   const raw = await ctx.clipboard.read();
   if (raw === undefined) return;

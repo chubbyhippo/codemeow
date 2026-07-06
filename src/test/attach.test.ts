@@ -4,12 +4,14 @@
 
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { attachMode } from '../core/attachPolicy';
+import { attachMode, isWritableScheme } from '../core/attachPolicy';
 import { MeowMode } from '../core/state';
 
 describe('AttachSpec', () => {
   // Which documents get meow, by scheme — the VS Code analog of ideameow's
-  // editor-kind checks (file editors, the commit box, read-only views).
+  // editor-kind checks. Read-only schemes attach in NORMAL like Emacs
+  // read-only buffers (the modify commands gate themselves; see
+  // ModesKeypadSpec) — they just report non-writable through the port.
 
   it('given a file document then meow attaches in NORMAL', () => {
     assert.equal(attachMode('file'), MeowMode.NORMAL);
@@ -23,16 +25,19 @@ describe('AttachSpec', () => {
     assert.equal(attachMode('vscode-scm'), MeowMode.NORMAL);
   });
 
-  it('given a git read-only view then meow attaches in MOTION', () => {
-    assert.equal(attachMode('git'), MeowMode.MOTION);
+  it('given a git read-only view (the diff revision side) then NORMAL, reported read-only', () => {
+    assert.equal(attachMode('git'), MeowMode.NORMAL);
+    assert.equal(isWritableScheme('git'), false);
   });
 
-  it('given the output panel then meow attaches in MOTION', () => {
-    assert.equal(attachMode('output'), MeowMode.MOTION);
+  it('given the output panel then NORMAL, reported read-only', () => {
+    assert.equal(attachMode('output'), MeowMode.NORMAL);
+    assert.equal(isWritableScheme('output'), false);
   });
 
-  it('given the codemeow cheatsheet then meow attaches in MOTION (j/k scroll it)', () => {
-    assert.equal(attachMode('codemeow'), MeowMode.MOTION);
+  it('given the codemeow cheatsheet then NORMAL, reported read-only (j/k still scroll it)', () => {
+    assert.equal(attachMode('codemeow'), MeowMode.NORMAL);
+    assert.equal(isWritableScheme('codemeow'), false);
   });
 
   it('given review-comment and interactive inputs then meow stays away', () => {

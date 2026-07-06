@@ -19,8 +19,11 @@ The states you know from meow:
 
 - **NORMAL** — keys are commands, block cursor. You start here.
 - **INSERT** — keys type text. `i a c I A` get you in, `ESC` gets you out.
-- **MOTION** — read-only views (git detail views, output, the cheatsheet).
-  `j`/`k` move, `SPC` still opens the keypad.
+- **MOTION** — meow's reduced state for special contexts (`j`/`k`/`SPC` by
+  default, rebindable with `mmap`). Read-only views do *not* use it: like
+  read-only buffers in Emacs they stay in NORMAL — every motion, selection,
+  search and avy jump works, and the modify commands are simply inert
+  (meow's `meow--allow-modify-p`). Nothing enters MOTION by default.
 - **KEYPAD** — `SPC` as the leader, dispatching editor commands Emacs-style
   (`SPC x f` = quick open, `SPC w v` = split…). A which-key hint lists your
   options in the status bar whenever you pause on a prefix.
@@ -29,8 +32,10 @@ The states you know from meow:
   every similar range. Edit them all at once; `ESC` collapses.
 
 The status bar always tells you which state you're in. Meow runs in file
-buffers and in the SCM commit message box; inputs that need their own keys
-(notebook REPLs, review comments) keep native editing.
+buffers, in read-only views (a diff's git side, the output panel, the
+cheatsheet — full layout, edits blocked), and in the SCM commit message box;
+inputs that need their own keys (notebook REPLs, review comments) keep
+native editing.
 
 And one idea borrowed straight from meow itself: **the extension binds no
 keys in code.** The entire keymap — the NORMAL/MOTION layout *and* the whole
@@ -121,7 +126,7 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 | `nmap <key> <action>(command.id)` | NORMAL key runs a VS Code command |
 | `nmap <key> <keys>` | NORMAL key replays a meow key sequence, e.g. `nmap Z ,b` |
 | `nnoremap` / `noremap` | like `nmap`/`map`, but the replayed keys resolve through the bundled defaults, ignoring your other mappings |
-| `mmap` / `mnoremap` | the same three target forms, for MOTION mode (read-only views) |
+| `mmap` / `mnoremap` | the same three target forms, for MOTION mode (unused by default — read-only views stay in NORMAL) |
 | `map <leader><seq> <action>(id)` | keypad entry: `SPC` + sequence runs the command (yours override the bundled defaults) |
 | `map <leader><seq> <keys>` | keypad entry replaying meow keys after the keypad closes |
 | `desc <leader><seq> <text>` | which-key label for an entry (exact seq) or a group (prefix) |
@@ -201,8 +206,14 @@ All deliberate, none accidental:
 - The kill-ring is the system clipboard (`meow-use-clipboard` behavior);
   `kill-line` does not append consecutive kills.
 - `I`/`A` open plain lines without language re-indent.
-- VS Code doesn't expose whether an editor is read-only, so MOTION mode
-  covers a list of known read-only schemes (git views, output) instead.
+- VS Code doesn't expose whether an editor is read-only, so a list of known
+  read-only schemes (git views, output, the cheatsheet) feeds the gate
+  instead: those stay in NORMAL with modifications blocked like meow's
+  `meow--allow-modify-p` — kill / change / backspace / replace silently
+  inert, delete / yank / open / swap-grab answering "Buffer is read-only".
+  `i`/`a` still switch to INSERT (as in Emacs) but typing lands in a
+  read-only surface. MOTION exists for `mmap` setups but nothing attaches
+  to it by default.
 - `ESC` in NORMAL is consumed while a meow buffer is focused (VS Code has no
   "run the default escape" escape hatch); the usual widgets — suggest, find,
   rename, snippets — are excluded in the keybinding's `when` clause and keep

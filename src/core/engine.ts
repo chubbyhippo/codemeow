@@ -56,7 +56,10 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   ctx.ui.clearExpandHints();
 
   const pend = st.pending;
-  const motionish = st.mode === MeowMode.MOTION || !ctx.port.isWritable();
+  // like Emacs: read-only buffers stay in NORMAL with every motion working
+  // (the modify commands gate themselves via allow-modify in edits); the
+  // motion map applies only to the MOTION state proper
+  const motionish = st.mode === MeowMode.MOTION;
   const binding = pend === null ? resolve(ctx, c, motionish) : null;
   const cmd = binding?.command;
 

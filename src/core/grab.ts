@@ -20,6 +20,7 @@ import { MeowState, SelType } from './state';
 import { escapeRegExp, lineEnd, lineOfOffset, lineStart } from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
+import * as Edits from './edits'; // used only at call time — safe under the require cycle
 
 /**
  * meow-grab / swap-grab / sync-grab — the secondary-selection stand-in — plus
@@ -88,6 +89,7 @@ function sync(ctx: Ctx): void {
 /** meow-swap-grab: exchange region and secondary text; the secondary stays
  *  at its location holding the swapped-in text. */
 async function swap(ctx: Ctx): Promise<void> {
+  if (Edits.blockedReadOnly(ctx)) return; // swap-grab edits both regions
   const { port, st } = ctx;
   const g = st.grab;
   const sel = Sel.primary(ctx);

@@ -15,7 +15,8 @@
 "   nmap <key> <meow keys>              NORMAL-mode key -> replayed meow keys
 "   nnoremap ...                        like nmap, but the RHS resolves through
 "                                       these bundled defaults, skipping user maps
-"   mmap / mnoremap <key> <target>      the same, for MOTION (read-only) mode
+"   mmap / mnoremap <key> <target>      the same, for MOTION mode (unused by
+"                                       default: read-only views stay NORMAL)
 "   map <leader><seq> <target>          keypad (SPC) entry
 "   desc <leader><seq> <text>           which-key label for an entry or a group
 "   set timeoutlen=300                  which-key hint delay in ms
@@ -39,8 +40,8 @@ set timeoutlen=300
 " code). Rebind any key to another meow command, to an <action>(...), or to
 " replayed keys; bind a key to `ignore` to disable it. In a home ~/.codemeowrc
 " only overrides are needed — a key without a home line keeps its binding
-" from this bundled file. mmap does the same for MOTION mode (read-only
-" documents). SPC is the keypad key and cannot be remapped; ESC and modifier
+" from this bundled file. mmap does the same for MOTION mode.
+" SPC is the keypad key and cannot be remapped; ESC and modifier
 " chords never reach the modal engine (put those on VS Code's keybindings).
 " ============================================================================
 
@@ -112,7 +113,9 @@ nmap Y meow-sync-grab
 nmap z meow-pop-selection
 nmap ' repeat
 
-" MOTION mode (read-only documents)
+" MOTION mode — meow's reduced state for special contexts. Unused by
+" default: read-only views (a diff's git side, output, the cheatsheet) stay
+" in NORMAL with the modify commands inert, like read-only buffers in Emacs.
 mmap j meow-next
 mmap k meow-prev
 

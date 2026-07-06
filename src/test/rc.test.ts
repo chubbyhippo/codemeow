@@ -204,11 +204,13 @@ describe('RcSpec', () => {
     s.thenText('abc');
   });
 
-  it('given a motion rebinding then read-only documents use it', async () => {
+  it('given a motion rebinding then MOTION-state editors use it', async () => {
+    // read-only documents stay in NORMAL these days (like Emacs read-only
+    // buffers); the mmap table applies to the MOTION state proper
     const s = freshSpec();
     s.given('three lines', '<caret>one\ntwo\nthree');
     s.givenRc('mmap n meow-next');
-    s.givenReadOnly();
+    s.st.mode = MeowMode.MOTION;
     await s.whenKeys('n');
     assert.equal(s.caretLine(), 1);
     await s.whenKeys('j'); // the default motion keys stay underneath
