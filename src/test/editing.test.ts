@@ -266,6 +266,19 @@ describe('EditingSpec', () => {
     s.thenNoSelection();
   });
 
+  it('given x x then repeated u past the undo stack then nothing blows up', async () => {
+    // ideameow's crash (performing IntelliJ's UndoAction while disabled
+    // fails a platform assertion) has no analog here: VS Code's `undo`
+    // command is a plain function and an exhausted stack is a silent no-op,
+    // so every press just dispatches it safely
+    const s = freshSpec();
+    s.given('three lines', '<caret>one\ntwo\nthree');
+    await s.whenKeys('xx');
+    await s.whenKeys('uuuuuu');
+    s.thenText('one\ntwo\nthree');
+    assert.equal(s.editor.undoCount, 6, 'undo dispatched on every press');
+  });
+
   it('given quote then the last command repeats', async () => {
     const s = freshSpec();
     s.given('chars', '<caret>abcdef');
