@@ -40,7 +40,14 @@ let statusBar: vscode.StatusBarItem;
 let grabDecoration: vscode.TextEditorDecorationType;
 let hintDecoration: vscode.TextEditorDecorationType;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
-let whichKeyMessage: vscode.Disposable | undefined;
+/** The bottom-panel view showing the which-key grid (resolved lazily). */
+let whichKeyView: vscode.WebviewView | undefined;
+/** Pending grid HTML, picked up when the view resolves. */
+let whichKeyHtml: string | undefined;
+/** Grace timer: the panel closes only when the prefix chain really ends. */
+let whichKeyCloseTimer: ReturnType<typeof setTimeout> | undefined;
+/** True while a prefix chain is alive: the next panel appears with no delay. */
+let whichKeyChain = false;
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
 let infoBody = '';
 const infoEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -82,15 +89,17 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
 
     scheduleWhichKey: (kind, buffer) => {
       hideWhichKey();
-      if (!Rc.whichKeyEnabled()) return;
+      if (!Rc.whichKeyEnabled()) {
+        whichKeyChain = false;
+        return;
+      }
+      // meow's timeoutlen for the first menu; follow-up prefixes reopen at once
+      const delay = whichKeyChain ? 0 : Math.max(Rc.whichKeyDelayMs(), 0);
+      whichKeyChain = false;
       whichKeyTimer = setTimeout(() => {
         whichKeyTimer = undefined;
-        const rows = kind === 'things' ? THINGS : keypadRows(buffer);
-        if (rows.length === 0) return;
-        const prefix = kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
-        const body = rows.map(([k, label]) => `${k} ${label}`).join('  ·  ');
-        whichKeyMessage = vscode.window.setStatusBarMessage(`${prefix} →  ${body}`);
-      }, Math.max(Rc.whichKeyDelayMs(), 0));
+        void openWhichKey(kind, buffer);
+      }, delay);
     },
 
     hideWhichKey,
@@ -133,8 +142,66 @@ function makeCtx(editor: vscode.TextEditor, st: MeowState): Ctx {
 function hideWhichKey(): void {
   if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
   whichKeyTimer = undefined;
-  whichKeyMessage?.dispose();
-  whichKeyMessage = undefined;
+  if (whichKeyView?.visible) {
+    whichKeyChain = true; // a follow-up prefix in the same chain redraws instantly
+    // close only when the chain really ends: openWhichKey cancels this timer
+    if (whichKeyCloseTimer !== undefined) clearTimeout(whichKeyCloseTimer);
+    whichKeyCloseTimer = setTimeout(() => {
+      whichKeyCloseTimer = undefined;
+      closeWhichKeyPanel();
+    }, 80);
+  }
+}
+
+function closeWhichKeyPanel(): void {
+  whichKeyChain = false;
+  if (whichKeyView?.visible) {
+    whichKeyView.webview.html = '';
+    void vscode.commands.executeCommand('workbench.action.closePanel');
+  }
+}
+
+/**
+ * which-key, the Emacs way: a NON-focusable panel along the bottom (a
+ * webview view revealed with preserveFocus) listing the continuations in
+ * columns. It never interrupts — keep typing in the editor; ESC cancels
+ * through the editor as usual. The very first reveal of a session has to
+ * resolve the view, which briefly bounces focus through the panel and back.
+ */
+async function openWhichKey(kind: 'keypad' | 'things', buffer: string): Promise<void> {
+  const rows = kind === 'things' ? THINGS : keypadRows(buffer);
+  if (rows.length === 0) return;
+  if (whichKeyCloseTimer !== undefined) {
+    clearTimeout(whichKeyCloseTimer);
+    whichKeyCloseTimer = undefined;
+  }
+  const title = kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
+  whichKeyHtml = whichKeyGridHtml(title, rows);
+  if (whichKeyView) {
+    whichKeyView.webview.html = whichKeyHtml;
+    whichKeyView.show(true); // preserveFocus: the editor keeps the keyboard
+  } else {
+    await vscode.commands.executeCommand('codemeow.whichKey.focus');
+    await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+  }
+}
+
+/** which-key's grid, column-major via CSS columns, in the editor's theme. */
+function whichKeyGridHtml(title: string, rows: Array<[string, string]>): string {
+  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const widest = rows.reduce((w, [k, d]) => Math.max(w, k.length + 3 + d.length), 8);
+  const entries = rows
+    .map(([k, d]) => `<div class="e"><b>${esc(k)}</b><span class="s"> → </span>${esc(d)}</div>`)
+    .join('');
+  return `<!DOCTYPE html><html><head><style>
+    body { margin: 4px 8px; font-family: var(--vscode-editor-font-family);
+           font-size: var(--vscode-editor-font-size); color: var(--vscode-foreground); }
+    .t { color: var(--vscode-descriptionForeground); margin-bottom: 4px; }
+    .wk { column-width: ${widest}ch; column-gap: 2ch; }
+    .e { break-inside: avoid; white-space: nowrap; }
+    .e b { color: var(--vscode-textLink-foreground); }
+    .s { color: var(--vscode-descriptionForeground); }
+  </style></head><body><div class="t">${esc(title)}</div><div class="wk">${entries}</div></body></html>`;
 }
 
 function clearExpandHints(editor: vscode.TextEditor): void {
@@ -292,6 +359,17 @@ export function activate(context: vscode.ExtensionContext): void {
       const ctx = makeCtx(editor, st);
       // same path as SPC ?
       void import('../core/keypad').then((k) => ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET));
+    }),
+
+    vscode.window.registerWebviewViewProvider('codemeow.whichKey', {
+      resolveWebviewView(view) {
+        whichKeyView = view;
+        view.webview.options = { enableScripts: false };
+        if (whichKeyHtml !== undefined) view.webview.html = whichKeyHtml;
+        view.onDidDispose(() => {
+          if (whichKeyView === view) whichKeyView = undefined;
+        });
+      },
     }),
 
     vscode.workspace.registerTextDocumentContentProvider('codemeow', {

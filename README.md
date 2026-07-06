@@ -157,11 +157,15 @@ mention keeps its bundled binding.
   understands take effect.
 
 **which-key.** Pause on any pending prefix — a keypad `SPC` sequence, or the
-`,` `.` `[` `]` thing table — and after `timeoutlen` ms the status bar lists
-the continuations. VS Code has no popup that can refuse focus, and stealing
-focus mid-keystroke would be worse than a humbler hint — so it lives in the
-status bar. `SPC ?` opens the full cheatsheet as a read-only document (`j`/`k`
-scroll it, `q`… well, `q` closes it, naturally).
+`,` `.` `[` `]` thing table — and after `timeoutlen` ms a panel opens along
+the bottom listing the continuations in columns, exactly like Emacs'
+which-key. It never takes focus: just keep typing the sequence in the editor;
+`ESC` cancels as usual, deeper prefixes in the same chain redraw the panel
+instantly, and it closes itself when the sequence ends. (One platform quirk:
+the very first time it appears in a session, VS Code has to materialize the
+panel view, which bounces focus through it and straight back.) `SPC ?` still
+opens the full cheatsheet as a read-only document (`j`/`k` scroll it, `q`…
+well, `q` closes it, naturally).
 
 **What the bundled default gives you.** The full meow QWERTY layout, the
 complete keypad table, and the same leader scheme as the companion
