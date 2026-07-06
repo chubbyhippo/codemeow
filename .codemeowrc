@@ -7,7 +7,7 @@
 " directory (Linux/macOS: ~/.codemeowrc, Windows: C:\Users\<you>\.codemeowrc)
 " overrides it entry by entry, so a home file only needs the lines you want
 " changed — or copy this whole file there and edit anything. Open it in the
-" editor with SPC c v; reload after editing with SPC c V ("Reload .codemeowrc").
+" editor with SPC c m; reload after editing with SPC c M ("Reload .codemeowrc").
 "
 " Syntax (see the README for the full guide):
 "   nmap <key> <action>(command.id)     NORMAL-mode key -> editor command
@@ -165,19 +165,19 @@ map <leader>cc <action>(workbench.action.files.newUntitledFile)
 map <leader>cl <action>(copyRelativeFilePath)
 map <leader>cg <action>(workbench.view.scm)
 
-" SPC c v / V: edit / reload ~/.codemeowrc (mirrors the .ideavimrc keys)
-map <leader>cv <action>(codemeow.editRc)
-map <leader>cV <action>(codemeow.reloadRc)
+" SPC c m / M: edit / reload ~/.codemeowrc
+map <leader>cm <action>(codemeow.editRc)
+map <leader>cM <action>(codemeow.reloadRc)
 
-" SPC c j: avy jumps — Code Ace Jumper commands when that extension is
-" installed (lucax88x.codeacejumper); a hint appears otherwise
-map <leader>cjw <action>(extension.aceJump)
-map <leader>cjc <action>(extension.aceJump.multiChar)
-map <leader>cjl <action>(extension.aceJump.line)
+" SPC c j: avy jumps — implemented natively by the extension, no Code Ace
+" Jumper needed
+map <leader>cjw avy-goto-char-timer
+map <leader>cjc avy-goto-char-timer
+map <leader>cjl avy-goto-line
 
 " SPC m = M-: meta
 map <leader>mx <action>(workbench.action.showCommands)
-map <leader>mo <action>(extension.aceJump)
+map <leader>mo avy-goto-char-timer
 map <leader>mr <action>(editor.action.smartSelect.expand)
 map <leader>mR <action>(editor.action.smartSelect.shrink)
 map <leader>my <action>(editor.action.clipboardPasteAction)
@@ -208,11 +208,11 @@ map <leader>w- <action>(editor.action.fontZoomOut)
 map <leader>wu <action>(editor.action.fontZoomReset)
 map <leader>w0 <action>(editor.action.fontZoomReset)
 
-" --- avy jumps, mirroring init.el (needs the Code Ace Jumper extension) -----
+" --- avy jumps, mirroring init.el (a native port — nothing to install) ------
 " init.el: S = avy-goto-char-timer, Q = avy-goto-line. X still goes-to-line,
 " so overriding Q costs nothing.
-nmap S <action>(extension.aceJump)
-nmap Q <action>(extension.aceJump.line)
+nmap S avy-goto-char-timer
+nmap Q avy-goto-line
 
 " --- split resizing (ideavimrc: - = _ +) ------------------------------------
 " '-' stays meow's negative-argument (the reason ideavimrc used '-' here was

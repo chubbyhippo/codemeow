@@ -113,15 +113,15 @@ describe('RcSpec', () => {
       if (key === 'Q') continue;
       assert.equal(d.normal.get(key)?.command, cmd, `bundled layout line for '${key}'`);
     }
-    assert.equal(d.normal.get('Q')?.action, 'extension.aceJump.line');
-    assert.equal(d.normal.get('S')?.action, 'extension.aceJump');
+    assert.equal(d.normal.get('Q')?.command, 'avy-goto-line');
+    assert.equal(d.normal.get('S')?.command, 'avy-goto-char-timer');
     assert.equal(d.motion.get('j')?.command, 'meow-next');
     assert.equal(d.motion.get('k')?.command, 'meow-prev');
     // the keypad table lives in the file too — nothing is bound in code
     assert.equal(d.keypad.get('b')?.action, 'workbench.action.showAllEditorsByMostRecentlyUsed');
     assert.equal(d.keypad.get(' ')?.action, 'workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup');
-    assert.equal(d.keypad.get('cv')?.action, 'codemeow.editRc');
-    assert.equal(d.keypad.get('cV')?.action, 'codemeow.reloadRc');
+    assert.equal(d.keypad.get('cm')?.action, 'codemeow.editRc');
+    assert.equal(d.keypad.get('cM')?.action, 'codemeow.reloadRc');
     assert.ok(d.keypad.size > 150, `keypad table + ported leader groups (got ${d.keypad.size})`);
   });
 

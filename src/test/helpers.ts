@@ -125,6 +125,10 @@ export class FakeUi implements UiPort {
   /** The offsets the adapter would overlay with digit labels. */
   expandHints: number[] = [];
 
+  /** What the adapter would paint for an avy session. */
+  avyMatches: Array<{ start: number; end: number }> = [];
+  avyLabels: Array<[number, string]> = [];
+
   scheduleWhichKey(): void {}
   hideWhichKey(): void {}
 
@@ -134,6 +138,19 @@ export class FakeUi implements UiPort {
 
   clearExpandHints(): void {
     this.expandHints = [];
+  }
+
+  showAvyMatches(ranges: Array<{ start: number; end: number }>): void {
+    this.avyMatches = ranges;
+  }
+
+  showAvyLabels(labels: Array<[number, string]>): void {
+    this.avyLabels = labels;
+  }
+
+  clearAvy(): void {
+    this.avyMatches = [];
+    this.avyLabels = [];
   }
   setGrabHighlight(): void {}
 

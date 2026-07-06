@@ -24,6 +24,7 @@ import * as Search from './search';
 import * as Structures from './structures';
 import * as Grab from './grab';
 import * as Edits from './edits';
+import * as Avy from './avy';
 import * as Engine from './engine'; // used lazily inside `repeat` — safe under the require cycle
 
 /**
@@ -40,6 +41,7 @@ export const COMMANDS: Map<string, MeowCommand> = new Map([
   ...Structures.commands,
   ...Grab.commands,
   ...Edits.commands,
+  ...Avy.commands,
   ['meow-negative-argument', (ctx: Ctx) => { ctx.st.negative = true; }],
   // meow's QWERTY table binds Emacs' own `negative-argument`; accept that
   // exact spelling too so the canonical table pastes verbatim

@@ -61,13 +61,18 @@ export interface ClipboardPort {
 export interface UiPort {
   hint(text: string): void;
   info(title: string, body: string): void;
-  input(prompt: string): Promise<string | undefined>;
+  input(prompt: string, initial?: string): Promise<string | undefined>;
   /** Run a host command by id; rejects when the id is unknown. */
   runCommand(id: string): Promise<void>;
   scheduleWhichKey(kind: 'keypad' | 'things', buffer: string): void;
   hideWhichKey(): void;
   showExpandHints(positions: number[]): void;
   clearExpandHints(): void;
+  /** Live match highlights while avy-goto-char-timer collects input. */
+  showAvyMatches(ranges: Array<{ start: number; end: number }>): void;
+  /** avy's at-full labels: each [offset, label] painted OVER the text. */
+  showAvyLabels(labels: Array<[number, string]>): void;
+  clearAvy(): void;
   setGrabHighlight(range: { start: number; end: number } | null): void;
   modeChanged(st: MeowState): void;
   /** Called after every handled key so the status widget stays fresh. */

@@ -22,6 +22,7 @@ import { Binding, Rc } from './rc';
 import * as Motions from './motions';
 import * as Structures from './structures';
 import * as Keypad from './keypad';
+import * as Avy from './avy';
 
 /**
  * The key dispatcher. Like meow in Emacs, the engine binds no keys of its
@@ -41,6 +42,12 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   if (st.mode === MeowMode.KEYPAD) {
     await Keypad.key(ctx, c);
     st.lastCommand = 'keypad';
+    ctx.ui.refresh(st);
+    return true;
+  }
+  if (st.avy) {
+    await Avy.key(ctx, c);
+    st.lastCommand = 'avy';
     ctx.ui.refresh(st);
     return true;
   }
@@ -163,6 +170,11 @@ export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
  */
 export function escapeKey(ctx: Ctx): boolean {
   const st = ctx.st;
+  if (st.avy) {
+    Avy.cancel(ctx);
+    ctx.ui.refresh(st);
+    return true;
+  }
   st.pending = null;
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();

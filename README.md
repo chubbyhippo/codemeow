@@ -96,7 +96,7 @@ swap-grab exchanges the selection and grab texts; `Y` sync-grab re-stashes.
 **Keypad.** `SPC b/x/c/m/w …` mirror the Emacs/meow keypad of the companion
 `init.el`/`.ideavimrc`/ideameow setups (quick open, save all, splits, font
 size…). `SPC 1-9` is a digit argument, `SPC ?` opens the cheatsheet, `SPC /`
-describes a key, and `SPC c v` / `SPC c V` edit / reload your config.
+describes a key, and `SPC c m` / `SPC c M` edit / reload your config.
 
 ## ~/.codemeowrc — configuring everything
 
@@ -105,11 +105,11 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 
 **Getting started is two steps:**
 
-1. Press `SPC c v` in the editor — it creates and opens the file for you.
+1. Press `SPC c m` in the editor — it creates and opens the file for you.
    (The bundled defaults stay underneath, so an empty file changes nothing
    and a one-line file changes exactly one thing. Or copy the repo's
    `.codemeowrc` over it and edit anything.)
-2. Edit, then reload with `SPC c V`. A message tells you how many mappings
+2. Edit, then reload with `SPC c M`. A message tells you how many mappings
    loaded — and lists any parse problems with their line numbers.
 
 **Syntax reference**
@@ -171,15 +171,22 @@ well, `q` closes it, naturally).
 complete keypad table, and the same leader scheme as the companion
 `.ideavimrc`/ideameow configs, ported to VS Code commands where analogs exist
 (`SPC .` settings, `SPC a` views, `SPC d/e/f/g/…` groups, `SPC ]`/`SPC [` for
-next/prev change, diff, and error). `S`/`Q` are the avy-style jumps — they
-run [Code Ace Jumper](https://marketplace.visualstudio.com/items?itemName=lucax88x.codeacejumper)
-commands when that extension is installed, and just hint politely when it
-isn't. Split resizing sits on `=` `_` `+`; `-` keeps meow's negative-argument
-(this engine has real negative counts, so it doesn't need vim's workaround).
-The file's footer lists what deliberately *isn't* ported, with reasons. And
-since a later line for the same key wins, `Q` ends up on the ace line jump —
-put `nmap Q meow-goto-line` in your home rc if you want meow's own binding
-back (`X` has it regardless).
+next/prev change, diff, and error). `S`/`Q` are avy jumps — a native port of
+avy 0.5.0's `avy-goto-char-timer` and `avy-goto-line`, nothing to install:
+`S`, type a few chars, pause 0.25 s, and home-row labels (`a s d f g h j k l`,
+avy's tree labeling) appear painted over the candidates; `Q` labels every
+visible line, and typing a digit switches to a plain goto-line prompt. A
+single candidate jumps immediately, a wrong label key just tells you and
+waits, `ESC` cancels, and jumping with an active selection extends it
+(avy-action-goto is a plain goto-char). Deviations from the Emacs original:
+it searches the current editor's visible area only (no `avy-all-windows`),
+and there is no `DEL` editing of the input — the pause ends it. Split
+resizing sits on `=` `_` `+`; `-` keeps meow's negative-argument (this engine
+has real negative counts, so it doesn't need vim's workaround). The file's
+footer lists what deliberately *isn't* ported, with reasons. And since a
+later line for the same key wins, `Q` ends up on the avy line jump — put
+`nmap Q meow-goto-line` in your home rc if you want meow's own binding back
+(`X` has it regardless).
 
 ## Known deviations from meow
 

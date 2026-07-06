@@ -199,7 +199,7 @@ describe('SelectionSpec', () => {
   });
 
   it('given Q then goto-line as well (QWERTY binds both Q and X)', async () => {
-    // the bundled defaults override Q to the avy jump (extension.aceJump.line);
+    // the bundled defaults override Q to the native avy line jump;
     // a home-rc line brings meow's own Q binding back — pin that layering
     const s = freshSpec();
     s.given('three lines', '<caret>one\ntwo\nthree');

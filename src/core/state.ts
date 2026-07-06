@@ -15,6 +15,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import type { AvySession } from './avy';
+
 export enum MeowMode {
   NORMAL = 'NORMAL',
   INSERT = 'INSERT',
@@ -95,6 +97,9 @@ export class MeowState {
 
   /** The grab region (secondary selection); offsets track core-applied edits. */
   grab: { start: number; end: number } | null = null;
+
+  /** An in-flight avy jump (S / Q) — keys route to it until it ends. */
+  avy: AvySession | null = null;
 
   keypad = '';
   unit: string[] = [];

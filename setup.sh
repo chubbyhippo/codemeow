@@ -183,4 +183,4 @@ if [ "$installed" -gt 0 ]; then
     echo "  * restart the editor(s) to load the extension"
 fi
 echo "  * disable VSCodeVim if it is enabled — both intercept typing"
-echo "  * in the editor: SPC ? shows the cheatsheet, SPC c v edits ~/.codemeowrc"
+echo "  * in the editor: SPC ? shows the cheatsheet, SPC c m edits ~/.codemeowrc"

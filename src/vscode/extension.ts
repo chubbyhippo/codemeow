@@ -39,6 +39,8 @@ const clipboard = new VscClipboard();
 let statusBar: vscode.StatusBarItem;
 let grabDecoration: vscode.TextEditorDecorationType;
 let hintDecoration: vscode.TextEditorDecorationType;
+let avyMatchDecoration: vscode.TextEditorDecorationType;
+let avyLabelDecoration: vscode.TextEditorDecorationType;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
 /** The bottom-panel view showing the which-key grid (resolved lazily). */
 let whichKeyView: vscode.WebviewView | undefined;
@@ -81,7 +83,7 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
       }
     },
 
-    input: (prompt) => Promise.resolve(vscode.window.showInputBox({ prompt })),
+    input: (prompt, initial) => Promise.resolve(vscode.window.showInputBox({ prompt, value: initial })),
 
     runCommand: async (id) => {
       await vscode.commands.executeCommand(id);
@@ -120,6 +122,32 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
     },
 
     clearExpandHints: () => clearExpandHints(editor),
+
+    showAvyMatches: (ranges) => {
+      const doc = editor.document;
+      editor.setDecorations(avyLabelDecoration, []);
+      editor.setDecorations(
+        avyMatchDecoration,
+        ranges.map((r) => new vscode.Range(doc.positionAt(r.start), doc.positionAt(r.end))),
+      );
+    },
+
+    showAvyLabels: (labels) => {
+      const doc = editor.document;
+      editor.setDecorations(avyMatchDecoration, []);
+      editor.setDecorations(
+        avyLabelDecoration,
+        labels.map(([off, label]) => ({
+          range: new vscode.Range(doc.positionAt(off), doc.positionAt(off)),
+          renderOptions: { after: { contentText: label } },
+        })),
+      );
+    },
+
+    clearAvy: () => {
+      editor.setDecorations(avyMatchDecoration, []);
+      editor.setDecorations(avyLabelDecoration, []);
+    },
 
     setGrabHighlight: (range) => {
       const doc = editor.document;
@@ -284,7 +312,24 @@ export function activate(context: vscode.ExtensionContext): void {
       textDecoration: 'none; position: absolute; z-index: 1',
     },
   });
-  context.subscriptions.push(statusBar, grabDecoration, hintDecoration, infoEmitter);
+  // the native avy port: live match highlights while collecting input, and
+  // avy-lead-face (white on amaranth) labels painted over the text —
+  // absolutely positioned like the expand hints so nothing shifts
+  avyMatchDecoration = vscode.window.createTextEditorDecorationType({
+    backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
+  });
+  avyLabelDecoration = vscode.window.createTextEditorDecorationType({
+    after: {
+      color: '#ffffff',
+      backgroundColor: '#e52b50',
+      fontWeight: 'bold',
+      textDecoration: 'none; position: absolute; z-index: 1',
+    },
+  });
+  context.subscriptions.push(
+    statusBar, grabDecoration, hintDecoration,
+    avyMatchDecoration, avyLabelDecoration, infoEmitter,
+  );
 
   loadDefaults(context.extensionPath);
   loadUserRc();
@@ -340,7 +385,7 @@ export function activate(context: vscode.ExtensionContext): void {
           `" ~/${Rc.FILE_NAME} — codemeow configuration`,
           '" the bundled defaults (full meow layout + keypad table) stay',
           '" underneath — lines here override them entry by entry, e.g.:',
-          '" nmap S <action>(extension.aceJump)',
+          '" nmap Q meow-goto-line',
           '" nmap n meow-mark-word',
           '" map <leader>gd <action>(editor.action.revealDefinition)',
           '" desc <leader>g goto',

@@ -22,7 +22,7 @@ import { COMMANDS } from './registry';
  * The .codemeowrc syntax — an .ideavimrc-flavored line format:
  *
  *   " comments start with a double quote (or #)
- *   nmap S <action>(extension.aceJump)  NORMAL key -> editor command
+ *   nmap F <action>(actions.find)       NORMAL key -> editor command
  *   nmap n meow-mark-word               NORMAL key -> a named meow command
  *   nmap Z ,b                           NORMAL key -> meow keys (recursive)
  *   nnoremap Z ,b                       same, but the RHS ignores user maps
