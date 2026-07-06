@@ -1,0 +1,13 @@
+# Ship the compiled extension, the bundled default keymap, and the docs —
+# nothing else. (package.json, README.md, LICENSE are always included.)
+src/**
+out/test/**
+out/**/*.map
+node_modules/**
+tsconfig.json
+mise.toml
+setup.sh
+package-lock.json
+.gitattributes
+.gitignore
+.vscodeignore
