@@ -204,11 +204,17 @@ export function activate(context: vscode.ExtensionContext): void {
   grabDecoration = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('diffEditor.insertedTextBackground'),
   });
+  // meow paints the expand digits OVER the text (meow-visual.el: a one-char
+  // overlay whose 'display replaces it) — text must never shift. VS Code's
+  // after-decorations are inline by default (they push the line), so the
+  // injected `position: absolute` takes the label out of the layout flow and
+  // the editor-background fill visually covers the char underneath.
   hintDecoration = vscode.window.createTextEditorDecorationType({
     after: {
       color: new vscode.ThemeColor('editorWarning.foreground'),
+      backgroundColor: new vscode.ThemeColor('editor.background'),
       fontWeight: 'bold',
-      margin: '0 2px 0 2px',
+      textDecoration: 'none; position: absolute; z-index: 1',
     },
   });
   context.subscriptions.push(statusBar, grabDecoration, hintDecoration, infoEmitter);

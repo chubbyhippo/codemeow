@@ -122,10 +122,19 @@ export class FakeUi implements UiPort {
    *  block/bar cursor switch and the status-bar text. */
   modes: MeowMode[] = [];
 
+  /** The offsets the adapter would overlay with digit labels. */
+  expandHints: number[] = [];
+
   scheduleWhichKey(): void {}
   hideWhichKey(): void {}
-  showExpandHints(): void {}
-  clearExpandHints(): void {}
+
+  showExpandHints(positions: number[]): void {
+    this.expandHints = positions;
+  }
+
+  clearExpandHints(): void {
+    this.expandHints = [];
+  }
   setGrabHighlight(): void {}
 
   modeChanged(st: MeowState): void {

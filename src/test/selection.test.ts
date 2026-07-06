@@ -136,6 +136,19 @@ describe('SelectionSpec', () => {
     s.thenCaretAtSelectionStart();
   });
 
+  it('given a selection then expand hints overlay the text without inserting inline content', async () => {
+    // parity with ideameow's overlay regression: the core hands the adapter
+    // positions to paint OVER the text (absolute-positioned decorations, the
+    // meow-visual.el 'display equivalent) — nothing enters the layout flow
+    const s = freshSpec();
+    s.given('three words', '<caret>hello world again');
+    await s.whenKeys('w');
+    assert.ok(s.ui.expandHints.length > 0, 'hint positions computed');
+    assert.equal(s.ui.expandHints[0], 11); // where digit 1 would take the selection
+    await s.whenKeys('g'); // next key clears the hints
+    assert.equal(s.ui.expandHints.length, 0);
+  });
+
   it('given digits after w then the selection expands by that many words', async () => {
     const s = freshSpec();
     s.given('five words', '<caret>one two three four five');
