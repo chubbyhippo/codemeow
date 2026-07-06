@@ -1,0 +1,59 @@
+{
+  "name": "codemeow",
+  "displayName": "codemeow",
+  "description": "Meow-style modal editing for VS Code and VSCodium: NORMAL / INSERT / MOTION / KEYPAD states, selection-first commands, the char-thing table, digit expand with hints, grab / swap-grab / sync-grab, and a beacon approximation on native multiple cursors. The whole keymap lives in a bundled .codemeowrc (QWERTY by default, every key rebindable); ~/.codemeowrc overrides it entry by entry. Disable VSCodeVim while this is enabled — both intercept typing.",
+  "version": "0.1.0",
+  "publisher": "chubbyhippo",
+  "license": "GPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chubbyhippo/codemeow.git"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Keymaps",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/vscode/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "codemeow.reloadRc",
+        "title": "Reload .codemeowrc",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.editRc",
+        "title": "Edit .codemeowrc",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.cheatsheet",
+        "title": "Meow Cheatsheet",
+        "category": "codemeow"
+      }
+    ],
+    "keybindings": [
+      {
+        "key": "escape",
+        "command": "codemeow.escape",
+        "when": "editorTextFocus && codemeow.active && !suggestWidgetVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !inSnippetMode"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "test": "npm run compile && node --test \"out/test/*.test.js\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.5.0"
+  }
+}

@@ -1,0 +1,489 @@
+" ============================================================================
+" .codemeowrc — THE default keymap of the codemeow extension
+" ----------------------------------------------------------------------------
+" Like meow in Emacs, the extension binds no keys in code: this file defines
+" every default — the NORMAL/MOTION layout and the whole SPC keypad table —
+" and ships bundled inside the extension. A ~/.codemeowrc in your home
+" directory (Linux/macOS: ~/.codemeowrc, Windows: C:\Users\<you>\.codemeowrc)
+" overrides it entry by entry, so a home file only needs the lines you want
+" changed — or copy this whole file there and edit anything. Open it in the
+" editor with SPC c v; reload after editing with SPC c V ("Reload .codemeowrc").
+"
+" Syntax (see the README for the full guide):
+"   nmap <key> <action>(command.id)     NORMAL-mode key -> editor command
+"   nmap <key> <meow-command>           NORMAL-mode key -> named meow command
+"   nmap <key> <meow keys>              NORMAL-mode key -> replayed meow keys
+"   nnoremap ...                        like nmap, but the RHS resolves through
+"                                       these bundled defaults, skipping user maps
+"   mmap / mnoremap <key> <target>      the same, for MOTION (read-only) mode
+"   map <leader><seq> <target>          keypad (SPC) entry
+"   desc <leader><seq> <text>           which-key label for an entry or a group
+"   set timeoutlen=300                  which-key hint delay in ms
+"   set nowhich-key                     turn the which-key hint off
+"
+" Ported from the companion ideameow .ideameowrc (itself a port of the
+" .ideavimrc leader scheme). Not portable (and why) is listed at the bottom.
+" The meow layout itself needs NO porting — the extension implements it
+" natively; the layout section right below IS the keymap (like
+" meow-normal-define-key in Emacs), so any key can be rebound. Within this
+" file, a later line for the same key wins.
+" ============================================================================
+
+set which-key
+set timeoutlen=300
+
+" ============================================================================
+" The meow layout — QWERTY by default, every key rebindable
+" ----------------------------------------------------------------------------
+" These lines ARE the default layout (there is no key table in the extension's
+" code). Rebind any key to another meow command, to an <action>(...), or to
+" replayed keys; bind a key to `ignore` to disable it. In a home ~/.codemeowrc
+" only overrides are needed — a key without a home line keeps its binding
+" from this bundled file. mmap does the same for MOTION mode (read-only
+" documents). SPC is the keypad key and cannot be remapped; ESC and modifier
+" chords never reach the modal engine (put those on VS Code's keybindings).
+" ============================================================================
+
+" expand / counts
+nmap 0 meow-expand-0
+nmap 1 meow-expand-1
+nmap 2 meow-expand-2
+nmap 3 meow-expand-3
+nmap 4 meow-expand-4
+nmap 5 meow-expand-5
+nmap 6 meow-expand-6
+nmap 7 meow-expand-7
+nmap 8 meow-expand-8
+nmap 9 meow-expand-9
+nmap - meow-negative-argument
+
+" selections / things
+nmap ; meow-reverse
+nmap , meow-inner-of-thing
+nmap . meow-bounds-of-thing
+nmap [ meow-beginning-of-thing
+nmap ] meow-end-of-thing
+nmap < meow-beginning-of-thing
+nmap > meow-end-of-thing
+
+" the letter keys
+nmap a meow-append
+nmap A meow-open-below
+nmap b meow-back-word
+nmap B meow-back-symbol
+nmap c meow-change
+nmap d meow-delete
+nmap D meow-backward-delete
+nmap e meow-next-word
+nmap E meow-next-symbol
+nmap f meow-find
+nmap g meow-cancel-selection
+nmap G meow-grab
+nmap h meow-left
+nmap H meow-left-expand
+nmap i meow-insert
+nmap I meow-open-above
+nmap j meow-next
+nmap J meow-next-expand
+nmap k meow-prev
+nmap K meow-prev-expand
+nmap l meow-right
+nmap L meow-right-expand
+nmap m meow-join
+nmap n meow-search
+nmap o meow-block
+nmap O meow-to-block
+nmap p meow-yank
+nmap q meow-quit
+nmap Q meow-goto-line
+nmap r meow-replace
+nmap R meow-swap-grab
+nmap s meow-kill
+nmap t meow-till
+nmap u meow-undo
+nmap U meow-undo-in-selection
+nmap v meow-visit
+nmap w meow-mark-word
+nmap W meow-mark-symbol
+nmap x meow-line
+nmap X meow-goto-line
+nmap y meow-save
+nmap Y meow-sync-grab
+nmap z meow-pop-selection
+nmap ' repeat
+
+" MOTION mode (read-only documents)
+mmap j meow-next
+mmap k meow-prev
+
+" ============================================================================
+" The keypad (SPC) table — every entry an rc line, like the layout above
+" ----------------------------------------------------------------------------
+" In Emacs, SPC x / c / m reach the C-x / C-c / M- keymaps; here the same
+" sequences dispatch VS Code commands, mirroring the companion .ideavimrc /
+" .ideameowrc leader scheme. SPC 1-9 (digit argument), SPC ? (cheatsheet) and
+" SPC / (describe key) are reserved by the keypad itself and cannot be
+" remapped. Find a command's id: Preferences > Keyboard Shortcuts, right-click
+" an entry, "Copy Command ID".
+" ============================================================================
+
+map <leader>b <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader><Space> <action>(workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup)
+
+" SPC x = C-x: files / buffers / windows
+map <leader>xf <action>(workbench.action.quickOpen)
+map <leader>xs <action>(workbench.action.files.saveAll)
+map <leader>xb <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader>xk <action>(workbench.action.closeActiveEditor)
+map <leader>xd <action>(workbench.view.explorer)
+map <leader>xg <action>(workbench.view.scm)
+map <leader>xo <action>(workbench.action.focusNextGroup)
+map <leader>xu <action>(timeline.focus)
+map <leader>xv <action>(workbench.view.scm)
+map <leader>xc <action>(workbench.action.closeFolder)
+map <leader>x0 <action>(workbench.action.joinTwoGroups)
+map <leader>x1 <action>(workbench.action.editorLayoutSingle)
+map <leader>x2 <action>(workbench.action.splitEditorDown)
+map <leader>x3 <action>(workbench.action.splitEditor)
+
+" SPC x p = C-x p: project.el
+map <leader>xpf <action>(workbench.action.quickOpen)
+map <leader>xpb <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader>xpg <action>(workbench.action.findInFiles)
+map <leader>xpr <action>(workbench.action.replaceInFiles)
+map <leader>xpc <action>(workbench.action.tasks.build)
+
+" SPC c = C-c: personal commands
+map <leader>cf <action>(workbench.action.quickOpen)
+map <leader>cs <action>(workbench.action.files.saveAll)
+map <leader>ck <action>(workbench.action.closeActiveEditor)
+map <leader>cb <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader>cr <action>(workbench.action.findInFiles)
+map <leader>ce <action>(editor.action.smartSelect.expand)
+map <leader>ca <action>(workbench.actions.view.problems)
+map <leader>cc <action>(workbench.action.files.newUntitledFile)
+map <leader>cl <action>(copyRelativeFilePath)
+map <leader>cg <action>(workbench.view.scm)
+
+" SPC c v / V: edit / reload ~/.codemeowrc (mirrors the .ideavimrc keys)
+map <leader>cv <action>(codemeow.editRc)
+map <leader>cV <action>(codemeow.reloadRc)
+
+" SPC c j: avy jumps — Code Ace Jumper commands when that extension is
+" installed (lucax88x.codeacejumper); a hint appears otherwise
+map <leader>cjw <action>(extension.aceJump)
+map <leader>cjc <action>(extension.aceJump.multiChar)
+map <leader>cjl <action>(extension.aceJump.line)
+
+" SPC m = M-: meta
+map <leader>mx <action>(workbench.action.showCommands)
+map <leader>mo <action>(extension.aceJump)
+map <leader>mr <action>(editor.action.smartSelect.expand)
+map <leader>mR <action>(editor.action.smartSelect.shrink)
+map <leader>my <action>(editor.action.clipboardPasteAction)
+map <leader>m. <action>(editor.action.revealDefinition)
+map <leader>mg <action>(workbench.action.gotoLine)
+map <leader>msr <action>(workbench.action.findInFiles)
+map <leader>msl <action>(actions.find)
+map <leader>mss <action>(actions.find)
+map <leader>msL <action>(workbench.action.findInFiles)
+map <leader>mso <action>(workbench.action.gotoSymbol)
+
+" SPC w: the window map (Emacs C-c w)
+map <leader>wv <action>(workbench.action.splitEditor)
+map <leader>ws <action>(workbench.action.splitEditorDown)
+map <leader>wd <action>(workbench.action.joinTwoGroups)
+map <leader>wD <action>(workbench.action.editorLayoutSingle)
+map <leader>wm <action>(workbench.action.editorLayoutSingle)
+map <leader>ww <action>(workbench.action.focusNextGroup)
+map <leader>wW <action>(workbench.action.moveEditorToNextGroup)
+map <leader>wh <action>(workbench.action.focusLeftGroup)
+map <leader>wj <action>(workbench.action.focusBelowGroup)
+map <leader>wk <action>(workbench.action.focusAboveGroup)
+map <leader>wl <action>(workbench.action.focusRightGroup)
+map <leader>wi <action>(editor.action.fontZoomIn)
+map <leader>w= <action>(editor.action.fontZoomIn)
+map <leader>wo <action>(editor.action.fontZoomOut)
+map <leader>w- <action>(editor.action.fontZoomOut)
+map <leader>wu <action>(editor.action.fontZoomReset)
+map <leader>w0 <action>(editor.action.fontZoomReset)
+
+" --- avy jumps, mirroring init.el (needs the Code Ace Jumper extension) -----
+" init.el: S = avy-goto-char-timer, Q = avy-goto-line. X still goes-to-line,
+" so overriding Q costs nothing.
+nmap S <action>(extension.aceJump)
+nmap Q <action>(extension.aceJump.line)
+
+" --- split resizing (ideavimrc: - = _ +) ------------------------------------
+" '-' stays meow's negative-argument (the reason ideavimrc used '-' here was
+" that vim lacks negative counts — this extension doesn't). The other three
+" keys are free in the meow layout:
+nmap = <action>(workbench.action.increaseViewSize)
+nmap _ <action>(workbench.action.decreaseViewSize)
+nmap + <action>(workbench.action.evenEditorWidths)
+
+" --- which-key labels for the keypad groups above ----------------------------
+desc <leader>b buffers (MRU editors)
+desc <leader>x C-x · file / buffer / window
+desc <leader>xp C-x p · project
+desc <leader>c C-c · commands (= M-m)
+desc <leader>cj C-c j · avy jump
+desc <leader>m M- · meta
+desc <leader>ms M-s · search
+desc <leader>w window map (Emacs C-c w)
+
+" ============================================================================
+" Feature groups, ported 1:1 from the .ideavimrc leader where VS Code has an
+" analog (b / c / m / w / x live in the keypad table above; digits and ? /
+" are reserved by the keypad)
+" ============================================================================
+
+" --- SPC . — settings / UI ---------------------------------------------------
+desc <leader>. settings / UI
+map <leader>.c <action>(workbench.action.toggleActivityBarVisibility)
+map <leader>.C <action>(workbench.action.closeFolder)
+map <leader>.d <action>(workbench.action.toggleZenMode)
+map <leader>.f <action>(workbench.action.toggleFullScreen)
+map <leader>.k <action>(workbench.action.openGlobalKeybindings)
+map <leader>.p <action>(workbench.view.extensions)
+map <leader>.r <action>(workbench.action.debug.selectandstart)
+map <leader>.R <action>(workbench.action.reloadWindow)
+map <leader>.s <action>(workbench.action.openSettings)
+map <leader>.t <action>(workbench.action.selectTheme)
+map <leader>.z <action>(workbench.action.toggleZenMode)
+
+" --- SPC a — activate views (tool windows) -----------------------------------
+desc <leader>a activate view
+map <leader>aB <action>(workbench.action.tasks.build)
+map <leader>ac <action>(workbench.view.scm)
+map <leader>ad <action>(workbench.view.debug)
+map <leader>af <action>(workbench.view.search)
+map <leader>ag <action>(workbench.view.scm)
+map <leader>ak <action>(workbench.action.toggleScreencastMode)
+map <leader>an <action>(notifications.showList)
+map <leader>ap <action>(workbench.view.explorer)
+map <leader>aP <action>(workbench.actions.view.problems)
+map <leader>ar <action>(workbench.view.debug)
+map <leader>as <action>(outline.focus)
+map <leader>at <action>(workbench.action.terminal.toggleTerminal)
+map <leader>aT <action>(workbench.action.tasks.runTask)
+map <leader>av <action>(workbench.view.scm)
+map <leader>ax <action>(workbench.view.extensions)
+
+" --- SPC d — debug / run ------------------------------------------------------
+desc <leader>d debug / run
+map <leader>db <action>(workbench.action.debug.start)
+map <leader>dd <action>(workbench.action.debug.run)
+map <leader>de <action>(workbench.action.debug.start)
+
+" --- SPC e — extract / edit / expand -----------------------------------------
+desc <leader>e extract / refactor
+map <leader>eI <action>(workbench.action.openSettings)
+map <leader>eP <action>(workbench.action.openWorkspaceSettings)
+map <leader>eR <action>(workbench.action.debug.configure)
+map <leader>eS <action>(workbench.action.openSettings)
+map <leader>ea <action>(editor.unfoldAll)
+map <leader>ec <action>(editor.action.refactor)
+map <leader>ef <action>(editor.action.refactor)
+map <leader>ei <action>(editor.action.refactor)
+map <leader>em <action>(editor.action.refactor)
+map <leader>ep <action>(editor.action.refactor)
+map <leader>er <action>(editor.unfold)
+map <leader>ev <action>(editor.action.refactor)
+map <leader>eV <action>(editor.action.refactor)
+
+" --- SPC f — find / format ----------------------------------------------------
+desc <leader>f find / format
+map <leader>fe <action>(revealFileInOS)
+map <leader>ff <action>(workbench.action.findInFiles)
+map <leader>fi <action>(actions.find)
+map <leader>fm <action>(editor.action.formatDocument)
+map <leader>fn <action>(explorer.newFile)
+map <leader>fo <action>(editor.action.formatDocument)
+map <leader>fp <action>(workbench.action.findInFiles)
+map <leader>fr <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader>fs <action>(workbench.action.toggleFullScreen)
+map <leader>fu <action>(editor.action.goToReferences)
+
+" --- SPC g — git / goto / generate ---------------------------------------------
+desc <leader>g git / goto / generate
+map <leader>gP <action>(git.push)
+map <leader>ga <action>(git.stage)
+map <leader>gb <action>(timeline.focus)
+map <leader>gc <action>(git.commit)
+map <leader>gd <action>(editor.action.revealDefinition)
+map <leader>ge <action>(editor.action.sourceAction)
+map <leader>gf <action>(git.fetch)
+map <leader>gg <action>(workbench.view.scm)
+map <leader>gh <action>(timeline.focus)
+map <leader>gi <action>(editor.action.goToImplementation)
+map <leader>gl <action>(workbench.view.scm)
+map <leader>gp <action>(git.pull)
+map <leader>gs <action>(workbench.action.gotoSymbol)
+
+" --- SPC h — hide the side bar --------------------------------------------------
+desc <leader>h hide side bar
+map <leader>h <action>(workbench.action.toggleSidebarVisibility)
+
+" --- SPC i — introduce / inline / implement --------------------------------------
+desc <leader>i introduce / inline
+map <leader>ic <action>(editor.action.refactor)
+map <leader>if <action>(editor.action.refactor)
+map <leader>il <action>(editor.action.refactor)
+map <leader>im <action>(editor.action.sourceAction)
+map <leader>in <action>(editor.action.refactor)
+map <leader>ip <action>(editor.action.refactor)
+map <leader>iv <action>(editor.action.refactor)
+
+" --- SPC j — quick docs / implementations -----------------------------------------
+desc <leader>j docs / implementations
+map <leader>jd <action>(editor.action.showHover)
+map <leader>ji <action>(editor.action.peekImplementation)
+
+" --- SPC k — keyboard shortcuts -------------------------------------------------------
+desc <leader>k keyboard shortcuts
+map <leader>k <action>(workbench.action.openGlobalKeybindings)
+
+" --- SPC l — local history (timeline) --------------------------------------------------
+desc <leader>l local history
+map <leader>lh <action>(timeline.focus)
+map <leader>lH <action>(timeline.focus)
+
+" --- SPC n — new (file / dir / scratch / ...) ----------------------------------------
+desc <leader>n new
+map <leader>nd <action>(explorer.newFolder)
+map <leader>ne <action>(explorer.newFile)
+map <leader>nf <action>(explorer.newFile)
+map <leader>np <action>(workbench.action.newWindow)
+map <leader>ns <action>(workbench.action.files.newUntitledFile)
+map <leader>nt <action>(workbench.action.terminal.new)
+
+" --- SPC o — open / optimize / override ------------------------------------------------
+desc <leader>o open / optimize
+map <leader>oP <action>(workbench.action.files.openFile)
+map <leader>oe <action>(revealFileInOS)
+map <leader>of <action>(workbench.action.files.openFile)
+map <leader>og <action>(workbench.view.scm)
+map <leader>oi <action>(editor.action.organizeImports)
+map <leader>om <action>(editor.action.sourceAction)
+map <leader>op <action>(workbench.view.explorer)
+map <leader>or <action>(workbench.action.openRecent)
+map <leader>ot <action>(workbench.action.terminal.new)
+
+" --- SPC p — popup / project / parameter info / docs -------------------------------------
+desc <leader>p popup / project / docs
+map <leader>pd <action>(editor.action.showHover)
+map <leader>pf <action>(workbench.action.quickOpen)
+map <leader>ph <action>(editor.action.showHover)
+map <leader>pi <action>(editor.action.peekImplementation)
+map <leader>pm <action>(editor.action.showContextMenu)
+map <leader>pp <action>(editor.action.triggerParameterHints)
+map <leader>pr <action>(workbench.action.debug.selectandstart)
+map <leader>pt <action>(workbench.action.pinEditor)
+
+" --- SPC q — close the current tab ---------------------------------------------------------
+desc <leader>q close editor tab
+map <leader>q <action>(workbench.action.closeActiveEditor)
+
+" --- SPC r — run / refactor / replace -------------------------------------------------------
+desc <leader>r run / refactor / replace
+map <leader>ra <action>(workbench.action.showCommands)
+map <leader>rb <action>(git.revertSelectedRanges)
+map <leader>rB <action>(git.clean)
+map <leader>rd <action>(workbench.action.debug.start)
+map <leader>re <action>(editor.action.refactor)
+map <leader>rf <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader>rl <action>(workbench.action.navigateToLastEditLocation)
+map <leader>rm <action>(workbench.action.debug.selectandstart)
+map <leader>rn <action>(editor.action.rename)
+map <leader>ro <action>(git.clean)
+map <leader>rp <action>(editor.action.startFindReplaceAction)
+map <leader>rr <action>(workbench.action.debug.run)
+map <leader>rs <action>(workbench.action.tasks.runTask)
+map <leader>ru <action>(workbench.action.debug.selectandstart)
+map <leader>rw <action>(workbench.action.replaceInFiles)
+
+" --- SPC s — search / show / surround / debug-step -------------------------------------------
+desc <leader>s search / show / step
+map <leader>ss <action>(actions.find)
+map <leader>sS <action>(workbench.action.showAllSymbols)
+map <leader>sI <action>(editor.action.quickFix)
+map <leader>sa <action>(workbench.action.showCommands)
+map <leader>sc <action>(workbench.action.showAllSymbols)
+map <leader>sd <action>(editor.action.showHover)
+map <leader>se <action>(editor.action.marker.next)
+map <leader>sf <action>(workbench.action.quickOpen)
+map <leader>sh <action>(editor.action.showHover)
+map <leader>si <action>(workbench.action.debug.stepInto)
+map <leader>sk <action>(workbench.action.toggleScreencastMode)
+map <leader>sO <action>(workbench.action.debug.stepOut)
+map <leader>sT <action>(workbench.action.debug.stop)
+map <leader>sm <action>(editor.action.showContextMenu)
+map <leader>sP <action>(editor.action.showContextMenu)
+map <leader>sn <action>(breadcrumbs.focusAndSelect)
+map <leader>so <action>(workbench.action.debug.stepOver)
+map <leader>sp <action>(workbench.action.findInFiles)
+map <leader>st <action>(workbench.action.findInFiles)
+map <leader>sr <action>(workbench.action.replaceInFiles)
+map <leader>su <action>(editor.action.referenceSearch.trigger)
+" ideavimrc: SPC s v sourced ~/.ideavimrc — here it reloads ~/.codemeowrc
+map <leader>sv <action>(codemeow.reloadRc)
+map <leader>sw <action>(editor.action.surroundWithSnippet)
+
+" --- SPC t — toggle / breakpoints ---------------------------------------------------------------
+desc <leader>t toggle / breakpoints
+map <leader>tb <action>(editor.debug.action.toggleBreakpoint)
+map <leader>tc <action>(workbench.action.toggleActivityBarVisibility)
+map <leader>tf <action>(workbench.action.toggleFullScreen)
+map <leader>tk <action>(workbench.action.toggleScreencastMode)
+map <leader>tz <action>(workbench.action.toggleZenMode)
+
+" --- SPC u — pin tab -----------------------------------------------------------------------
+desc <leader>u pin
+map <leader>up <action>(workbench.action.pinEditor)
+
+" --- SPC v — VCS -------------------------------------------------------------------------------
+desc <leader>v VCS
+map <leader>vb <action>(workbench.debug.action.focusBreakpointsView)
+map <leader>vc <action>(git.commit)
+map <leader>vh <action>(timeline.focus)
+map <leader>vl <action>(workbench.view.scm)
+map <leader>vp <action>(git.pull)
+map <leader>vP <action>(git.push)
+
+" --- SPC ] / SPC [ — next / prev navigation ------------------------------------------------------
+" ideavimrc used ]c [c ]d [d ]e [e in NORMAL; multi-key NORMAL sequences don't
+" exist here ([ ] are meow's beginning/end-of-thing), so they live on the
+" keypad instead.
+desc <leader>] next (change / diff / error)
+map <leader>]c <action>(workbench.action.editor.nextChange)
+map <leader>]d <action>(workbench.action.compareEditor.nextChange)
+map <leader>]e <action>(editor.action.marker.nextInFiles)
+desc <leader>[ previous (change / diff / error)
+map <leader>[c <action>(workbench.action.editor.previousChange)
+map <leader>[d <action>(workbench.action.compareEditor.previousChange)
+map <leader>[e <action>(editor.action.marker.prevInFiles)
+
+" ============================================================================
+" NOT ported from .ideavimrc / .ideameowrc, and why
+" ----------------------------------------------------------------------------
+" * the whole meow-emulation section — the extension implements real meow;
+"   the layout block at the top of this file is the native keymap itself.
+" * set clipboard/ideajoin/number/relativenumber — IdeaVim/vim options; the
+"   editor and the extension handle these themselves. Any such lines are
+"   ignored if pasted, so copying an .ideavimrc or .ideameowrc wholesale is
+"   safe.
+" * <A-m> leader alias, C-key routing — only printable keys reach the meow
+"   engine; use VS Code's keybindings.json for modifier chords.
+" * SPC / (comment) and SPC ? — reserved by the keypad for describe-key and
+"   the cheatsheet. Comment-line is on the editor's usual Ctrl-/ chord.
+" * IntelliJ-only actions with no VS Code analog (tool windows like Maven /
+"   Gradle / Coverage / Bookmarks / Hierarchy, GotoTest, ExtractInterface as
+"   a distinct action, PasteMultiple history, Unwrap, presentation-assistant
+"   overlays beyond screencast mode) — dropped rather than bound to the
+"   wrong thing; editor.action.refactor covers the whole introduce/extract
+"   family in VS Code.
+" * :tabm / :delmarks / :set number! ex-commands — no ex layer here.
+" * SPC <CR> (intentions): Enter can't be a keypad key; use Ctrl-. (quick
+"   fix) or SPC s I (editor.action.quickFix).
+" ============================================================================

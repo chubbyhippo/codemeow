@@ -1,0 +1,24 @@
+# Build output
+out/
+*.vsix
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# npm noise
+npm-debug.log*
+
+# Local toolchain overrides (mise.toml stays tracked)
+mise.local.toml
+.mise.local.toml
+
+# Test host downloads
+.vscode-test/
+
+# IDE
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
