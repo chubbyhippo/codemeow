@@ -21,24 +21,6 @@
   ],
   "main": "./out/vscode/extension.js",
   "contributes": {
-    "viewsContainers": {
-      "panel": [
-        {
-          "id": "codemeow",
-          "title": "meow",
-          "icon": "media/whichkey.svg"
-        }
-      ]
-    },
-    "views": {
-      "codemeow": [
-        {
-          "type": "webview",
-          "id": "codemeow.whichKey",
-          "name": "which-key"
-        }
-      ]
-    },
     "commands": [
       {
         "command": "codemeow.reloadRc",

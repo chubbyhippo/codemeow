@@ -33,7 +33,7 @@ import { TREE_KEYS } from './treeKeys';
 /**
  * The VS Code shell around the meow core: owns the `type` override, the
  * per-document state, the status-bar widget, the decorations (grab region,
- * expand hints), the which-key status hints, and the two rc layers on disk.
+ * expand hints), the which-key overlay, and the two rc layers on disk.
  * All editing semantics live in ../core — this file only wires them up.
  */
 
@@ -45,14 +45,22 @@ let hintDecoration: vscode.TextEditorDecorationType;
 let avyMatchDecoration: vscode.TextEditorDecorationType;
 let avyLabelDecoration: vscode.TextEditorDecorationType;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
-/** The bottom-panel view showing the which-key grid (resolved lazily). */
-let whichKeyView: vscode.WebviewView | undefined;
-/** Pending grid HTML, picked up when the view resolves. */
-let whichKeyHtml: string | undefined;
-/** Grace timer: the panel closes only when the prefix chain really ends. */
+/** The open which-key menu; `closing` marks a programmatic dispose so
+ *  onDidHide can tell it apart from the user's ESC / click-away. */
+let whichKeyMenu: { qp: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
+/** Grace timer: between chain steps the menu redraws in place; it is
+ *  disposed only when no follow-up schedule arrives (the chain ended). */
 let whichKeyCloseTimer: ReturnType<typeof setTimeout> | undefined;
-/** True while a prefix chain is alive: the next panel appears with no delay. */
+/** True when hide() closed a visible menu: the chain's next menu appears
+ *  with no delay, like which-key refreshing between prefixes. */
 let whichKeyChain = false;
+/** The engine is a state machine — menu keystrokes dispatch strictly in order. */
+let whichKeyDispatch: Promise<void> = Promise.resolve();
+
+interface WhichKeyItem extends vscode.QuickPickItem {
+  /** The raw char this row dispatches ('SPC' displays, ' ' dispatches). */
+  meowKey: string;
+}
 let hintTimer: ReturnType<typeof setTimeout> | undefined;
 let infoBody = '';
 const infoEmitter = new vscode.EventEmitter<vscode.Uri>();
@@ -93,9 +101,18 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
     },
 
     scheduleWhichKey: (kind, buffer) => {
-      hideWhichKey();
+      if (whichKeyCloseTimer !== undefined) {
+        clearTimeout(whichKeyCloseTimer); // the chain continues: keep the menu
+        whichKeyCloseTimer = undefined;
+      }
+      if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
+      whichKeyTimer = undefined;
       if (!Rc.whichKeyEnabled()) {
         whichKeyChain = false;
+        return;
+      }
+      if (whichKeyMenu) {
+        fillWhichKeyMenu(whichKeyMenu.qp, kind, buffer); // deeper prefix: redraw in place
         return;
       }
       // meow's timeoutlen for the first menu; follow-up prefixes reopen at once
@@ -103,7 +120,7 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
       whichKeyChain = false;
       whichKeyTimer = setTimeout(() => {
         whichKeyTimer = undefined;
-        void openWhichKey(kind, buffer);
+        openWhichKeyMenu(editor, st, kind, buffer);
       }, delay);
     },
 
@@ -173,66 +190,91 @@ function makeCtx(editor: vscode.TextEditor, st: MeowState): Ctx {
 function hideWhichKey(): void {
   if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
   whichKeyTimer = undefined;
-  if (whichKeyView?.visible) {
+  if (whichKeyMenu && whichKeyCloseTimer === undefined) {
     whichKeyChain = true; // a follow-up prefix in the same chain redraws instantly
-    // close only when the chain really ends: openWhichKey cancels this timer
-    if (whichKeyCloseTimer !== undefined) clearTimeout(whichKeyCloseTimer);
+    // dispose only when the chain really ends: scheduleWhichKey cancels this
     whichKeyCloseTimer = setTimeout(() => {
       whichKeyCloseTimer = undefined;
-      closeWhichKeyPanel();
-    }, 80);
+      whichKeyChain = false;
+      closeWhichKeyMenu();
+    }, 60);
   }
 }
 
-function closeWhichKeyPanel(): void {
-  whichKeyChain = false;
-  if (whichKeyView?.visible) {
-    whichKeyView.webview.html = '';
-    void vscode.commands.executeCommand('workbench.action.closePanel');
-  }
+function closeWhichKeyMenu(): void {
+  const menu = whichKeyMenu;
+  if (!menu) return;
+  whichKeyMenu = undefined;
+  menu.closing = true;
+  menu.qp.dispose(); // fires onDidHide, which sees `closing` and stays quiet
 }
 
 /**
- * which-key, the Emacs way: a NON-focusable panel along the bottom (a
- * webview view revealed with preserveFocus) listing the continuations in
- * columns. It never interrupts — keep typing in the editor; ESC cancels
- * through the editor as usual. The very first reveal of a session has to
- * resolve the view, which briefly bounces focus through the panel and back.
+ * which-key as a native QuickPick — the established VS Code which-key UX.
+ * There is no non-focusable floating widget in the API, so unlike ideameow's
+ * bottom JBPopup the menu takes the keyboard while it is up; its input box is
+ * a key sink: every typed char is swallowed and dispatched through the engine
+ * exactly like an editor key (it does NOT filter — filtering would break
+ * typing sequences through the menu), so chains behave identically with or
+ * without the menu. Enter or a click dispatches the highlighted row's key;
+ * ESC / clicking away cancels the pending chain just like ESC in the editor.
+ * Appears after timeoutlen, meow-style — fast chains never see it.
  */
-async function openWhichKey(kind: 'keypad' | 'things', buffer: string): Promise<void> {
-  const rows = kind === 'things' ? THINGS : keypadRows(buffer);
-  if (rows.length === 0) return;
-  if (whichKeyCloseTimer !== undefined) {
-    clearTimeout(whichKeyCloseTimer);
-    whichKeyCloseTimer = undefined;
-  }
-  const title = kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
-  whichKeyHtml = whichKeyGridHtml(title, rows);
-  if (whichKeyView) {
-    whichKeyView.webview.html = whichKeyHtml;
-    whichKeyView.show(true); // preserveFocus: the editor keeps the keyboard
-  } else {
-    await vscode.commands.executeCommand('codemeow.whichKey.focus');
-    await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
-  }
+function openWhichKeyMenu(
+  editor: vscode.TextEditor, st: MeowState, kind: 'keypad' | 'things', buffer: string,
+): void {
+  if (kind === 'keypad' && keypadRows(buffer).length === 0) return;
+  closeWhichKeyMenu(); // a stale menu must not leak its handlers
+  const qp = vscode.window.createQuickPick<WhichKeyItem>();
+  const menu = { qp, closing: false };
+  whichKeyMenu = menu;
+  qp.placeholder = 'keep typing the sequence — Enter or a click runs the highlighted key';
+  fillWhichKeyMenu(qp, kind, buffer);
+  qp.onDidChangeValue((v) => {
+    if (v === '') return; // our own reset below
+    qp.value = ''; // swallow: keys dispatch, they do not filter
+    dispatchMenuKeys(editor, st, v);
+  });
+  qp.onDidAccept(() => {
+    const item = qp.activeItems[0];
+    if (item) dispatchMenuKeys(editor, st, item.meowKey);
+  });
+  qp.onDidHide(() => {
+    const userHid = whichKeyMenu === menu && !menu.closing;
+    if (whichKeyMenu === menu) whichKeyMenu = undefined;
+    qp.dispose();
+    if (userHid) {
+      whichKeyChain = false;
+      // ESC / click-away cancels the chain the way editor ESC would; the
+      // guard keeps a mode-already-left close from collapsing beacon cursors
+      if (st.mode === MeowMode.KEYPAD || st.pending !== null) {
+        Engine.escapeKey(makeCtx(editor, st));
+      }
+    }
+  });
+  qp.show();
 }
 
-/** which-key's grid, column-major via CSS columns, in the editor's theme. */
-function whichKeyGridHtml(title: string, rows: Array<[string, string]>): string {
-  const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  const widest = rows.reduce((w, [k, d]) => Math.max(w, k.length + 3 + d.length), 8);
-  const entries = rows
-    .map(([k, d]) => `<div class="e"><b>${esc(k)}</b><span class="s"> → </span>${esc(d)}</div>`)
-    .join('');
-  return `<!DOCTYPE html><html><head><style>
-    body { margin: 4px 8px; font-family: var(--vscode-editor-font-family);
-           font-size: var(--vscode-editor-font-size); color: var(--vscode-foreground); }
-    .t { color: var(--vscode-descriptionForeground); margin-bottom: 4px; }
-    .wk { column-width: ${widest}ch; column-gap: 2ch; }
-    .e { break-inside: avoid; white-space: nowrap; }
-    .e b { color: var(--vscode-textLink-foreground); }
-    .s { color: var(--vscode-descriptionForeground); }
-  </style></head><body><div class="t">${esc(title)}</div><div class="wk">${entries}</div></body></html>`;
+function fillWhichKeyMenu(
+  qp: vscode.QuickPick<WhichKeyItem>, kind: 'keypad' | 'things', buffer: string,
+): void {
+  const rows = kind === 'things' ? THINGS : keypadRows(buffer);
+  qp.title = kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
+  qp.items = rows.map(([k, d]) => ({
+    label: k,
+    description: `→ ${d}`,
+    meowKey: k === 'SPC' ? ' ' : k,
+  }));
+  qp.activeItems = qp.items.length > 0 ? [qp.items[0]] : [];
+}
+
+function dispatchMenuKeys(editor: vscode.TextEditor, st: MeowState, keys: string): void {
+  whichKeyDispatch = whichKeyDispatch
+    .then(async () => {
+      const ctx = makeCtx(editor, st);
+      for (const ch of keys) await Engine.handleChar(ctx, ch);
+    })
+    .catch(() => undefined);
 }
 
 function clearExpandHints(editor: vscode.TextEditor): void {
@@ -510,16 +552,7 @@ export function activate(context: vscode.ExtensionContext): void {
       void import('../core/keypad').then((k) => ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET));
     }),
 
-    vscode.window.registerWebviewViewProvider('codemeow.whichKey', {
-      resolveWebviewView(view) {
-        whichKeyView = view;
-        view.webview.options = { enableScripts: false };
-        if (whichKeyHtml !== undefined) view.webview.html = whichKeyHtml;
-        view.onDidDispose(() => {
-          if (whichKeyView === view) whichKeyView = undefined;
-        });
-      },
-    }),
+    { dispose: closeWhichKeyMenu },
 
     vscode.workspace.registerTextDocumentContentProvider('codemeow', {
       onDidChange: infoEmitter.event,

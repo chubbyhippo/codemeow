@@ -20,7 +20,8 @@ import { Rc } from './rc';
 /**
  * which-key: after a short delay on a pending prefix (keypad SPC sequences,
  * or the , . [ ] thing table), the adapter lists the available continuations
- * (codemeow shows them in the status bar — it must never steal focus).
+ * in a QuickPick menu whose input dispatches typed keys through the engine
+ * (they never filter — chains must type through the menu unchanged).
  * Descriptions come from `desc` / `let g:WhichKeyDesc_*` entries; delay and
  * on/off from `set timeoutlen` / `set nowhich-key`. The row computation is
  * pure and lives here.

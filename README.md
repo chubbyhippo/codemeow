@@ -26,8 +26,8 @@ The states you know from meow:
   What *does* answer to it, like special buffers in Emacs: the workbench
   trees — see below.
 - **KEYPAD** — `SPC` as the leader, dispatching editor commands Emacs-style
-  (`SPC x f` = quick open, `SPC w v` = split…). A which-key hint lists your
-  options in the status bar whenever you pause on a prefix.
+  (`SPC x f` = quick open, `SPC w v` = split…). A which-key menu pops up
+  with your options whenever you pause on a prefix.
 - **BEACON** — meow's multi-edit, built on VS Code's native multiple cursors:
   grab a region with `G`, select something inside it, and a cursor lands on
   every similar range. Edit them all at once; `ESC` collapses.
@@ -199,15 +199,16 @@ mention keeps its bundled binding.
   understands take effect.
 
 **which-key.** Pause on any pending prefix — a keypad `SPC` sequence, or the
-`,` `.` `[` `]` thing table — and after `timeoutlen` ms a panel opens along
-the bottom listing the continuations in columns, exactly like Emacs'
-which-key. It never takes focus: just keep typing the sequence in the editor;
-`ESC` cancels as usual, deeper prefixes in the same chain redraw the panel
-instantly, and it closes itself when the sequence ends. (One platform quirk:
-the very first time it appears in a session, VS Code has to materialize the
-panel view, which bounces focus through it and straight back.) `SPC ?` still
-opens the full cheatsheet as a read-only document (`j`/`k` scroll it, `q`…
-well, `q` closes it, naturally).
+`,` `.` `[` `]` thing table — and after `timeoutlen` ms a menu pops up with
+the continuations (a native QuickPick, the familiar VS Code which-key UX).
+Keep typing the sequence into it: typed keys dispatch immediately — they
+never filter the list — so chains behave exactly as they do without the
+menu. Arrows plus `Enter`, or a click, run the highlighted key instead;
+`ESC` (or clicking away) cancels the chain like `ESC` in the editor. Deeper
+prefixes redraw the menu in place, it closes itself when the sequence ends,
+and fast chains finish before it ever appears. `SPC ?` still opens the full
+cheatsheet as a read-only document (`j`/`k` scroll it, `q`… well, `q` closes
+it, naturally).
 
 **What the bundled default gives you.** The full meow QWERTY layout, the
 complete keypad table, and the same leader scheme as the companion
