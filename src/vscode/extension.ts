@@ -24,8 +24,10 @@ import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
 import { Config, Rc } from '../core/rc';
 import { MeowMode, MeowState } from '../core/state';
+import * as TreeMeow from '../core/treeMeow';
 import { keypadRows, THINGS } from '../core/whichKey';
 import { VscClipboard, VscEditorPort } from './editorPort';
+import { TREE_KEYS } from './treeKeys';
 
 /**
  * The VS Code shell around the meow core: owns the `type` override, the
@@ -260,6 +262,30 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);
 }
 
+// ----------------------------------------------------------- tree surface
+
+/** Turn on the context gates for exactly the mmap-bound keys — the analog
+ *  of ideameow registering its shortcut set on the focused tree. Re-run
+ *  after a rc reload (SPC c M) so new mmap lines apply without a restart. */
+function syncTreeKeys(): void {
+  const bound = TreeMeow.boundChars();
+  for (const { ch, ctx } of TREE_KEYS) {
+    void vscode.commands.executeCommand('setContext', `codemeow.tree.${ctx}`, bound.has(ch));
+  }
+}
+
+/** The focused tree's command executor for TreeMeow.dispatch — the list.*
+ *  commands act on whichever workbench list/tree has the keyboard, which is
+ *  the one that matched the keybinding's `when`. Unknown ids hint, like
+ *  runBinding's action arm. */
+async function runTreeCommand(id: string): Promise<void> {
+  try {
+    await vscode.commands.executeCommand(id);
+  } catch {
+    void vscode.window.setStatusBarMessage(`meow: Unknown command: ${id}`, 3000);
+  }
+}
+
 // -------------------------------------------------------------- rc loading
 
 function userRcPath(): string {
@@ -333,6 +359,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
   loadDefaults(context.extensionPath);
   loadUserRc();
+  syncTreeKeys();
 
   // the modal heart: intercept typing before it becomes an insertion
   try {
@@ -369,8 +396,17 @@ export function activate(context: vscode.ExtensionContext): void {
       if (st) Engine.escapeKey(makeCtx(editor, st));
     }),
 
+    // the tree surface: the per-key manifest keybindings (gated on the
+    // codemeow.tree.* contexts, see treeKeys.ts) land here with the pressed
+    // char, and the MOTION map decides what it does on the focused tree
+    vscode.commands.registerCommand('codemeow.tree', (c: unknown) => {
+      if (typeof c !== 'string') return;
+      return TreeMeow.dispatch(runTreeCommand, c);
+    }),
+
     vscode.commands.registerCommand('codemeow.reloadRc', () => {
       const c = loadUserRc();
+      syncTreeKeys();
       const problems = c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
         `Reloaded ~/${Rc.FILE_NAME}: ${c.normal.size} normal map(s), ${c.motion.size} motion map(s), ` +

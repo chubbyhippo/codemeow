@@ -19,11 +19,12 @@ The states you know from meow:
 
 - **NORMAL** — keys are commands, block cursor. You start here.
 - **INSERT** — keys type text. `i a c I A` get you in, `ESC` gets you out.
-- **MOTION** — meow's reduced state for special contexts (`j`/`k`/`SPC` by
-  default, rebindable with `mmap`). Read-only views do *not* use it: like
-  read-only buffers in Emacs they stay in NORMAL — every motion, selection,
-  search and avy jump works, and the modify commands are simply inert
-  (meow's `meow--allow-modify-p`). Nothing enters MOTION by default.
+- **MOTION** — meow's reduced state for special contexts, rebindable with
+  `mmap`. Read-only views do *not* use it: like read-only buffers in Emacs
+  they stay in NORMAL — every motion, selection, search and avy jump works,
+  and the modify commands are simply inert (meow's `meow--allow-modify-p`).
+  What *does* answer to it, like special buffers in Emacs: the workbench
+  trees — see below.
 - **KEYPAD** — `SPC` as the leader, dispatching editor commands Emacs-style
   (`SPC x f` = quick open, `SPC w v` = split…). A which-key hint lists your
   options in the status bar whenever you pause on a prefix.
@@ -36,6 +37,19 @@ buffers, in read-only views (a diff's git side, the output panel, the
 cheatsheet — full layout, edits blocked), and in the SCM commit message box;
 inputs that need their own keys (notebook REPLs, review comments) keep
 native editing.
+
+**Workbench trees** — the Explorer, outline, search results, problems,
+timeline, and every other sidebar or panel tree — answer to the MOTION map,
+like special buffers in Emacs: `j`/`k` move the selection, `h` collapses or
+goes to the parent, `l` expands or enters, `q` hides the side bar.
+Everything else stays native: `Enter` opens, and any *unmapped* letter still
+starts the tree's type-to-find. Add your own tree keys with `mmap` lines in
+`~/.codemeowrc`, e.g. `mmap o <action>(filesExplorer.openFilePreserveFocus)`
+(open the file but keep navigating) or
+`mmap r <action>(workbench.files.action.refreshFilesExplorer)`;
+`mmap <key> ignore` gives a key back to the tree (so `mmap q ignore` makes
+`q` type into the find again). Meow commands other than the four motions
+have no tree meaning and are simply inert there.
 
 And one idea borrowed straight from meow itself: **the extension binds no
 keys in code.** The entire keymap — the NORMAL/MOTION layout *and* the whole
@@ -128,7 +142,7 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 | `nmap <key> <action>(command.id)` | NORMAL key runs a VS Code command |
 | `nmap <key> <keys>` | NORMAL key replays a meow key sequence, e.g. `nmap Z ,b` |
 | `nnoremap` / `noremap` | like `nmap`/`map`, but the replayed keys resolve through the bundled defaults, ignoring your other mappings |
-| `mmap` / `mnoremap` | the same three target forms, for MOTION mode (unused by default — read-only views stay in NORMAL) |
+| `mmap` / `mnoremap` | the same three target forms, for MOTION mode — the keymap of the workbench trees (read-only views stay in NORMAL) |
 | `map <leader><seq> <action>(id)` | keypad entry: `SPC` + sequence runs the command (yours override the bundled defaults) |
 | `map <leader><seq> <keys>` | keypad entry replaying meow keys after the keypad closes |
 | `desc <leader><seq> <text>` | which-key label for an entry (exact seq) or a group (prefix) |
@@ -218,8 +232,8 @@ All deliberate, none accidental:
   `meow--allow-modify-p` — kill / change / backspace / replace silently
   inert, delete / yank / open / swap-grab answering "Buffer is read-only".
   `i`/`a` still switch to INSERT (as in Emacs) but typing lands in a
-  read-only surface. MOTION exists for `mmap` setups but nothing attaches
-  to it by default.
+  read-only surface. No *editor* attaches to MOTION by default — the
+  workbench trees answer to it instead (see above).
 - `ESC` in NORMAL is consumed while a meow buffer is focused (VS Code has no
   "run the default escape" escape hatch); the usual widgets — suggest, find,
   rename, snippets — are excluded in the keybinding's `when` clause and keep
@@ -244,8 +258,9 @@ run headless in milliseconds.
 | `src/core/edits.ts` | everything that mutates text: insert/change/delete/kill/yank/… |
 | `src/core/things.ts` | what a "thing" is: pairs, strings, paragraphs, defuns… |
 | `src/core/rc.ts` / `rcParser.ts` | the two rc layers (bundled defaults + `~/.codemeowrc`) and the line syntax |
+| `src/core/treeMeow.ts` | the tree surface: MOTION-map dispatch on workbench trees (`j k h l` → the `list.*` arrow commands) |
 | `src/core/port.ts` | the editor/clipboard/UI interfaces the core sees — the seam that keeps `vscode` out |
-| `src/vscode/` | the thin adapter: the `type` override, decorations, status bar, rc files on disk |
+| `src/vscode/` | the thin adapter: the `type` override, decorations, status bar, rc files on disk, the per-key tree keybindings (`treeKeys.ts`) |
 | `src/test/` | the behavior suite over a fake editor — a straight port of ideameow's specs |
 
 Behavior is pinned by the specs in `src/test` (given/whenKeys/then…) — every

@@ -66,6 +66,570 @@
         "key": "escape",
         "command": "codemeow.escape",
         "when": "editorTextFocus && codemeow.active && !suggestWidgetVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !inSnippetMode"
+      },
+      {
+        "key": "a",
+        "command": "codemeow.tree",
+        "args": "a",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.a"
+      },
+      {
+        "key": "b",
+        "command": "codemeow.tree",
+        "args": "b",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.b"
+      },
+      {
+        "key": "c",
+        "command": "codemeow.tree",
+        "args": "c",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.c"
+      },
+      {
+        "key": "d",
+        "command": "codemeow.tree",
+        "args": "d",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.d"
+      },
+      {
+        "key": "e",
+        "command": "codemeow.tree",
+        "args": "e",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.e"
+      },
+      {
+        "key": "f",
+        "command": "codemeow.tree",
+        "args": "f",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.f"
+      },
+      {
+        "key": "g",
+        "command": "codemeow.tree",
+        "args": "g",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.g"
+      },
+      {
+        "key": "h",
+        "command": "codemeow.tree",
+        "args": "h",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.h"
+      },
+      {
+        "key": "i",
+        "command": "codemeow.tree",
+        "args": "i",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.i"
+      },
+      {
+        "key": "j",
+        "command": "codemeow.tree",
+        "args": "j",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.j"
+      },
+      {
+        "key": "k",
+        "command": "codemeow.tree",
+        "args": "k",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.k"
+      },
+      {
+        "key": "l",
+        "command": "codemeow.tree",
+        "args": "l",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.l"
+      },
+      {
+        "key": "m",
+        "command": "codemeow.tree",
+        "args": "m",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.m"
+      },
+      {
+        "key": "n",
+        "command": "codemeow.tree",
+        "args": "n",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.n"
+      },
+      {
+        "key": "o",
+        "command": "codemeow.tree",
+        "args": "o",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.o"
+      },
+      {
+        "key": "p",
+        "command": "codemeow.tree",
+        "args": "p",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.p"
+      },
+      {
+        "key": "q",
+        "command": "codemeow.tree",
+        "args": "q",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.q"
+      },
+      {
+        "key": "r",
+        "command": "codemeow.tree",
+        "args": "r",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.r"
+      },
+      {
+        "key": "s",
+        "command": "codemeow.tree",
+        "args": "s",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.s"
+      },
+      {
+        "key": "t",
+        "command": "codemeow.tree",
+        "args": "t",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.t"
+      },
+      {
+        "key": "u",
+        "command": "codemeow.tree",
+        "args": "u",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.u"
+      },
+      {
+        "key": "v",
+        "command": "codemeow.tree",
+        "args": "v",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.v"
+      },
+      {
+        "key": "w",
+        "command": "codemeow.tree",
+        "args": "w",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.w"
+      },
+      {
+        "key": "x",
+        "command": "codemeow.tree",
+        "args": "x",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.x"
+      },
+      {
+        "key": "y",
+        "command": "codemeow.tree",
+        "args": "y",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.y"
+      },
+      {
+        "key": "z",
+        "command": "codemeow.tree",
+        "args": "z",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.z"
+      },
+      {
+        "key": "shift+a",
+        "command": "codemeow.tree",
+        "args": "A",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.A"
+      },
+      {
+        "key": "shift+b",
+        "command": "codemeow.tree",
+        "args": "B",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.B"
+      },
+      {
+        "key": "shift+c",
+        "command": "codemeow.tree",
+        "args": "C",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.C"
+      },
+      {
+        "key": "shift+d",
+        "command": "codemeow.tree",
+        "args": "D",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.D"
+      },
+      {
+        "key": "shift+e",
+        "command": "codemeow.tree",
+        "args": "E",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.E"
+      },
+      {
+        "key": "shift+f",
+        "command": "codemeow.tree",
+        "args": "F",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.F"
+      },
+      {
+        "key": "shift+g",
+        "command": "codemeow.tree",
+        "args": "G",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.G"
+      },
+      {
+        "key": "shift+h",
+        "command": "codemeow.tree",
+        "args": "H",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.H"
+      },
+      {
+        "key": "shift+i",
+        "command": "codemeow.tree",
+        "args": "I",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.I"
+      },
+      {
+        "key": "shift+j",
+        "command": "codemeow.tree",
+        "args": "J",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.J"
+      },
+      {
+        "key": "shift+k",
+        "command": "codemeow.tree",
+        "args": "K",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.K"
+      },
+      {
+        "key": "shift+l",
+        "command": "codemeow.tree",
+        "args": "L",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.L"
+      },
+      {
+        "key": "shift+m",
+        "command": "codemeow.tree",
+        "args": "M",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.M"
+      },
+      {
+        "key": "shift+n",
+        "command": "codemeow.tree",
+        "args": "N",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.N"
+      },
+      {
+        "key": "shift+o",
+        "command": "codemeow.tree",
+        "args": "O",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.O"
+      },
+      {
+        "key": "shift+p",
+        "command": "codemeow.tree",
+        "args": "P",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.P"
+      },
+      {
+        "key": "shift+q",
+        "command": "codemeow.tree",
+        "args": "Q",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.Q"
+      },
+      {
+        "key": "shift+r",
+        "command": "codemeow.tree",
+        "args": "R",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.R"
+      },
+      {
+        "key": "shift+s",
+        "command": "codemeow.tree",
+        "args": "S",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.S"
+      },
+      {
+        "key": "shift+t",
+        "command": "codemeow.tree",
+        "args": "T",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.T"
+      },
+      {
+        "key": "shift+u",
+        "command": "codemeow.tree",
+        "args": "U",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.U"
+      },
+      {
+        "key": "shift+v",
+        "command": "codemeow.tree",
+        "args": "V",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.V"
+      },
+      {
+        "key": "shift+w",
+        "command": "codemeow.tree",
+        "args": "W",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.W"
+      },
+      {
+        "key": "shift+x",
+        "command": "codemeow.tree",
+        "args": "X",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.X"
+      },
+      {
+        "key": "shift+y",
+        "command": "codemeow.tree",
+        "args": "Y",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.Y"
+      },
+      {
+        "key": "shift+z",
+        "command": "codemeow.tree",
+        "args": "Z",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.Z"
+      },
+      {
+        "key": "0",
+        "command": "codemeow.tree",
+        "args": "0",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.0"
+      },
+      {
+        "key": "1",
+        "command": "codemeow.tree",
+        "args": "1",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.1"
+      },
+      {
+        "key": "2",
+        "command": "codemeow.tree",
+        "args": "2",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.2"
+      },
+      {
+        "key": "3",
+        "command": "codemeow.tree",
+        "args": "3",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.3"
+      },
+      {
+        "key": "4",
+        "command": "codemeow.tree",
+        "args": "4",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.4"
+      },
+      {
+        "key": "5",
+        "command": "codemeow.tree",
+        "args": "5",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.5"
+      },
+      {
+        "key": "6",
+        "command": "codemeow.tree",
+        "args": "6",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.6"
+      },
+      {
+        "key": "7",
+        "command": "codemeow.tree",
+        "args": "7",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.7"
+      },
+      {
+        "key": "8",
+        "command": "codemeow.tree",
+        "args": "8",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.8"
+      },
+      {
+        "key": "9",
+        "command": "codemeow.tree",
+        "args": "9",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.9"
+      },
+      {
+        "key": "shift+1",
+        "command": "codemeow.tree",
+        "args": "!",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.exclam"
+      },
+      {
+        "key": "shift+2",
+        "command": "codemeow.tree",
+        "args": "@",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.at"
+      },
+      {
+        "key": "shift+3",
+        "command": "codemeow.tree",
+        "args": "#",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.hash"
+      },
+      {
+        "key": "shift+4",
+        "command": "codemeow.tree",
+        "args": "$",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.dollar"
+      },
+      {
+        "key": "shift+5",
+        "command": "codemeow.tree",
+        "args": "%",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.percent"
+      },
+      {
+        "key": "shift+6",
+        "command": "codemeow.tree",
+        "args": "^",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.caret"
+      },
+      {
+        "key": "shift+7",
+        "command": "codemeow.tree",
+        "args": "&",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.ampersand"
+      },
+      {
+        "key": "shift+8",
+        "command": "codemeow.tree",
+        "args": "*",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.asterisk"
+      },
+      {
+        "key": "shift+9",
+        "command": "codemeow.tree",
+        "args": "(",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.parenLeft"
+      },
+      {
+        "key": "shift+0",
+        "command": "codemeow.tree",
+        "args": ")",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.parenRight"
+      },
+      {
+        "key": "`",
+        "command": "codemeow.tree",
+        "args": "`",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.backquote"
+      },
+      {
+        "key": "shift+`",
+        "command": "codemeow.tree",
+        "args": "~",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.tilde"
+      },
+      {
+        "key": "-",
+        "command": "codemeow.tree",
+        "args": "-",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.minus"
+      },
+      {
+        "key": "shift+-",
+        "command": "codemeow.tree",
+        "args": "_",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.underscore"
+      },
+      {
+        "key": "=",
+        "command": "codemeow.tree",
+        "args": "=",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.equals"
+      },
+      {
+        "key": "shift+=",
+        "command": "codemeow.tree",
+        "args": "+",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.plus"
+      },
+      {
+        "key": "[",
+        "command": "codemeow.tree",
+        "args": "[",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.bracketLeft"
+      },
+      {
+        "key": "shift+[",
+        "command": "codemeow.tree",
+        "args": "{",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.braceLeft"
+      },
+      {
+        "key": "]",
+        "command": "codemeow.tree",
+        "args": "]",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.bracketRight"
+      },
+      {
+        "key": "shift+]",
+        "command": "codemeow.tree",
+        "args": "}",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.braceRight"
+      },
+      {
+        "key": "\\",
+        "command": "codemeow.tree",
+        "args": "\\",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.backslash"
+      },
+      {
+        "key": "shift+\\",
+        "command": "codemeow.tree",
+        "args": "|",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.pipe"
+      },
+      {
+        "key": ";",
+        "command": "codemeow.tree",
+        "args": ";",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.semicolon"
+      },
+      {
+        "key": "shift+;",
+        "command": "codemeow.tree",
+        "args": ":",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.colon"
+      },
+      {
+        "key": "'",
+        "command": "codemeow.tree",
+        "args": "'",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.quote"
+      },
+      {
+        "key": "shift+'",
+        "command": "codemeow.tree",
+        "args": "\"",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.doubleQuote"
+      },
+      {
+        "key": ",",
+        "command": "codemeow.tree",
+        "args": ",",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.comma"
+      },
+      {
+        "key": "shift+,",
+        "command": "codemeow.tree",
+        "args": "<",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.less"
+      },
+      {
+        "key": ".",
+        "command": "codemeow.tree",
+        "args": ".",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.period"
+      },
+      {
+        "key": "shift+.",
+        "command": "codemeow.tree",
+        "args": ">",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.greater"
+      },
+      {
+        "key": "/",
+        "command": "codemeow.tree",
+        "args": "/",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.slash"
+      },
+      {
+        "key": "shift+/",
+        "command": "codemeow.tree",
+        "args": "?",
+        "when": "listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused && codemeow.tree.question"
       }
     ]
   },
