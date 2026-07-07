@@ -226,6 +226,10 @@ map <leader>wh <action>(codemeow.windmoveLeft)
 map <leader>wj <action>(codemeow.windmoveDown)
 map <leader>wk <action>(codemeow.windmoveUp)
 map <leader>wl <action>(codemeow.windmoveRight)
+" b: balance the split sizes (init.el C-c w b = balance-windows). The
+" H/J/K/L window swaps live in ideameow only — VS Code has no command to
+" exchange two groups' contents.
+map <leader>wb <action>(workbench.action.evenEditorWidths)
 map <leader>wi <action>(editor.action.fontZoomIn)
 map <leader>w= <action>(editor.action.fontZoomIn)
 map <leader>wo <action>(editor.action.fontZoomOut)

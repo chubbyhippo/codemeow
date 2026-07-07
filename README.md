@@ -58,7 +58,10 @@ The "windows" are the editor groups *plus* the two panes of a side-by-side
 diff, which plain group focus never crosses — `S-left` in the modified pane
 enters the original, `S-left` again leaves the diff toward the group on its
 left. No wrap-around, and where Emacs would complain, codemeow does too:
-"No window left from selected window" in the status bar. The Shift+arrow
+"No window left from selected window" in the status bar. `SPC w b`
+balances the split sizes (init.el's `C-c w b`); the `H/J/K/L` window swaps
+exist in ideameow only — VS Code has no command to exchange two groups'
+contents. The Shift+arrow
 chords live in the manifest keybindings (modifier chords never reach the
 modal engine) — rebind them under *Preferences → Keyboard Shortcuts →
 Windmove* — and inside meow buffers they shadow shift-selection, the exact

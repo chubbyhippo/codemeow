@@ -100,4 +100,11 @@ describe('WindmoveSpec', () => {
     assert.equal(d.get('wk')?.action, 'codemeow.windmoveUp');
     assert.equal(d.get('wl')?.action, 'codemeow.windmoveRight');
   });
+
+  it('given the bundled rc then SPC w b balances the splits', () => {
+    // init.el C-c w b = balance-windows; the HJKL swaps are ideameow-only
+    // (VS Code has no command to exchange two groups' contents)
+    freshSpec();
+    assert.equal(Rc.defaults().keypad.get('wb')?.action, 'workbench.action.evenEditorWidths');
+  });
 });
