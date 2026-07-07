@@ -172,8 +172,12 @@ a command's id, press `SPC i d` — a filterable list of every command id the
 editor knows: type to narrow, `Enter` copies the id to the clipboard. (This
 is the sibling of ideameow's `SPC i d` action-id tracking; VS Code's stable
 API has no "command executed" listener, so codemeow gives you a searchable
-directory instead of live tracking.) Or right-click any entry in
-*Preferences → Keyboard Shortcuts* and pick *Copy Command ID*.
+directory instead of live tracking.) For tracking's other half — "what does
+this key run?" — the list's two title buttons hand you to the platform's own
+tools: one opens *Keyboard Shortcuts* in record-keys mode (press the chord,
+see its commands, right-click → *Copy Command ID*), the other toggles the
+keystroke log (*Toggle Keyboard Shortcuts Troubleshooting*), which logs every
+keypress with the command it dispatched to the Window log until toggled off.
 
 **Relayouting (Dvorak, Colemak, …).** The layout section of the bundled
 `.codemeowrc` IS the default keymap — an `nmap`/`mmap` line per key, exactly

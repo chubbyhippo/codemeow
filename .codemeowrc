@@ -357,7 +357,8 @@ map <leader>h <action>(workbench.action.toggleSidebarVisibility)
 " --- SPC i — introduce / inline / implement / ids ---------------------------------
 desc <leader>i introduce / inline / ids
 map <leader>ic <action>(editor.action.refactor)
-" SPC i d: find a command id — filterable list, Enter copies it
+" SPC i d: find a command id — filterable list, Enter copies it; its title
+" buttons open record-keys mode / the keystroke log ("what runs this key?")
 map <leader>id <action>(codemeow.commandIds)
 desc <leader>id find command ids
 map <leader>if <action>(editor.action.refactor)

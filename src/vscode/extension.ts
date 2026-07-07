@@ -532,14 +532,44 @@ export function activate(context: vscode.ExtensionContext): void {
       // stable API has no "command executed" listener (vscode.d.ts, checked),
       // so instead of live tracking this lists every command id the editor
       // knows — the ids <action>(...) rc lines take — and Enter copies one.
+      // The title buttons cover tracking's "what does this key run?" half
+      // with the platform's own tools (ids source-verified 2026-07): the
+      // Keyboard Shortcuts editor in record-keys mode, and the keystroke
+      // log (Toggle Keyboard Shortcuts Troubleshooting — logging on also
+      // opens the Window log, where each keypress shows its command).
       const ids = (await vscode.commands.getCommands(true)).sort();
-      const picked = await vscode.window.showQuickPick(ids, {
-        placeHolder: 'command id for <action>(...) rc mappings — Enter copies it to the clipboard',
+      const recordButton: vscode.QuickInputButton = {
+        iconPath: new vscode.ThemeIcon('record-keys'),
+        tooltip: 'What does a key run? Record keys in the Keyboard Shortcuts editor',
+      };
+      const logButton: vscode.QuickInputButton = {
+        iconPath: new vscode.ThemeIcon('output'),
+        tooltip: 'Toggle the keystroke log (every keypress logs its command)',
+      };
+      const qp = vscode.window.createQuickPick();
+      qp.title = 'command ids';
+      qp.placeholder = 'command id for <action>(...) rc mappings — Enter copies it to the clipboard';
+      qp.items = ids.map((id) => ({ label: id }));
+      qp.buttons = [recordButton, logButton];
+      qp.onDidTriggerButton((b) => {
+        qp.hide();
+        if (b === recordButton) {
+          void vscode.commands.executeCommand('workbench.action.openGlobalKeybindings')
+            .then(() => vscode.commands.executeCommand('keybindings.editor.recordSearchKeys'));
+        } else {
+          void vscode.commands.executeCommand('workbench.action.toggleKeybindingsLog');
+        }
       });
-      if (picked !== undefined) {
-        await vscode.env.clipboard.writeText(picked);
-        void vscode.window.setStatusBarMessage(`meow: copied ${picked}`, 3000);
-      }
+      qp.onDidAccept(async () => {
+        const picked = qp.activeItems[0]?.label;
+        qp.hide();
+        if (picked !== undefined) {
+          await vscode.env.clipboard.writeText(picked);
+          void vscode.window.setStatusBarMessage(`meow: copied ${picked}`, 3000);
+        }
+      });
+      qp.onDidHide(() => qp.dispose());
+      qp.show();
     }),
 
     vscode.commands.registerCommand('codemeow.cheatsheet', () => {
