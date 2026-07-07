@@ -381,19 +381,40 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.editRc', async () => {
       const p = userRcPath();
       if (!fs.existsSync(p)) {
-        fs.writeFileSync(p, [
-          `" ~/${Rc.FILE_NAME} — codemeow configuration`,
-          '" the bundled defaults (full meow layout + keypad table) stay',
-          '" underneath — lines here override them entry by entry, e.g.:',
-          '" nmap Q meow-goto-line',
-          '" nmap n meow-mark-word',
-          '" map <leader>gd <action>(editor.action.revealDefinition)',
-          '" desc <leader>g goto',
-          '',
-        ].join('\n'));
+        // a first ~/.codemeowrc starts as a full copy of the bundled
+        // defaults — the complete layout and keypad table, ready to edit
+        const bundled = path.join(context.extensionPath, Rc.FILE_NAME);
+        if (fs.existsSync(bundled)) {
+          fs.copyFileSync(bundled, p);
+        } else {
+          // a missing bundled rc is an extension bug (loadDefaults reports
+          // it); leave a minimal self-describing file so SPC c m still works
+          fs.writeFileSync(p, [
+            `" ~/${Rc.FILE_NAME} — codemeow configuration`,
+            '" the bundled defaults (full meow layout + keypad table) stay',
+            '" underneath — lines here override them entry by entry, e.g.:',
+            '" nmap Q meow-goto-line',
+            '',
+          ].join('\n'));
+        }
       }
       const doc = await vscode.workspace.openTextDocument(p);
       await vscode.window.showTextDocument(doc);
+    }),
+
+    vscode.commands.registerCommand('codemeow.commandIds', async () => {
+      // the ideameow Track Action IDs analog (keypad: SPC i d). VS Code's
+      // stable API has no "command executed" listener (vscode.d.ts, checked),
+      // so instead of live tracking this lists every command id the editor
+      // knows — the ids <action>(...) rc lines take — and Enter copies one.
+      const ids = (await vscode.commands.getCommands(true)).sort();
+      const picked = await vscode.window.showQuickPick(ids, {
+        placeHolder: 'command id for <action>(...) rc mappings — Enter copies it to the clipboard',
+      });
+      if (picked !== undefined) {
+        await vscode.env.clipboard.writeText(picked);
+        void vscode.window.setStatusBarMessage(`meow: copied ${picked}`, 3000);
+      }
     }),
 
     vscode.commands.registerCommand('codemeow.cheatsheet', () => {

@@ -5,9 +5,10 @@
 " every default — the NORMAL/MOTION layout and the whole SPC keypad table —
 " and ships bundled inside the extension. A ~/.codemeowrc in your home
 " directory (Linux/macOS: ~/.codemeowrc, Windows: C:\Users\<you>\.codemeowrc)
-" overrides it entry by entry, so a home file only needs the lines you want
-" changed — or copy this whole file there and edit anything. Open it in the
-" editor with SPC c m; reload after editing with SPC c M ("Reload .codemeowrc").
+" overrides it entry by entry — only the lines you change matter; a deleted
+" line falls back to the bundled default (bind `ignore` to disable a key).
+" Open it with SPC c m — the first press creates ~/.codemeowrc as a full
+" copy of this file; reload after editing with SPC c M ("Reload .codemeowrc").
 "
 " Syntax (see the README for the full guide):
 "   nmap <key> <action>(command.id)     NORMAL-mode key -> editor command
@@ -126,8 +127,9 @@ mmap k meow-prev
 " sequences dispatch VS Code commands, mirroring the companion .ideavimrc /
 " .ideameowrc leader scheme. SPC 1-9 (digit argument), SPC ? (cheatsheet) and
 " SPC / (describe key) are reserved by the keypad itself and cannot be
-" remapped. Find a command's id: Preferences > Keyboard Shortcuts, right-click
-" an entry, "Copy Command ID".
+" remapped. Finding a command's id for <action>(...): SPC i d lists every
+" command id (type to filter, Enter copies it to the clipboard), or
+" Preferences > Keyboard Shortcuts, right-click an entry, "Copy Command ID".
 " ============================================================================
 
 map <leader>b <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
@@ -328,9 +330,12 @@ map <leader>gs <action>(workbench.action.gotoSymbol)
 desc <leader>h hide side bar
 map <leader>h <action>(workbench.action.toggleSidebarVisibility)
 
-" --- SPC i — introduce / inline / implement --------------------------------------
-desc <leader>i introduce / inline
+" --- SPC i — introduce / inline / implement / ids ---------------------------------
+desc <leader>i introduce / inline / ids
 map <leader>ic <action>(editor.action.refactor)
+" SPC i d: find a command id — filterable list, Enter copies it
+map <leader>id <action>(codemeow.commandIds)
+desc <leader>id find command ids
 map <leader>if <action>(editor.action.refactor)
 map <leader>il <action>(editor.action.refactor)
 map <leader>im <action>(editor.action.sourceAction)

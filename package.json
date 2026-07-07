@@ -54,6 +54,11 @@
         "command": "codemeow.cheatsheet",
         "title": "Meow Cheatsheet",
         "category": "codemeow"
+      },
+      {
+        "command": "codemeow.commandIds",
+        "title": "Find Command Id",
+        "category": "codemeow"
       }
     ],
     "keybindings": [

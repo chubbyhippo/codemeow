@@ -113,6 +113,14 @@ describe('ModesKeypadSpec', () => {
     assert.deepEqual(s.ui.ran, ['workbench.action.files.saveAll']);
   });
 
+  it('given SPC i d then the command-id finder runs (the ideameow Track Action IDs sibling)', async () => {
+    const s = freshSpec();
+    s.given('word', '<caret>hello');
+    await s.whenKeys(' id'); // bundled: SPC i d -> the filterable id list
+    s.thenMode(MeowMode.NORMAL);
+    assert.deepEqual(s.ui.ran, ['codemeow.commandIds']);
+  });
+
   it('given INSERT then the adapter is told to swap the cursor, and back on escape', async () => {
     // the ideameow block/bar-cursor spec, at the port seam: the adapter maps
     // these notifications to TextEditorCursorStyle.Line / Block

@@ -110,10 +110,12 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 
 **Getting started is two steps:**
 
-1. Press `SPC c m` in the editor — it creates and opens the file for you.
-   (The bundled defaults stay underneath, so an empty file changes nothing
-   and a one-line file changes exactly one thing. Or copy the repo's
-   `.codemeowrc` over it and edit anything.)
+1. Press `SPC c m` in the editor — the first press creates `~/.codemeowrc`
+   as a full copy of the bundled defaults and opens it: the complete layout
+   and keypad table, ready to edit. (The bundled defaults also stay
+   underneath and overrides apply entry by entry, so deleting a line just
+   falls back to the default — bind `ignore` to disable a key — and a
+   pared-down file of only your overrides works exactly the same.)
 2. Edit, then reload with `SPC c M`. A message tells you how many mappings
    loaded — and lists any parse problems with their line numbers.
 
@@ -134,9 +136,13 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 | `set timeoutlen=300` | which-key hint delay in milliseconds (the bundled default sets 300) |
 | `set which-key` / `set nowhich-key` | hint on/off (default on) |
 
-Key notation: plain printable characters, plus `<Space>` and `<lt>`. Find a
-command's id in *Preferences → Keyboard Shortcuts*: right-click any entry and
-pick *Copy Command ID*.
+Key notation: plain printable characters, plus `<Space>` and `<lt>`. To find
+a command's id, press `SPC i d` — a filterable list of every command id the
+editor knows: type to narrow, `Enter` copies the id to the clipboard. (This
+is the sibling of ideameow's `SPC i d` action-id tracking; VS Code's stable
+API has no "command executed" listener, so codemeow gives you a searchable
+directory instead of live tracking.) Or right-click any entry in
+*Preferences → Keyboard Shortcuts* and pick *Copy Command ID*.
 
 **Relayouting (Dvorak, Colemak, …).** The layout section of the bundled
 `.codemeowrc` IS the default keymap — an `nmap`/`mmap` line per key, exactly
