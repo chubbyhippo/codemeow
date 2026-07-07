@@ -51,6 +51,20 @@ starts the tree's type-to-find. Add your own tree keys with `mmap` lines in
 `q` type into the find again). Meow commands other than the four motions
 have no tree meaning and are simply inert there.
 
+**Windows** — `(windmove-default-keybindings)` from `init.el`, ported:
+`Shift+←→↑↓` select the editor window in that direction, and the same four
+commands live on `SPC w h/j/k/l`, mirroring init.el's `C-c w` window map.
+The "windows" are the editor groups *plus* the two panes of a side-by-side
+diff, which plain group focus never crosses — `S-left` in the modified pane
+enters the original, `S-left` again leaves the diff toward the group on its
+left. No wrap-around, and where Emacs would complain, codemeow does too:
+"No window left from selected window" in the status bar. The Shift+arrow
+chords live in the manifest keybindings (modifier chords never reach the
+modal engine) — rebind them under *Preferences → Keyboard Shortcuts →
+Windmove* — and inside meow buffers they shadow shift-selection, the exact
+tradeoff the Emacs binding makes (select with meow instead; anywhere meow
+doesn't attach keeps native shift-select).
+
 And one idea borrowed straight from meow itself: **the extension binds no
 keys in code.** The entire keymap — the NORMAL/MOTION layout *and* the whole
 `SPC` keypad table — lives in a `.codemeowrc` file bundled inside the
@@ -226,6 +240,13 @@ All deliberate, none accidental:
 - The kill-ring is the system clipboard (`meow-use-clipboard` behavior);
   `kill-line` does not append consecutive kills.
 - `I`/`A` open plain lines without language re-indent.
+- Windmove is composed, not geometric: VS Code exposes no window rectangles
+  to extensions, so `Shift+arrows` chain the editor's own directional group
+  focus with diff-pane crossing, and the caret-row rule from window.el
+  (with three stacked splits on the left, enter the one at your caret's
+  height) lives in ideameow only. Whether a diff renders side-by-side is
+  read from the `diffEditor.renderSideBySide` setting — a per-editor
+  inline toggle isn't visible to extensions.
 - VS Code doesn't expose whether an editor is read-only, so a list of known
   read-only schemes (git views, output, the cheatsheet) feeds the gate
   instead: those stay in NORMAL with modifications blocked like meow's
@@ -259,6 +280,7 @@ run headless in milliseconds.
 | `src/core/things.ts` | what a "thing" is: pairs, strings, paragraphs, defuns… |
 | `src/core/rc.ts` / `rcParser.ts` | the two rc layers (bundled defaults + `~/.codemeowrc`) and the line syntax |
 | `src/core/treeMeow.ts` | the tree surface: MOTION-map dispatch on workbench trees (`j k h l` → the `list.*` arrow commands) |
+| `src/core/windmove.ts` | windmove's step decision: diff panes are windows, then directional group focus |
 | `src/core/port.ts` | the editor/clipboard/UI interfaces the core sees — the seam that keeps `vscode` out |
 | `src/vscode/` | the thin adapter: the `type` override, decorations, status bar, rc files on disk, the per-key tree keybindings (`treeKeys.ts`) |
 | `src/test/` | the behavior suite over a fake editor — a straight port of ideameow's specs |

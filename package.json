@@ -59,6 +59,26 @@
         "command": "codemeow.commandIds",
         "title": "Find Command Id",
         "category": "codemeow"
+      },
+      {
+        "command": "codemeow.windmoveLeft",
+        "title": "Windmove Left",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.windmoveRight",
+        "title": "Windmove Right",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.windmoveUp",
+        "title": "Windmove Up",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.windmoveDown",
+        "title": "Windmove Down",
+        "category": "codemeow"
       }
     ],
     "keybindings": [
@@ -66,6 +86,26 @@
         "key": "escape",
         "command": "codemeow.escape",
         "when": "editorTextFocus && codemeow.active && !suggestWidgetVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !inSnippetMode"
+      },
+      {
+        "key": "shift+left",
+        "command": "codemeow.windmoveLeft",
+        "when": "editorTextFocus && codemeow.active"
+      },
+      {
+        "key": "shift+right",
+        "command": "codemeow.windmoveRight",
+        "when": "editorTextFocus && codemeow.active"
+      },
+      {
+        "key": "shift+up",
+        "command": "codemeow.windmoveUp",
+        "when": "editorTextFocus && codemeow.active"
+      },
+      {
+        "key": "shift+down",
+        "command": "codemeow.windmoveDown",
+        "when": "editorTextFocus && codemeow.active"
       },
       {
         "key": "a",

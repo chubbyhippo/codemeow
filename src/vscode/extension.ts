@@ -26,6 +26,7 @@ import { Config, Rc } from '../core/rc';
 import { MeowMode, MeowState } from '../core/state';
 import * as TreeMeow from '../core/treeMeow';
 import { keypadRows, THINGS } from '../core/whichKey';
+import { DiffSideView, noWindowMessage, plan, WindmoveDir } from '../core/windmove';
 import { VscClipboard, VscEditorPort } from './editorPort';
 import { TREE_KEYS } from './treeKeys';
 
@@ -286,6 +287,45 @@ async function runTreeCommand(id: string): Promise<void> {
   }
 }
 
+// --------------------------------------------------------------- windmove
+
+/** The active text diff as core/windmove sees it: which pane the caret is
+ *  in (by URI against the tab's diff input) and whether the panes render
+ *  side by side. The per-editor inline/side-by-side toggle is not exposed
+ *  to extensions, so the diffEditor.renderSideBySide setting stands in. */
+function diffSideView(): DiffSideView | null {
+  const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
+  if (!(input instanceof vscode.TabInputTextDiff)) return null;
+  const active = vscode.window.activeTextEditor?.document.uri.toString();
+  return {
+    onOriginal: active === input.original.toString(),
+    onModified: active === input.modified.toString(),
+    sideBySide:
+      vscode.workspace.getConfiguration('diffEditor').get<boolean>('renderSideBySide', true) === true,
+  };
+}
+
+function focusFingerprint(): string {
+  return `${vscode.window.tabGroups.activeTabGroup.viewColumn}:` +
+    `${vscode.window.activeTextEditor?.document.uri.toString() ?? ''}`;
+}
+
+/** One windmove step; when nothing changed hands, report what Emacs would
+ *  ("No window left from selected window"). The focus fingerprint settles
+ *  through extension-host events, hence the small delay before comparing. */
+async function windmove(dir: WindmoveDir): Promise<void> {
+  const before = focusFingerprint();
+  try {
+    await vscode.commands.executeCommand(plan(dir, diffSideView()));
+  } catch {
+    /* an id VS Code doesn't know would be an extension bug; fall through */
+  }
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  if (focusFingerprint() === before) {
+    void vscode.window.setStatusBarMessage(`meow: ${noWindowMessage(dir)}`, 3000);
+  }
+}
+
 // -------------------------------------------------------------- rc loading
 
 function userRcPath(): string {
@@ -403,6 +443,13 @@ export function activate(context: vscode.ExtensionContext): void {
       if (typeof c !== 'string') return;
       return TreeMeow.dispatch(runTreeCommand, c);
     }),
+
+    // windmove: Shift+arrows (manifest keybindings, meow editors only) and
+    // SPC w h/j/k/l from the rc
+    vscode.commands.registerCommand('codemeow.windmoveLeft', () => windmove('left')),
+    vscode.commands.registerCommand('codemeow.windmoveRight', () => windmove('right')),
+    vscode.commands.registerCommand('codemeow.windmoveUp', () => windmove('up')),
+    vscode.commands.registerCommand('codemeow.windmoveDown', () => windmove('down')),
 
     vscode.commands.registerCommand('codemeow.reloadRc', () => {
       const c = loadUserRc();

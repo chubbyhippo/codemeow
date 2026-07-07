@@ -216,10 +216,16 @@ map <leader>wD <action>(workbench.action.editorLayoutSingle)
 map <leader>wm <action>(workbench.action.editorLayoutSingle)
 map <leader>ww <action>(workbench.action.focusNextGroup)
 map <leader>wW <action>(workbench.action.moveEditorToNextGroup)
-map <leader>wh <action>(workbench.action.focusLeftGroup)
-map <leader>wj <action>(workbench.action.focusBelowGroup)
-map <leader>wk <action>(workbench.action.focusAboveGroup)
-map <leader>wl <action>(workbench.action.focusRightGroup)
+" h/j/k/l: windmove, ported from init.el — directional focus over editor
+" groups AND the two panes of a side-by-side diff (which plain group focus
+" never crosses). The extension also binds plain Shift+arrows to these,
+" i.e. (windmove-default-keybindings) — that lives in the manifest
+" keybindings (rebind in Preferences > Keyboard Shortcuts > Windmove *),
+" not in this rc, because modifier chords never reach the modal engine.
+map <leader>wh <action>(codemeow.windmoveLeft)
+map <leader>wj <action>(codemeow.windmoveDown)
+map <leader>wk <action>(codemeow.windmoveUp)
+map <leader>wl <action>(codemeow.windmoveRight)
 map <leader>wi <action>(editor.action.fontZoomIn)
 map <leader>w= <action>(editor.action.fontZoomIn)
 map <leader>wo <action>(editor.action.fontZoomOut)
