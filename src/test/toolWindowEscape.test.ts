@@ -30,34 +30,34 @@ import { onEscape, reset, TIMEOUT_MS } from '../core/toolWindowEscape';
 describe('ToolWindowEscapeSpec', () => {
   beforeEach(() => reset());
 
-  it('the first escape in a tool window does not jump', () => {
+  it('given a single escape in a tool window then it does not jump', () => {
     assert.equal(onEscape('terminal', 1_000), false);
   });
 
-  it('a second escape in the same tool window within the timeout jumps', () => {
+  it('given a second escape in the same tool window within the timeout then it jumps', () => {
     onEscape('terminal', 1_000);
     assert.equal(onEscape('terminal', 1_000 + TIMEOUT_MS), true);
   });
 
-  it('a jump consumes the pair so the next escape starts a new one', () => {
+  it('given a completed jump then the next escape starts a new pair', () => {
     onEscape('terminal', 1_000);
     assert.equal(onEscape('terminal', 1_100), true);
     assert.equal(onEscape('terminal', 1_200), false);
   });
 
-  it('escapes slower than the timeout do not pair but re-arm', () => {
+  it('given escapes slower than the timeout then they do not pair but re-arm', () => {
     onEscape('terminal', 1_000);
     assert.equal(onEscape('terminal', 1_001 + TIMEOUT_MS), false);
     assert.equal(onEscape('terminal', 1_200 + TIMEOUT_MS), true);
   });
 
-  it('escapes in different tool windows do not pair', () => {
+  it('given escapes in different tool windows then they do not pair', () => {
     onEscape('terminal', 1_000);
     assert.equal(onEscape('list', 1_100), false);
     assert.equal(onEscape('list', 1_200), true);
   });
 
-  it('focus outside any tool window breaks the pair', () => {
+  it('given focus outside any tool window then the pair breaks', () => {
     onEscape('terminal', 1_000);
     assert.equal(onEscape(null, 1_100), false);
     assert.equal(onEscape('terminal', 1_200), false);
