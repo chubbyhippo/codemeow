@@ -16,7 +16,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Ctx } from './port';
-import { clamp, isSymbolChar, lineCount, lineEnd, lineOfOffset, lineStart } from './text';
+import {
+  clamp,
+  isSymbolChar,
+  lineCount,
+  lineEnd,
+  lineOfOffset,
+  lineStart,
+} from './text';
 
 /**
  * meow-char-thing-table:
@@ -40,34 +47,61 @@ export const Things = {
   pair,
 };
 
-async function compute(ctx: Ctx, ch: string, offset: number, inner: boolean): Promise<Bounds | null> {
+async function compute(
+  ctx: Ctx,
+  ch: string,
+  offset: number,
+  inner: boolean,
+): Promise<Bounds | null> {
   const text = ctx.port.getText();
   switch (ch) {
-    case 'r': return pair(text, offset, '(', ')', inner);
-    case 's': return pair(text, offset, '[', ']', inner);
-    case 'c': return pair(text, offset, '{', '}', inner);
-    case 'g': return stringThing(text, offset, inner);
-    case 'e': return symbol(text, offset);
-    case 'w': return window(ctx, text);
-    case 'b': return { start: 0, end: text.length };
-    case 'p': return paragraph(text, offset, inner);
-    case 'l': return line(text, offset, inner);
-    case 'v': return visualLine(text, offset);
-    case 'd': return defun(ctx, text, offset);
-    case '.': return sentence(text, offset, inner);
-    default: return null;
+    case 'r':
+      return pair(text, offset, '(', ')', inner);
+    case 's':
+      return pair(text, offset, '[', ']', inner);
+    case 'c':
+      return pair(text, offset, '{', '}', inner);
+    case 'g':
+      return stringThing(text, offset, inner);
+    case 'e':
+      return symbol(text, offset);
+    case 'w':
+      return window(ctx, text);
+    case 'b':
+      return { start: 0, end: text.length };
+    case 'p':
+      return paragraph(text, offset, inner);
+    case 'l':
+      return line(text, offset, inner);
+    case 'v':
+      return visualLine(text, offset);
+    case 'd':
+      return defun(ctx, text, offset);
+    case '.':
+      return sentence(text, offset, inner);
+    default:
+      return null;
   }
 }
 
 /** Innermost pair of open/close containing [offset], nesting-aware. */
-function pair(text: string, offset: number, open: string, close: string, inner: boolean): Bounds | null {
+function pair(
+  text: string,
+  offset: number,
+  open: string,
+  close: string,
+  inner: boolean,
+): Bounds | null {
   let depth = 0;
   let start = -1;
   for (let i = offset - 1; i >= 0; i--) {
     const c = text[i];
     if (c === close) depth++;
     else if (c === open) {
-      if (depth === 0) { start = i; break; }
+      if (depth === 0) {
+        start = i;
+        break;
+      }
       depth--;
     }
   }
@@ -78,7 +112,10 @@ function pair(text: string, offset: number, open: string, close: string, inner: 
     const c = text[j];
     if (c === open && j !== start) depth++;
     else if (c === close) {
-      if (depth === 0) { end = j; break; }
+      if (depth === 0) {
+        end = j;
+        break;
+      }
       depth--;
     }
   }
@@ -91,14 +128,21 @@ function pair(text: string, offset: number, open: string, close: string, inner: 
  * escapes); if [offset] is inside a quoted run, return it. Heuristic —
  * comments containing apostrophes can fool it, like any text-based scan.
  */
-function stringThing(text: string, offset: number, inner: boolean): Bounds | null {
+function stringThing(
+  text: string,
+  offset: number,
+  inner: boolean,
+): Bounds | null {
   let i = 0;
   let quote = '';
   let start = -1;
   while (i < text.length) {
     const c = text[i];
     if (quote !== '') {
-      if (c === '\\') { i += 2; continue; }
+      if (c === '\\') {
+        i += 2;
+        continue;
+      }
       if (c === quote) {
         if ((offset > start && offset <= i) || offset === start) {
           return inner ? { start: start + 1, end: i } : { start, end: i + 1 };
@@ -135,10 +179,15 @@ function window(ctx: Ctx, text: string): Bounds {
   return { start: lineStart(text, first), end: lineEnd(text, stop) };
 }
 
-function paragraph(text: string, offset: number, inner: boolean): Bounds | null {
+function paragraph(
+  text: string,
+  offset: number,
+  inner: boolean,
+): Bounds | null {
   if (text.length === 0) return null;
   const count = lineCount(text);
-  const blank = (l: number) => text.slice(lineStart(text, l), lineEnd(text, l)).trim() === '';
+  const blank = (l: number) =>
+    text.slice(lineStart(text, l), lineEnd(text, l)).trim() === '';
   const ln = lineOfOffset(text, clamp(offset, 0, text.length));
   if (blank(ln)) return null;
   let first = ln;
@@ -150,7 +199,8 @@ function paragraph(text: string, offset: number, inner: boolean): Bounds | null 
   // bounds include the trailing blank lines (emacs forward-paragraph)
   let stop = last;
   while (stop < count - 1 && blank(stop + 1)) stop++;
-  const end = stop < count - 1 ? lineStart(text, stop + 1) : lineEnd(text, stop);
+  const end =
+    stop < count - 1 ? lineStart(text, stop + 1) : lineEnd(text, stop);
   return { start, end };
 }
 
@@ -171,7 +221,11 @@ function visualLine(text: string, offset: number): Bounds {
  * defun: the host's symbol provider when it knows a function around point;
  * falls back to the outermost curly block for plain text.
  */
-async function defun(ctx: Ctx, text: string, offset: number): Promise<Bounds | null> {
+async function defun(
+  ctx: Ctx,
+  text: string,
+  offset: number,
+): Promise<Bounds | null> {
   const fromHost = await ctx.port.symbolRangeAt(offset);
   if (fromHost) return fromHost;
   let b = pair(text, offset, '{', '}', false);
@@ -190,7 +244,8 @@ function sentence(text: string, offset: number, inner: boolean): Bounds | null {
   let s = clamp(offset, 0, text.length - 1);
   while (s > 0) {
     const c = text[s - 1];
-    if (enders.includes(c) || (c === '\n' && s > 1 && text[s - 2] === '\n')) break;
+    if (enders.includes(c) || (c === '\n' && s > 1 && text[s - 2] === '\n'))
+      break;
     s--;
   }
   while (s < text.length && /\s/.test(text[s])) s++;
@@ -199,7 +254,8 @@ function sentence(text: string, offset: number, inner: boolean): Bounds | null {
     e < text.length &&
     !enders.includes(text[e]) &&
     !(text[e] === '\n' && e + 1 < text.length && text[e + 1] === '\n')
-  ) e++;
+  )
+    e++;
   if (e < text.length && enders.includes(text[e])) e++;
   if (e <= s) return null;
   if (inner) return { start: s, end: e };

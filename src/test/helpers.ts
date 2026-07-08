@@ -19,7 +19,14 @@ import { strict as assert } from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as Engine from '../core/engine';
-import { ClipboardPort, Ctx, EditorPort, SelRange, TextEdit, UiPort } from '../core/port';
+import {
+  ClipboardPort,
+  Ctx,
+  EditorPort,
+  SelRange,
+  TextEdit,
+  UiPort,
+} from '../core/port';
 import { Config, Rc } from '../core/rc';
 import { MeowMode, MeowState, SelType } from '../core/state';
 import { lineOfOffset } from '../core/text';
@@ -168,7 +175,12 @@ export class Spec {
   st = new MeowState();
 
   get ctx(): Ctx {
-    return { port: this.editor, clipboard: this.clip, ui: this.ui, st: this.st };
+    return {
+      port: this.editor,
+      clipboard: this.clip,
+      ui: this.ui,
+      st: this.st,
+    };
   }
 
   given(_description: string, textWithCaret: string): void {
@@ -210,7 +222,10 @@ export class Spec {
   selectedText(): string | undefined {
     const s = this.editor.sels[0];
     if (s.anchor === s.active) return undefined;
-    return this.editor.text.slice(Math.min(s.anchor, s.active), Math.max(s.anchor, s.active));
+    return this.editor.text.slice(
+      Math.min(s.anchor, s.active),
+      Math.max(s.anchor, s.active),
+    );
   }
 
   caretLine(): number {
@@ -233,13 +248,21 @@ export class Spec {
   thenCaretAtSelectionStart(): void {
     const s = this.editor.sels[0];
     assert.notEqual(s.anchor, s.active, 'expected a selection');
-    assert.equal(s.active, Math.min(s.anchor, s.active), 'caret at selection start (reversed)');
+    assert.equal(
+      s.active,
+      Math.min(s.anchor, s.active),
+      'caret at selection start (reversed)',
+    );
   }
 
   thenCaretAtSelectionEnd(): void {
     const s = this.editor.sels[0];
     assert.notEqual(s.anchor, s.active, 'expected a selection');
-    assert.equal(s.active, Math.max(s.anchor, s.active), 'caret at selection end (forward)');
+    assert.equal(
+      s.active,
+      Math.max(s.anchor, s.active),
+      'caret at selection end (forward)',
+    );
   }
 
   thenText(expected: string): void {

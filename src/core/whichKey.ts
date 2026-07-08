@@ -28,9 +28,18 @@ import { Rc } from './rc';
  */
 
 export const THINGS: Array<[string, string]> = [
-  ['r', 'round ( )'], ['s', 'square [ ]'], ['c', 'curly { }'], ['g', 'string'],
-  ['e', 'symbol'], ['w', 'window'], ['b', 'buffer'], ['p', 'paragraph'],
-  ['l', 'line'], ['v', 'visual line'], ['d', 'defun'], ['.', 'sentence'],
+  ['r', 'round ( )'],
+  ['s', 'square [ ]'],
+  ['c', 'curly { }'],
+  ['g', 'string'],
+  ['e', 'symbol'],
+  ['w', 'window'],
+  ['b', 'buffer'],
+  ['p', 'paragraph'],
+  ['l', 'line'],
+  ['v', 'visual line'],
+  ['d', 'defun'],
+  ['.', 'sentence'],
 ];
 
 /** One row per next key continuing [buffer]: terminal label or group desc. */
@@ -40,9 +49,10 @@ export function keypadRows(buffer: string): Array<[string, string]> {
   for (const [seq, b] of Rc.keypad()) {
     if (!seq.startsWith(buffer) || seq === buffer) continue;
     const child = buffer + seq[buffer.length];
-    const label = seq === child
-      ? descs.get(seq) ?? b.action ?? b.command ?? b.keys ?? ''
-      : descs.get(child) ?? '+more';
+    const label =
+      seq === child
+        ? (descs.get(seq) ?? b.action ?? b.command ?? b.keys ?? '')
+        : (descs.get(child) ?? '+more');
     if (!rows.has(child) || descs.has(child)) rows.set(child, label);
   }
   return [...rows.entries()]

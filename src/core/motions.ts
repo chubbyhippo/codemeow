@@ -17,7 +17,17 @@
 
 import { Ctx, SelRange } from './port';
 import { Pending, SelType } from './state';
-import { charPred, clamp, escapeRegExp, lineCount, lineEnd, lineOfOffset, lineStart, nthCharTarget, Words } from './text';
+import {
+  charPred,
+  clamp,
+  escapeRegExp,
+  lineCount,
+  lineEnd,
+  lineOfOffset,
+  lineStart,
+  nthCharTarget,
+  Words,
+} from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
 import * as GrabMod from './grab';
@@ -41,35 +51,70 @@ export const commands: Map<string, MeowCommand> = new Map([
   ['meow-next-expand', (ctx: Ctx) => moveExpand(ctx, 0, ctx.st.takeCount(1))],
   ['meow-prev-expand', (ctx: Ctx) => moveExpand(ctx, 0, -ctx.st.takeCount(1))],
   ['meow-next-word', (ctx: Ctx) => wordMotion(ctx, false, ctx.st.takeCount(1))],
-  ['meow-next-symbol', (ctx: Ctx) => wordMotion(ctx, true, ctx.st.takeCount(1))],
+  [
+    'meow-next-symbol',
+    (ctx: Ctx) => wordMotion(ctx, true, ctx.st.takeCount(1)),
+  ],
   // meow-back-word = meow-next-thing with -N
-  ['meow-back-word', (ctx: Ctx) => wordMotion(ctx, false, -ctx.st.takeCount(1))],
-  ['meow-back-symbol', (ctx: Ctx) => wordMotion(ctx, true, -ctx.st.takeCount(1))],
+  [
+    'meow-back-word',
+    (ctx: Ctx) => wordMotion(ctx, false, -ctx.st.takeCount(1)),
+  ],
+  [
+    'meow-back-symbol',
+    (ctx: Ctx) => wordMotion(ctx, true, -ctx.st.takeCount(1)),
+  ],
   ['meow-mark-word', (ctx: Ctx) => markWord(ctx, false)],
   ['meow-mark-symbol', (ctx: Ctx) => markWord(ctx, true)],
   ['meow-line', (ctx: Ctx) => line(ctx)],
   ['meow-goto-line', (ctx: Ctx) => gotoLine(ctx)],
-  ['meow-find', (ctx: Ctx) => { ctx.st.pending = Pending.FIND; }],
-  ['meow-till', (ctx: Ctx) => { ctx.st.pending = Pending.TILL; }],
+  [
+    'meow-find',
+    (ctx: Ctx) => {
+      ctx.st.pending = Pending.FIND;
+    },
+  ],
+  [
+    'meow-till',
+    (ctx: Ctx) => {
+      ctx.st.pending = Pending.TILL;
+    },
+  ],
 ]);
 
 const wordType = (symbol: boolean) => (symbol ? SelType.SYMBOL : SelType.WORD);
 
 /** The commands whose chains keep Emacs' temporary-goal-column alive. */
-const VERTICAL = new Set(['meow-next', 'meow-prev', 'meow-next-expand', 'meow-prev-expand']);
+const VERTICAL = new Set([
+  'meow-next',
+  'meow-prev',
+  'meow-next-expand',
+  'meow-prev-expand',
+]);
 
 const charSelActive = (ctx: Ctx) =>
   ctx.st.selType === SelType.CHAR && Sel.hasSelection(Sel.primary(ctx));
 
 /** meow-left/right run backward-char/forward-char: offsets, crossing newlines. */
-function movedChar(len: number, sel: SelRange, dx: number, extend: boolean): SelRange {
+function movedChar(
+  len: number,
+  sel: SelRange,
+  dx: number,
+  extend: boolean,
+): SelRange {
   const active = clamp(sel.active + dx, 0, len);
   return { anchor: extend ? sel.anchor : active, active };
 }
 
 /** next-line/previous-line: goal column (primary caret), own column for the
  *  rest; past the first/last line the point goes to the buffer edge. */
-function movedLine(text: string, sel: SelRange, dy: number, extend: boolean, goal: number | null): SelRange {
+function movedLine(
+  text: string,
+  sel: SelRange,
+  dy: number,
+  extend: boolean,
+  goal: number | null,
+): SelRange {
   const ln = lineOfOffset(text, sel.active);
   const target = ln + dy;
   let active: number;
@@ -87,7 +132,11 @@ function movedLine(text: string, sel: SelRange, dy: number, extend: boolean, goa
  *  survives while the previous command was a vertical move too. */
 function goalColumn(ctx: Ctx): number {
   const st = ctx.st;
-  if (st.goalColumn === null || st.lastCommand === null || !VERTICAL.has(st.lastCommand)) {
+  if (
+    st.goalColumn === null ||
+    st.lastCommand === null ||
+    !VERTICAL.has(st.lastCommand)
+  ) {
     const text = ctx.port.getText();
     const p = Sel.primary(ctx).active;
     st.goalColumn = p - lineStart(text, lineOfOffset(text, p));
@@ -100,7 +149,9 @@ function moveChar(ctx: Ctx, dx: number): void {
   // meow-left/right cancel (clearing the history) only with an active region
   if (!extend && Sel.hasSelection(Sel.primary(ctx))) Sel.cancel(ctx);
   const len = ctx.port.getText().length;
-  ctx.port.setSelections(ctx.port.getSelections().map((s) => movedChar(len, s, dx, extend)));
+  ctx.port.setSelections(
+    ctx.port.getSelections().map((s) => movedChar(len, s, dx, extend)),
+  );
 }
 
 function moveLine(ctx: Ctx, dy: number): void {
@@ -109,9 +160,11 @@ function moveLine(ctx: Ctx, dy: number): void {
   if (!extend) Sel.cancel(ctx);
   const goal = goalColumn(ctx);
   const text = ctx.port.getText();
-  ctx.port.setSelections(ctx.port.getSelections().map(
-    (s, i) => movedLine(text, s, dy, extend, i === 0 ? goal : null),
-  ));
+  ctx.port.setSelections(
+    ctx.port
+      .getSelections()
+      .map((s, i) => movedLine(text, s, dy, extend, i === 0 ? goal : null)),
+  );
 }
 
 /** meow-left/right/next/prev-expand: (expand . char) selection through
@@ -121,13 +174,20 @@ function moveExpand(ctx: Ctx, dx: number, dy: number): void {
   const goal = dy !== 0 ? goalColumn(ctx) : null;
   const sels = ctx.port.getSelections();
   const before = sels[0].active;
-  const moved = sels.map((s, i) => (
+  const moved = sels.map((s, i) =>
     dy === 0
       ? movedChar(text.length, s, dx, true)
-      : movedLine(text, s, dy, true, i === 0 ? goal : null)
-  ));
+      : movedLine(text, s, dy, true, i === 0 ? goal : null),
+  );
   ctx.port.setSelections(moved);
-  Sel.recordSelect(ctx, SelType.CHAR, moved[0].anchor, moved[0].active, true, before);
+  Sel.recordSelect(
+    ctx,
+    SelType.CHAR,
+    moved[0].anchor,
+    moved[0].active,
+    true,
+    before,
+  );
   ctx.st.selType = SelType.CHAR;
   ctx.st.selExpand = true;
   GrabMod.beacon(ctx);
@@ -153,17 +213,21 @@ function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
   // FIRST — meow--cancel-selection, so the chain history restarts and a
   // later z pops the null placeholder, not the foreign selection
   if (!(Sel.hasSelection(sel) && ctx.st.selType === type)) Sel.cancel(ctx);
-  const extend = ctx.st.selExpand && ctx.st.selType === type && Sel.hasSelection(sel);
+  const extend =
+    ctx.st.selExpand && ctx.st.selType === type && Sel.hasSelection(sel);
   const from = extend ? (n < 0 ? lo : hi) : sel.active;
-  const target = n > 0
-    ? Words.nextEnd(text, from, n, charPred(symbol))
-    : Words.prevStart(text, from, -n, charPred(symbol));
+  const target =
+    n > 0
+      ? Words.nextEnd(text, from, n, charPred(symbol))
+      : Words.prevStart(text, from, -n, charPred(symbol));
   if (target === from) return;
   // meow--fix-thing-selection-mark: a fresh selection snaps its mark to the
   // word's own bounds — the separators between the old point and the word
   // stay OUTSIDE (e e e steps bare words)
   const anchor = extend
-    ? (n < 0 ? hi : lo)
+    ? n < 0
+      ? hi
+      : lo
     : Words.fixSelectionMark(text, target, from, charPred(symbol));
   Sel.select(ctx, type, anchor, target, extend);
 }
@@ -174,7 +238,10 @@ function markWord(ctx: Ctx, symbol: boolean): void {
   const neg = ctx.st.takeCount(1) < 0;
   const text = ctx.port.getText();
   const b = Words.boundsAt(text, Sel.primary(ctx).active, charPred(symbol));
-  if (!b) { ctx.ui.hint('No word here'); return; }
+  if (!b) {
+    ctx.ui.hint('No word here');
+    return;
+  }
   const [s, e] = b;
   if (neg) Sel.select(ctx, wordType(symbol), e, s, true);
   else Sel.select(ctx, wordType(symbol), s, e, true);
@@ -190,7 +257,11 @@ function line(ctx: Ctx): void {
   const lastLine = lineCount(text) - 1;
   // extension needs exactly (expand . line) — a digit-expanded (select . line)
   // selection re-selects the current line instead
-  if (ctx.st.selType === SelType.LINE && ctx.st.selExpand && Sel.hasSelection(Sel.primary(ctx))) {
+  if (
+    ctx.st.selType === SelType.LINE &&
+    ctx.st.selExpand &&
+    Sel.hasSelection(Sel.primary(ctx))
+  ) {
     const caretLn = lineOfOffset(text, Sel.primary(ctx).active);
     if (Sel.backwardP(ctx)) {
       const ln = Math.max(caretLn - Math.abs(n), 0);
@@ -204,10 +275,22 @@ function line(ctx: Ctx): void {
   const ln = lineOfOffset(text, Sel.primary(ctx).active);
   if (n < 0) {
     const startLn = Math.max(ln + n + 1, 0);
-    Sel.select(ctx, SelType.LINE, lineEnd(text, ln), lineStart(text, startLn), true);
+    Sel.select(
+      ctx,
+      SelType.LINE,
+      lineEnd(text, ln),
+      lineStart(text, startLn),
+      true,
+    );
   } else {
     const endLn = Math.min(ln + n - 1, lastLine);
-    Sel.select(ctx, SelType.LINE, lineStart(text, ln), lineEnd(text, endLn), true);
+    Sel.select(
+      ctx,
+      SelType.LINE,
+      lineStart(text, ln),
+      lineEnd(text, endLn),
+      true,
+    );
   }
 }
 
@@ -229,7 +312,10 @@ export function findTill(ctx: Ctx, ch: string, till: boolean): void {
   const text = ctx.port.getText();
   const caret = Sel.primary(ctx).active;
   const target = nthCharTarget(text, ch, caret, Math.abs(n), n < 0, till);
-  if (target < 0) { ctx.ui.hint(`char not found: ${ch}`); return; }
+  if (target < 0) {
+    ctx.ui.hint(`char not found: ${ch}`);
+    return;
+  }
   Sel.select(ctx, till ? SelType.TILL : SelType.FIND, caret, target, false);
   ctx.st.lastFind = ch;
 }

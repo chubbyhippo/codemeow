@@ -74,12 +74,14 @@ export function charPred(symbol: boolean): (c: string) => boolean {
 // ------------------------------------------------------------- char scans
 
 export function indexOfChar(text: string, c: string, from: number): number {
-  for (let i = Math.max(from, 0); i < text.length; i++) if (text[i] === c) return i;
+  for (let i = Math.max(from, 0); i < text.length; i++)
+    if (text[i] === c) return i;
   return -1;
 }
 
 export function lastIndexOfChar(text: string, c: string, from: number): number {
-  for (let i = Math.min(from, text.length - 1); i >= 0; i--) if (text[i] === c) return i;
+  for (let i = Math.min(from, text.length - 1); i >= 0; i--)
+    if (text[i] === c) return i;
   return -1;
 }
 
@@ -90,12 +92,25 @@ export function lastIndexOfChar(text: string, c: string, from: number): number {
  * is no nth occurrence.
  */
 export function nthCharTarget(
-  text: string, ch: string, caret: number, n: number, backward: boolean, till: boolean,
+  text: string,
+  ch: string,
+  caret: number,
+  n: number,
+  backward: boolean,
+  till: boolean,
 ): number {
   let found = -1;
-  let from = backward ? (till ? caret - 2 : caret - 1) : (till ? caret + 1 : caret);
+  let from = backward
+    ? till
+      ? caret - 2
+      : caret - 1
+    : till
+      ? caret + 1
+      : caret;
   for (let k = 0; k < n; k++) {
-    found = backward ? lastIndexOfChar(text, ch, from) : indexOfChar(text, ch, from);
+    found = backward
+      ? lastIndexOfChar(text, ch, from)
+      : indexOfChar(text, ch, from);
     if (found < 0) return -1;
     from = backward ? found - 1 : found + 1;
   }
@@ -108,7 +123,12 @@ export function nthCharTarget(
 
 /** Word/symbol scanning shared by commands and hints. */
 export const Words = {
-  nextEnd(text: string, from: number, n: number, pred: (c: string) => boolean): number {
+  nextEnd(
+    text: string,
+    from: number,
+    n: number,
+    pred: (c: string) => boolean,
+  ): number {
     let i = clamp(from, 0, text.length);
     for (let k = 0; k < n; k++) {
       while (i < text.length && !pred(text[i])) i++;
@@ -117,7 +137,12 @@ export const Words = {
     return i;
   },
 
-  prevStart(text: string, from: number, n: number, pred: (c: string) => boolean): number {
+  prevStart(
+    text: string,
+    from: number,
+    n: number,
+    pred: (c: string) => boolean,
+  ): number {
     let i = clamp(from, 0, text.length);
     for (let k = 0; k < n; k++) {
       while (i > 0 && !pred(text[i - 1])) i--;
@@ -133,14 +158,27 @@ export const Words = {
    *  (mark < pos): max(mark, start of the thing ending at pos); backward:
    *  min(mark, end of the thing starting at pos). Expand chains ignore
    *  this (the anchor comes from the region ends). */
-  fixSelectionMark(text: string, pos: number, mark: number, pred: (c: string) => boolean): number {
-    const probe = clamp(mark > pos ? pos : pos - 1, 0, Math.max(text.length - 1, 0));
+  fixSelectionMark(
+    text: string,
+    pos: number,
+    mark: number,
+    pred: (c: string) => boolean,
+  ): number {
+    const probe = clamp(
+      mark > pos ? pos : pos - 1,
+      0,
+      Math.max(text.length - 1, 0),
+    );
     const bounds = Words.boundsAt(text, probe, pred);
     if (!bounds) return mark;
     return mark > pos ? Math.min(mark, bounds[1]) : Math.max(mark, bounds[0]);
   },
 
-  boundsAt(text: string, offset: number, pred: (c: string) => boolean): [number, number] | null {
+  boundsAt(
+    text: string,
+    offset: number,
+    pred: (c: string) => boolean,
+  ): [number, number] | null {
     let o = offset;
     if (o >= text.length || !pred(text[o])) {
       if (o > 0 && pred(text[o - 1])) {

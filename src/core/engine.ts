@@ -86,7 +86,9 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
 
   const prefixy =
     st.pending !== null ||
-    (st.pendingCount !== 0 && cmd !== undefined && cmd.startsWith('meow-expand-')) ||
+    (st.pendingCount !== 0 &&
+      cmd !== undefined &&
+      cmd.startsWith('meow-expand-')) ||
     (st.negative && cmd === 'meow-negative-argument') ||
     cmd === 'meow-keypad';
   if (!st.replaying && cmd !== 'repeat' && !prefixy) st.lastKeys = [...st.unit];
@@ -111,9 +113,14 @@ function resolve(ctx: Ctx, c: string, motion: boolean): Binding | null {
 /** Commands that read one more key: find/till chars and the thing table. */
 async function resolvePending(ctx: Ctx, p: Pending, c: string): Promise<void> {
   switch (p) {
-    case Pending.FIND: Motions.findTill(ctx, c, false); break;
-    case Pending.TILL: Motions.findTill(ctx, c, true); break;
-    default: await Structures.thingSelect(ctx, p, c);
+    case Pending.FIND:
+      Motions.findTill(ctx, c, false);
+      break;
+    case Pending.TILL:
+      Motions.findTill(ctx, c, true);
+      break;
+    default:
+      await Structures.thingSelect(ctx, p, c);
   }
 }
 

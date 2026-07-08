@@ -55,8 +55,14 @@ export const commands: Map<string, MeowCommand> = new Map([
 
 // --------------------------------------------------------------- the tree
 
-export interface Leaf { kind: 'leaf'; offset: number }
-export interface Branch { kind: 'branch'; children: Array<[string, AvyNode]> }
+export interface Leaf {
+  kind: 'leaf';
+  offset: number;
+}
+export interface Branch {
+  kind: 'branch';
+  children: Array<[string, AvyNode]>;
+}
 export type AvyNode = Leaf | Branch;
 
 /** avy-subdiv: distribute N candidates over B keys in a balanced way. */
@@ -81,7 +87,10 @@ export function tree(candidates: number[], keys: string = KEYS): Branch {
   if (candidates.length < keys.length) {
     return {
       kind: 'branch',
-      children: candidates.map((offset, i) => [keys[i], { kind: 'leaf', offset } as AvyNode]),
+      children: candidates.map((offset, i) => [
+        keys[i],
+        { kind: 'leaf', offset } as AvyNode,
+      ]),
     };
   }
   let rest = candidates;
@@ -148,7 +157,9 @@ function collect(ctx: Ctx, session: AvySession, c: string): void {
   if (session.timer !== null) clearTimeout(session.timer);
   session.timer = setTimeout(() => void finishInput(ctx), TIMEOUT_MS);
   const len = session.input.length;
-  ctx.ui.showAvyMatches(matches(ctx, session.input).map((start) => ({ start, end: start + len })));
+  ctx.ui.showAvyMatches(
+    matches(ctx, session.input).map((start) => ({ start, end: start + len })),
+  );
 }
 
 /** The avy-timeout-seconds pause ended: label (or jump, or give up). */
@@ -170,7 +181,11 @@ export function finishInput(ctx: Ctx): void {
   }
 }
 
-function toSelecting(ctx: Ctx, session: AvySession, candidates: number[]): void {
+function toSelecting(
+  ctx: Ctx,
+  session: AvySession,
+  candidates: number[],
+): void {
   ctx.ui.clearAvy();
   session.phase = 'selecting';
   session.node = tree(candidates);

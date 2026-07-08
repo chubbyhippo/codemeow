@@ -33,7 +33,11 @@ describe('RcSpec', () => {
   });
 
   it('given a meow command name then it parses into a command binding', () => {
-    const c = Rc.parse(['nmap n meow-mark-word', 'nmap d ignore', 'nmap Z repeat']);
+    const c = Rc.parse([
+      'nmap n meow-mark-word',
+      'nmap d ignore',
+      'nmap Z repeat',
+    ]);
     assert.equal(c.normal.get('n')!.command, 'meow-mark-word');
     assert.equal(c.normal.get('d')!.command, 'ignore');
     assert.equal(c.normal.get('Z')!.command, 'repeat');
@@ -57,16 +61,29 @@ describe('RcSpec', () => {
 
   it('given leader mappings and descriptions then the keypad table extends', () => {
     const s = freshSpec();
-    s.givenRc('map <leader>gd <action>(editor.action.revealDefinition)\ndesc <leader>g goto things');
-    assert.equal(Rc.cfg().keypad.get('gd')!.action, 'editor.action.revealDefinition');
+    s.givenRc(
+      'map <leader>gd <action>(editor.action.revealDefinition)\ndesc <leader>g goto things',
+    );
+    assert.equal(
+      Rc.cfg().keypad.get('gd')!.action,
+      'editor.action.revealDefinition',
+    );
     assert.equal(Rc.cfg().keypadDesc.get('g'), 'goto things');
-    assert.equal(Rc.keypad().get('gd')!.action, 'editor.action.revealDefinition');
+    assert.equal(
+      Rc.keypad().get('gd')!.action,
+      'editor.action.revealDefinition',
+    );
     // bundled defaults stay beneath
-    assert.equal(Rc.keypad().get('b')!.action, 'workbench.action.showAllEditorsByMostRecentlyUsed');
+    assert.equal(
+      Rc.keypad().get('b')!.action,
+      'workbench.action.showAllEditorsByMostRecentlyUsed',
+    );
   });
 
   it('given the ideavimrc WhichKeyDesc let syntax then descriptions parse', () => {
-    const c = Rc.parse(['let g:WhichKeyDesc_leader_x = "<leader>x C-x files/buffers"']);
+    const c = Rc.parse([
+      'let g:WhichKeyDesc_leader_x = "<leader>x C-x files/buffers"',
+    ]);
     assert.equal(c.keypadDesc.get('x'), 'C-x files/buffers');
     assert.deepEqual(c.errors, []);
   });
@@ -111,19 +128,32 @@ describe('RcSpec', () => {
     // deliberate avy overrides further down the file)
     for (const [key, cmd] of QWERTY) {
       if (key === 'Q') continue;
-      assert.equal(d.normal.get(key)?.command, cmd, `bundled layout line for '${key}'`);
+      assert.equal(
+        d.normal.get(key)?.command,
+        cmd,
+        `bundled layout line for '${key}'`,
+      );
     }
     assert.equal(d.normal.get('Q')?.command, 'avy-goto-line');
     assert.equal(d.normal.get('S')?.command, 'avy-goto-char-timer');
     assert.equal(d.motion.get('j')?.command, 'meow-next');
     assert.equal(d.motion.get('k')?.command, 'meow-prev');
     // the keypad table lives in the file too — nothing is bound in code
-    assert.equal(d.keypad.get('b')?.action, 'workbench.action.showAllEditorsByMostRecentlyUsed');
-    assert.equal(d.keypad.get(' ')?.action, 'workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup');
+    assert.equal(
+      d.keypad.get('b')?.action,
+      'workbench.action.showAllEditorsByMostRecentlyUsed',
+    );
+    assert.equal(
+      d.keypad.get(' ')?.action,
+      'workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup',
+    );
     assert.equal(d.keypad.get('cm')?.action, 'codemeow.editRc');
     assert.equal(d.keypad.get('cM')?.action, 'codemeow.reloadRc');
     assert.equal(d.keypad.get('id')?.action, 'codemeow.commandIds');
-    assert.ok(d.keypad.size > 150, `keypad table + ported leader groups (got ${d.keypad.size})`);
+    assert.ok(
+      d.keypad.size > 150,
+      `keypad table + ported leader groups (got ${d.keypad.size})`,
+    );
   });
 
   it('given bad lines then errors are collected with line numbers', () => {
@@ -242,17 +272,29 @@ describe('RcSpec', () => {
 
   it('given keypad entries then which-key rows show terminals and groups', () => {
     const s = freshSpec();
-    s.givenRc('map <leader>zz <action>(workbench.action.quickOpen)\ndesc <leader>z my group');
+    s.givenRc(
+      'map <leader>zz <action>(workbench.action.quickOpen)\ndesc <leader>z my group',
+    );
     const top = keypadRows('');
     assert.ok(top.some(([k, label]) => k === 'z' && label === 'my group'));
     const inner = keypadRows('z');
-    assert.ok(inner.some(([k, label]) => k === 'z' && label === 'workbench.action.quickOpen'));
+    assert.ok(
+      inner.some(
+        ([k, label]) => k === 'z' && label === 'workbench.action.quickOpen',
+      ),
+    );
   });
 
   it('given a terminal with a description then which-key prefers it', () => {
     const s = freshSpec();
-    s.givenRc('map <leader>zz <action>(workbench.action.quickOpen)\ndesc <leader>zz open a file');
-    assert.ok(keypadRows('z').some(([k, label]) => k === 'z' && label === 'open a file'));
+    s.givenRc(
+      'map <leader>zz <action>(workbench.action.quickOpen)\ndesc <leader>zz open a file',
+    );
+    assert.ok(
+      keypadRows('z').some(
+        ([k, label]) => k === 'z' && label === 'open a file',
+      ),
+    );
   });
 
   it('given the default table then the SPC SPC entry renders as SPC', () => {
@@ -267,7 +309,10 @@ describe('RcSpec', () => {
    * so the two plugins can never drift apart silently.
    */
   const QWERTY: Map<string, string> = new Map([
-    ...Array.from({ length: 10 }, (_, n) => [String(n), `meow-expand-${n}`] as [string, string]),
+    ...Array.from(
+      { length: 10 },
+      (_, n) => [String(n), `meow-expand-${n}`] as [string, string],
+    ),
     ['-', 'meow-negative-argument'],
     [';', 'meow-reverse'],
     [',', 'meow-inner-of-thing'],

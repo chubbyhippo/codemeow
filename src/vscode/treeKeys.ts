@@ -86,7 +86,11 @@ const PUNCTUATION: Array<[string, string, string, string, string]> = [
  *  and unmappable in the rc). */
 export const TREE_KEYS: TreeKey[] = [
   ...[...LETTERS].map((c) => ({ ch: c, key: c, ctx: c })),
-  ...[...LETTERS].map((c) => ({ ch: c.toUpperCase(), key: `shift+${c}`, ctx: c.toUpperCase() })),
+  ...[...LETTERS].map((c) => ({
+    ch: c.toUpperCase(),
+    key: `shift+${c}`,
+    ctx: c.toUpperCase(),
+  })),
   ...[...DIGITS].map((c) => ({ ch: c, key: c, ctx: c })),
   ...SHIFTED_DIGITS.map(([ch, key, ctx]) => ({ ch, key: `shift+${key}`, ctx })),
   ...PUNCTUATION.flatMap(([ch, key, ctx, shifted, shiftedCtx]) => [
@@ -98,7 +102,12 @@ export const TREE_KEYS: TreeKey[] = [
 /** The contributes.keybindings entries package.json must carry, verbatim —
  *  pinned by the TreeMeowSpec suite. Each dispatches the pressed char to
  *  the codemeow.tree command (core/treeMeow resolves it via the mmap). */
-export function treeKeybindings(): Array<{ key: string; command: string; args: string; when: string }> {
+export function treeKeybindings(): Array<{
+  key: string;
+  command: string;
+  args: string;
+  when: string;
+}> {
   return TREE_KEYS.map(({ ch, key, ctx }) => ({
     key,
     command: 'codemeow.tree',

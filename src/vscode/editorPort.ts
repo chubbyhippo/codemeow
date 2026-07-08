@@ -40,17 +40,27 @@ export class VscEditorPort implements EditorPort {
 
   setSelections(sels: SelRange[]): void {
     this.editor.selections = sels.map(
-      (s) => new vscode.Selection(this.doc.positionAt(s.anchor), this.doc.positionAt(s.active)),
+      (s) =>
+        new vscode.Selection(
+          this.doc.positionAt(s.anchor),
+          this.doc.positionAt(s.active),
+        ),
     );
     const caret = this.doc.positionAt(sels[0].active);
-    this.editor.revealRange(new vscode.Range(caret, caret), vscode.TextEditorRevealType.Default);
+    this.editor.revealRange(
+      new vscode.Range(caret, caret),
+      vscode.TextEditorRevealType.Default,
+    );
   }
 
   async edit(edits: TextEdit[]): Promise<void> {
     await this.editor.edit(
       (builder) => {
         for (const e of edits) {
-          const range = new vscode.Range(this.doc.positionAt(e.start), this.doc.positionAt(e.end));
+          const range = new vscode.Range(
+            this.doc.positionAt(e.start),
+            this.doc.positionAt(e.end),
+          );
           if (e.start === e.end) builder.insert(range.start, e.text);
           else if (e.text === '') builder.delete(range);
           else builder.replace(range, e.text);
@@ -77,12 +87,13 @@ export class VscEditorPort implements EditorPort {
     await vscode.commands.executeCommand('workbench.action.closeActiveEditor');
   }
 
-  async symbolRangeAt(offset: number): Promise<{ start: number; end: number } | null> {
+  async symbolRangeAt(
+    offset: number,
+  ): Promise<{ start: number; end: number } | null> {
     try {
-      const symbols = await vscode.commands.executeCommand<vscode.DocumentSymbol[]>(
-        'vscode.executeDocumentSymbolProvider',
-        this.doc.uri,
-      );
+      const symbols = await vscode.commands.executeCommand<
+        vscode.DocumentSymbol[]
+      >('vscode.executeDocumentSymbolProvider', this.doc.uri);
       if (!symbols) return null;
       const pos = this.doc.positionAt(offset);
       const fnKinds = new Set([
@@ -102,7 +113,10 @@ export class VscEditorPort implements EditorPort {
       walk(symbols);
       if (!best) return null;
       const range = (best as vscode.DocumentSymbol).range;
-      return { start: this.doc.offsetAt(range.start), end: this.doc.offsetAt(range.end) };
+      return {
+        start: this.doc.offsetAt(range.start),
+        end: this.doc.offsetAt(range.end),
+      };
     } catch {
       return null;
     }

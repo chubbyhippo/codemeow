@@ -17,7 +17,16 @@
 
 import { Ctx } from './port';
 import { SelType } from './state';
-import { charPred, indexOfChar, lastIndexOfChar, lineCount, lineEnd, lineOfOffset, lineStart, Words } from './text';
+import {
+  charPred,
+  indexOfChar,
+  lastIndexOfChar,
+  lineCount,
+  lineEnd,
+  lineOfOffset,
+  lineStart,
+  Words,
+} from './text';
 
 /**
  * meow's expand hints: after an expandable selection (word/symbol/line/
@@ -40,7 +49,9 @@ export function expandHintPositions(ctx: Ctx, count = 10): number[] {
       const pred = charPred(st.selType === SelType.SYMBOL);
       let i = caret;
       for (let k = 0; k < count; k++) {
-        i = backward ? Words.prevStart(text, i, 1, pred) : Words.nextEnd(text, i, 1, pred);
+        i = backward
+          ? Words.prevStart(text, i, 1, pred)
+          : Words.nextEnd(text, i, 1, pred);
         if (backward ? i <= 0 : i >= text.length) break;
         out.push(i);
       }
@@ -61,9 +72,13 @@ export function expandHintPositions(ctx: Ctx, count = 10): number[] {
       if (c === null) return out;
       let i = caret;
       for (let k = 0; k < count; k++) {
-        const next = backward ? lastIndexOfChar(text, c, i - 1) : indexOfChar(text, c, i + 1);
+        const next = backward
+          ? lastIndexOfChar(text, c, i - 1)
+          : indexOfChar(text, c, i + 1);
         if (next < 0) break;
-        out.push(st.selType === SelType.TILL ? next : Math.min(next + 1, text.length));
+        out.push(
+          st.selType === SelType.TILL ? next : Math.min(next + 1, text.length),
+        );
         i = next;
       }
       break;

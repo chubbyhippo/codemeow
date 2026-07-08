@@ -33,7 +33,8 @@ const READONLY_SCHEMES = new Set(['git', 'output', 'codemeow']);
 
 const SKIP_SCHEMES = new Set([
   'comment', // review-comment inputs: effectively one-line dialogs
-  'interactive', 'vscode-interactive-input', // notebook/REPL inputs
+  'interactive',
+  'vscode-interactive-input', // notebook/REPL inputs
 ]);
 
 export function attachMode(scheme: string): MeowMode | null {

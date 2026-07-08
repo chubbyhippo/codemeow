@@ -70,8 +70,14 @@ describe('WindmoveSpec', () => {
 
   it('given no window in the direction then the message is Emacs verbatim', () => {
     // batch-verified: (windmove-do-window-select 'left) with one window
-    assert.equal(noWindowMessage('left'), 'No window left from selected window');
-    assert.equal(noWindowMessage('down'), 'No window down from selected window');
+    assert.equal(
+      noWindowMessage('left'),
+      'No window left from selected window',
+    );
+    assert.equal(
+      noWindowMessage('down'),
+      'No window down from selected window',
+    );
   });
 
   it('given the manifest then shift+arrows dispatch windmove on meow editors', () => {
@@ -80,8 +86,14 @@ describe('WindmoveSpec', () => {
     // not attach (the Emacs tradeoff applies only inside meow buffers)
     const pkg = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
-    ) as { contributes: { keybindings: Array<{ key: string; command: string; when: string }> } };
-    const bound = pkg.contributes.keybindings.filter((k) => k.command.startsWith('codemeow.windmove'));
+    ) as {
+      contributes: {
+        keybindings: Array<{ key: string; command: string; when: string }>;
+      };
+    };
+    const bound = pkg.contributes.keybindings.filter((k) =>
+      k.command.startsWith('codemeow.windmove'),
+    );
     assert.deepEqual(
       bound,
       (['Left', 'Right', 'Up', 'Down'] as const).map((d) => ({
@@ -105,6 +117,9 @@ describe('WindmoveSpec', () => {
     // init.el C-c w b = balance-windows; the HJKL swaps are ideameow-only
     // (VS Code has no command to exchange two groups' contents)
     freshSpec();
-    assert.equal(Rc.defaults().keypad.get('wb')?.action, 'workbench.action.evenEditorWidths');
+    assert.equal(
+      Rc.defaults().keypad.get('wb')?.action,
+      'workbench.action.evenEditorWidths',
+    );
   });
 });

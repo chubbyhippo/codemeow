@@ -17,7 +17,16 @@
 
 import { Ctx, SelRange } from './port';
 import { MeowState, SavedSelection, SelType } from './state';
-import { charPred, clamp, lineCount, lineEnd, lineOfOffset, lineStart, nthCharTarget, Words } from './text';
+import {
+  charPred,
+  clamp,
+  lineCount,
+  lineEnd,
+  lineOfOffset,
+  lineStart,
+  nthCharTarget,
+  Words,
+} from './text';
 import { MeowCommand } from './command';
 import * as GrabMod from './grab';
 import { expandHintPositions } from './hints';
@@ -42,7 +51,12 @@ commands.set('meow-pop-selection', (ctx) => pop(ctx));
 
 /** The types digit expand can grow; anything else makes digits a count. */
 const EXPANDABLE = new Set([
-  SelType.CHAR, SelType.WORD, SelType.SYMBOL, SelType.LINE, SelType.FIND, SelType.TILL,
+  SelType.CHAR,
+  SelType.WORD,
+  SelType.SYMBOL,
+  SelType.LINE,
+  SelType.FIND,
+  SelType.TILL,
 ]);
 
 export function primary(ctx: Ctx): SelRange {
@@ -66,18 +80,32 @@ export function mark(ctx: Ctx): number {
 }
 
 function sameSaved(a: SavedSelection, b: SavedSelection): boolean {
-  return a.type === b.type && a.expand === b.expand && a.anchor === b.anchor && a.active === b.active;
+  return (
+    a.type === b.type &&
+    a.expand === b.expand &&
+    a.anchor === b.anchor &&
+    a.active === b.active
+  );
 }
 
 /** meow--select's history bookkeeping: push the previous meow--selection —
  *  or a null placeholder at [posBefore] when there was none — then remember
  *  the new one. */
 export function recordSelect(
-  ctx: Ctx, type: SelType, anchor: number, active: number, expand: boolean, posBefore?: number,
+  ctx: Ctx,
+  type: SelType,
+  anchor: number,
+  active: number,
+  expand: boolean,
+  posBefore?: number,
 ): void {
   const st = ctx.st;
-  const prev: SavedSelection = st.lastSelection
-    ?? { type: null, expand: false, anchor: posBefore ?? active, active: posBefore ?? active };
+  const prev: SavedSelection = st.lastSelection ?? {
+    type: null,
+    expand: false,
+    anchor: posBefore ?? active,
+    active: posBefore ?? active,
+  };
   const head = st.selectionHistory[st.selectionHistory.length - 1];
   if (!head || !sameSaved(head, prev)) st.selectionHistory.push(prev);
   while (st.selectionHistory.length > 200) st.selectionHistory.shift();
@@ -85,7 +113,12 @@ export function recordSelect(
 }
 
 export function select(
-  ctx: Ctx, type: SelType, markOff: number, point: number, expand: boolean, push = true,
+  ctx: Ctx,
+  type: SelType,
+  markOff: number,
+  point: number,
+  expand: boolean,
+  push = true,
 ): void {
   const { port, st } = ctx;
   const len = port.getText().length;
@@ -186,7 +219,9 @@ function expand(ctx: Ctx, n: number): void {
     case SelType.WORD:
     case SelType.SYMBOL: {
       const p = charPred(st.selType === SelType.SYMBOL);
-      target = back ? Words.prevStart(text, caret, n, p) : Words.nextEnd(text, caret, n, p);
+      target = back
+        ? Words.prevStart(text, caret, n, p)
+        : Words.nextEnd(text, caret, n, p);
       break;
     }
     case SelType.LINE: {
@@ -200,7 +235,14 @@ function expand(ctx: Ctx, n: number): void {
     case SelType.TILL: {
       const ch = st.lastFind;
       if (ch === null) return;
-      const t = nthCharTarget(text, ch, caret, n, back, st.selType === SelType.TILL);
+      const t = nthCharTarget(
+        text,
+        ch,
+        caret,
+        n,
+        back,
+        st.selType === SelType.TILL,
+      );
       if (t < 0) return;
       target = t;
       break;

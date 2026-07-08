@@ -1,0 +1,3 @@
+# compiled output and machine-generated files
+out/
+package-lock.json

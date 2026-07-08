@@ -45,7 +45,11 @@ describe('ModesKeypadSpec', () => {
   it('given nothing meow-related when escape then it reports unhandled', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello');
-    assert.equal(s.pressEsc(), false, 'the host may fall through to its own escape');
+    assert.equal(
+      s.pressEsc(),
+      false,
+      'the host may fall through to its own escape',
+    );
   });
 
   it('given a read-only document then all motions work and the modify commands are inert', async () => {

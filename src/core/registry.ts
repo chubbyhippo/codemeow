@@ -42,15 +42,28 @@ export const COMMANDS: Map<string, MeowCommand> = new Map([
   ...Grab.commands,
   ...Edits.commands,
   ...Avy.commands,
-  ['meow-negative-argument', (ctx: Ctx) => { ctx.st.negative = true; }],
+  [
+    'meow-negative-argument',
+    (ctx: Ctx) => {
+      ctx.st.negative = true;
+    },
+  ],
   // meow's QWERTY table binds Emacs' own `negative-argument`; accept that
   // exact spelling too so the canonical table pastes verbatim
-  ['negative-argument', (ctx: Ctx) => { ctx.st.negative = true; }],
+  [
+    'negative-argument',
+    (ctx: Ctx) => {
+      ctx.st.negative = true;
+    },
+  ],
   ['meow-quit', (ctx: Ctx) => ctx.port.closeEditor()],
-  ['meow-keypad', (ctx: Ctx) => {
-    setMode(ctx, MeowMode.KEYPAD);
-    ctx.ui.scheduleWhichKey('keypad', '');
-  }],
+  [
+    'meow-keypad',
+    (ctx: Ctx) => {
+      setMode(ctx, MeowMode.KEYPAD);
+      ctx.ui.scheduleWhichKey('keypad', '');
+    },
+  ],
   ['repeat', (ctx: Ctx) => Engine.repeatLast(ctx)],
   ['ignore', () => {}],
 ]);

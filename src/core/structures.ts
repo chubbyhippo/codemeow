@@ -45,12 +45,20 @@ function pendThing(ctx: Ctx, p: Pending): void {
 }
 
 /** The second half of the thing commands, once the thing char arrives. */
-export async function thingSelect(ctx: Ctx, kind: Pending, ch: string): Promise<void> {
+export async function thingSelect(
+  ctx: Ctx,
+  kind: Pending,
+  ch: string,
+): Promise<void> {
   const off = Sel.primary(ctx).active;
-  const b = kind === Pending.BOUNDS
-    ? await Things.bounds(ctx, ch, off)
-    : await Things.inner(ctx, ch, off);
-  if (!b) { ctx.ui.hint(`No thing '${ch}' here`); return; }
+  const b =
+    kind === Pending.BOUNDS
+      ? await Things.bounds(ctx, ch, off)
+      : await Things.inner(ctx, ch, off);
+  if (!b) {
+    ctx.ui.hint(`No thing '${ch}' here`);
+    return;
+  }
   switch (kind) {
     case Pending.INNER:
       Sel.select(ctx, SelType.TRANSIENT, b.start, b.end, false);
@@ -73,7 +81,10 @@ export async function thingSelect(ctx: Ctx, kind: Pending, ch: string): Promise<
 
 // ------------------------------------------------------------------ blocks
 
-interface PairRange { open: number; close: number }
+interface PairRange {
+  open: number;
+  close: number;
+}
 
 /**
  * Smallest bracket pair strictly enclosing [s, e). Same-line quoted runs
@@ -93,7 +104,10 @@ function enclosingPair(text: string, s: number, e: number): PairRange | null {
         if (text[j] === '\\') j++;
         j++;
       }
-      if (j < text.length && text[j] === c) { i = j + 1; continue; }
+      if (j < text.length && text[j] === c) {
+        i = j + 1;
+        continue;
+      }
     }
     if (opens.includes(c)) {
       stack.push(i);
@@ -102,7 +116,11 @@ function enclosingPair(text: string, s: number, e: number): PairRange | null {
       while (stack.length > 0) {
         const o = stack.pop()!;
         if (opens.indexOf(text[o]) === kind) {
-          if (o < s && i + 1 >= e && (best === null || i - o < best.close - best.open)) {
+          if (
+            o < s &&
+            i + 1 >= e &&
+            (best === null || i - o < best.close - best.open)
+          ) {
             best = { open: o, close: i };
           }
           break;
@@ -121,11 +139,14 @@ function block(ctx: Ctx): void {
   const text = ctx.port.getText();
   const sel = Sel.primary(ctx);
   const active = ctx.st.selType === SelType.BLOCK && Sel.hasSelection(sel);
-  const back = Sel.backwardP(ctx) !== (ctx.st.takeCount(1) < 0); // xor, like meow-block
+  const back = Sel.backwardP(ctx) !== ctx.st.takeCount(1) < 0; // xor, like meow-block
   const s = active ? Math.min(sel.anchor, sel.active) : sel.active;
   const e = active ? Math.max(sel.anchor, sel.active) : sel.active;
   const p = enclosingPair(text, s, e);
-  if (!p) { ctx.ui.hint('No enclosing block'); return; }
+  if (!p) {
+    ctx.ui.hint('No enclosing block');
+    return;
+  }
   if (back) Sel.select(ctx, SelType.BLOCK, p.close + 1, p.open, true);
   else Sel.select(ctx, SelType.BLOCK, p.open, p.close + 1, true);
 }
@@ -135,10 +156,15 @@ function block(ctx: Ctx): void {
  *  is negative). */
 function toBlock(ctx: Ctx): void {
   const text = ctx.port.getText();
-  const back = (ctx.st.selType === SelType.BLOCK && Sel.backwardP(ctx)) || ctx.st.takeCount(1) < 0;
+  const back =
+    (ctx.st.selType === SelType.BLOCK && Sel.backwardP(ctx)) ||
+    ctx.st.takeCount(1) < 0;
   const caret = Sel.primary(ctx).active;
   const p = enclosingPair(text, caret, caret);
-  if (!p) { ctx.ui.hint('No enclosing block'); return; }
+  if (!p) {
+    ctx.ui.hint('No enclosing block');
+    return;
+  }
   Sel.select(ctx, SelType.BLOCK, caret, back ? p.open : p.close + 1, true);
 }
 
@@ -151,7 +177,8 @@ function join(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;
   const n = ctx.st.takeCount(1);
-  const blank = (l: number) => text.slice(lineStart(text, l), lineEnd(text, l)).trim() === '';
+  const blank = (l: number) =>
+    text.slice(lineStart(text, l), lineEnd(text, l)).trim() === '';
   const ln = lineOfOffset(text, Sel.primary(ctx).active);
   if (n >= 0) {
     let pl = ln - 1;

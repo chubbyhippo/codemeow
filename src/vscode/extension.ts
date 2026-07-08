@@ -27,7 +27,12 @@ import { MeowMode, MeowState } from '../core/state';
 import * as ToolWindowEscape from '../core/toolWindowEscape';
 import * as TreeMeow from '../core/treeMeow';
 import { keypadRows, THINGS } from '../core/whichKey';
-import { DiffSideView, noWindowMessage, plan, WindmoveDir } from '../core/windmove';
+import {
+  DiffSideView,
+  noWindowMessage,
+  plan,
+  WindmoveDir,
+} from '../core/windmove';
 import { VscClipboard, VscEditorPort } from './editorPort';
 import { TREE_KEYS } from './treeKeys';
 
@@ -48,7 +53,8 @@ let avyLabelDecoration: vscode.TextEditorDecorationType;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
 /** The open which-key menu; `closing` marks a programmatic dispose so
  *  onDidHide can tell it apart from the user's ESC / click-away. */
-let whichKeyMenu: { qp: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
+let whichKeyMenu:
+  { qp: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
 /** Grace timer: between chain steps the menu redraws in place; it is
  *  disposed only when no follow-up schedule arrives (the chain ended). */
 let whichKeyCloseTimer: ReturnType<typeof setTimeout> | undefined;
@@ -81,21 +87,25 @@ function stateFor(editor: vscode.TextEditor): MeowState | undefined {
 
 function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
   return {
-    hint: (text) => void vscode.window.setStatusBarMessage(`meow: ${text}`, 3000),
+    hint: (text) =>
+      void vscode.window.setStatusBarMessage(`meow: ${text}`, 3000),
 
     info: (title, body) => {
       if (body.includes('\n')) {
         infoBody = `${title}\n${'='.repeat(title.length)}\n\n${body}\n`;
         infoEmitter.fire(INFO_URI);
-        void vscode.workspace.openTextDocument(INFO_URI).then((doc) =>
-          vscode.window.showTextDocument(doc, { preview: true }),
-        );
+        void vscode.workspace
+          .openTextDocument(INFO_URI)
+          .then((doc) =>
+            vscode.window.showTextDocument(doc, { preview: true }),
+          );
       } else {
         void vscode.window.showInformationMessage(`${title}: ${body}`);
       }
     },
 
-    input: (prompt, initial) => Promise.resolve(vscode.window.showInputBox({ prompt, value: initial })),
+    input: (prompt, initial) =>
+      Promise.resolve(vscode.window.showInputBox({ prompt, value: initial })),
 
     runCommand: async (id) => {
       await vscode.commands.executeCommand(id);
@@ -149,7 +159,10 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
       editor.setDecorations(avyLabelDecoration, []);
       editor.setDecorations(
         avyMatchDecoration,
-        ranges.map((r) => new vscode.Range(doc.positionAt(r.start), doc.positionAt(r.end))),
+        ranges.map(
+          (r) =>
+            new vscode.Range(doc.positionAt(r.start), doc.positionAt(r.end)),
+        ),
       );
     },
 
@@ -174,7 +187,14 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
       const doc = editor.document;
       editor.setDecorations(
         grabDecoration,
-        range ? [new vscode.Range(doc.positionAt(range.start), doc.positionAt(range.end))] : [],
+        range
+          ? [
+              new vscode.Range(
+                doc.positionAt(range.start),
+                doc.positionAt(range.end),
+              ),
+            ]
+          : [],
       );
     },
 
@@ -185,7 +205,12 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
 }
 
 function makeCtx(editor: vscode.TextEditor, st: MeowState): Ctx {
-  return { port: new VscEditorPort(editor), clipboard, ui: makeUi(editor, st), st };
+  return {
+    port: new VscEditorPort(editor),
+    clipboard,
+    ui: makeUi(editor, st),
+    st,
+  };
 }
 
 function hideWhichKey(): void {
@@ -222,14 +247,18 @@ function closeWhichKeyMenu(): void {
  * Appears after timeoutlen, meow-style — fast chains never see it.
  */
 function openWhichKeyMenu(
-  editor: vscode.TextEditor, st: MeowState, kind: 'keypad' | 'things', buffer: string,
+  editor: vscode.TextEditor,
+  st: MeowState,
+  kind: 'keypad' | 'things',
+  buffer: string,
 ): void {
   if (kind === 'keypad' && keypadRows(buffer).length === 0) return;
   closeWhichKeyMenu(); // a stale menu must not leak its handlers
   const qp = vscode.window.createQuickPick<WhichKeyItem>();
   const menu = { qp, closing: false };
   whichKeyMenu = menu;
-  qp.placeholder = 'keep typing the sequence — Enter or a click runs the highlighted key';
+  qp.placeholder =
+    'keep typing the sequence — Enter or a click runs the highlighted key';
   fillWhichKeyMenu(qp, kind, buffer);
   qp.onDidChangeValue((v) => {
     if (v === '') return; // our own reset below
@@ -257,10 +286,13 @@ function openWhichKeyMenu(
 }
 
 function fillWhichKeyMenu(
-  qp: vscode.QuickPick<WhichKeyItem>, kind: 'keypad' | 'things', buffer: string,
+  qp: vscode.QuickPick<WhichKeyItem>,
+  kind: 'keypad' | 'things',
+  buffer: string,
 ): void {
   const rows = kind === 'things' ? THINGS : keypadRows(buffer);
-  qp.title = kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
+  qp.title =
+    kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
   qp.items = rows.map(([k, d]) => ({
     label: k,
     description: `→ ${d}`,
@@ -269,7 +301,11 @@ function fillWhichKeyMenu(
   qp.activeItems = qp.items.length > 0 ? [qp.items[0]] : [];
 }
 
-function dispatchMenuKeys(editor: vscode.TextEditor, st: MeowState, keys: string): void {
+function dispatchMenuKeys(
+  editor: vscode.TextEditor,
+  st: MeowState,
+  keys: string,
+): void {
   whichKeyDispatch = whichKeyDispatch
     .then(async () => {
       const ctx = makeCtx(editor, st);
@@ -286,22 +322,24 @@ function clearExpandHints(editor: vscode.TextEditor): void {
 
 function applyMode(editor: vscode.TextEditor, st: MeowState): void {
   editor.options = {
-    cursorStyle: st.mode === MeowMode.INSERT
-      ? vscode.TextEditorCursorStyle.Line
-      : vscode.TextEditorCursorStyle.Block,
+    cursorStyle:
+      st.mode === MeowMode.INSERT
+        ? vscode.TextEditorCursorStyle.Line
+        : vscode.TextEditorCursorStyle.Block,
   };
   refreshStatus(editor, st);
 }
 
 function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
   const beacon = editor.selections.length > 1;
-  statusBar.text = st.mode === MeowMode.KEYPAD
-    ? `MEOW KEYPAD  SPC ${st.keypad.split('').join(' ')}`
-    : beacon && st.mode === MeowMode.INSERT
-      ? 'MEOW BEACON-INSERT'
-      : beacon
-        ? 'MEOW BEACON'
-        : `MEOW ${st.mode}`;
+  statusBar.text =
+    st.mode === MeowMode.KEYPAD
+      ? `MEOW KEYPAD  SPC ${st.keypad.split('').join(' ')}`
+      : beacon && st.mode === MeowMode.INSERT
+        ? 'MEOW BEACON-INSERT'
+        : beacon
+          ? 'MEOW BEACON'
+          : `MEOW ${st.mode}`;
   statusBar.show();
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);
 }
@@ -314,7 +352,11 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
 function syncTreeKeys(): void {
   const bound = TreeMeow.boundChars();
   for (const { ch, ctx } of TREE_KEYS) {
-    void vscode.commands.executeCommand('setContext', `codemeow.tree.${ctx}`, bound.has(ch));
+    void vscode.commands.executeCommand(
+      'setContext',
+      `codemeow.tree.${ctx}`,
+      bound.has(ch),
+    );
   }
 }
 
@@ -326,7 +368,10 @@ async function runTreeCommand(id: string): Promise<void> {
   try {
     await vscode.commands.executeCommand(id);
   } catch {
-    void vscode.window.setStatusBarMessage(`meow: Unknown command: ${id}`, 3000);
+    void vscode.window.setStatusBarMessage(
+      `meow: Unknown command: ${id}`,
+      3000,
+    );
   }
 }
 
@@ -344,13 +389,17 @@ function diffSideView(): DiffSideView | null {
     onOriginal: active === input.original.toString(),
     onModified: active === input.modified.toString(),
     sideBySide:
-      vscode.workspace.getConfiguration('diffEditor').get<boolean>('renderSideBySide', true) === true,
+      vscode.workspace
+        .getConfiguration('diffEditor')
+        .get<boolean>('renderSideBySide', true) === true,
   };
 }
 
 function focusFingerprint(): string {
-  return `${vscode.window.tabGroups.activeTabGroup.viewColumn}:` +
-    `${vscode.window.activeTextEditor?.document.uri.toString() ?? ''}`;
+  return (
+    `${vscode.window.tabGroups.activeTabGroup.viewColumn}:` +
+    `${vscode.window.activeTextEditor?.document.uri.toString() ?? ''}`
+  );
 }
 
 /** One windmove step; when nothing changed hands, report what Emacs would
@@ -365,7 +414,10 @@ async function windmove(dir: WindmoveDir): Promise<void> {
   }
   await new Promise((resolve) => setTimeout(resolve, 80));
   if (focusFingerprint() === before) {
-    void vscode.window.setStatusBarMessage(`meow: ${noWindowMessage(dir)}`, 3000);
+    void vscode.window.setStatusBarMessage(
+      `meow: ${noWindowMessage(dir)}`,
+      3000,
+    );
   }
 }
 
@@ -377,7 +429,9 @@ function userRcPath(): string {
 
 function loadUserRc(): Config {
   const p = userRcPath();
-  const lines = fs.existsSync(p) ? fs.readFileSync(p, 'utf8').split(/\r?\n/) : [];
+  const lines = fs.existsSync(p)
+    ? fs.readFileSync(p, 'utf8').split(/\r?\n/)
+    : [];
   const c = Rc.setUserLines(lines);
   if (c.errors.length > 0) {
     void vscode.window.showWarningMessage(
@@ -397,14 +451,19 @@ function loadDefaults(extensionPath: string): void {
       );
     }
   } catch {
-    void vscode.window.showErrorMessage(`codemeow: bundled ${Rc.FILE_NAME} is missing (extension bug)`);
+    void vscode.window.showErrorMessage(
+      `codemeow: bundled ${Rc.FILE_NAME} is missing (extension bug)`,
+    );
   }
 }
 
 // -------------------------------------------------------------- activation
 
 export function activate(context: vscode.ExtensionContext): void {
-  statusBar = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+  statusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    100,
+  );
   grabDecoration = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('diffEditor.insertedTextBackground'),
   });
@@ -425,7 +484,9 @@ export function activate(context: vscode.ExtensionContext): void {
   // avy-lead-face (white on amaranth) labels painted over the text —
   // absolutely positioned like the expand hints so nothing shifts
   avyMatchDecoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
+    backgroundColor: new vscode.ThemeColor(
+      'editor.findMatchHighlightBackground',
+    ),
   });
   avyLabelDecoration = vscode.window.createTextEditorDecorationType({
     after: {
@@ -436,8 +497,12 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   });
   context.subscriptions.push(
-    statusBar, grabDecoration, hintDecoration,
-    avyMatchDecoration, avyLabelDecoration, infoEmitter,
+    statusBar,
+    grabDecoration,
+    hintDecoration,
+    avyMatchDecoration,
+    avyLabelDecoration,
+    infoEmitter,
   );
 
   loadDefaults(context.extensionPath);
@@ -447,23 +512,28 @@ export function activate(context: vscode.ExtensionContext): void {
   // the modal heart: intercept typing before it becomes an insertion
   try {
     context.subscriptions.push(
-      vscode.commands.registerCommand('type', async (args: { text?: string }) => {
-        const editor = vscode.window.activeTextEditor;
-        const text = args?.text ?? '';
-        if (!editor || text === '') {
-          return vscode.commands.executeCommand('default:type', args);
-        }
-        const st = stateFor(editor);
-        if (!st || st.mode === MeowMode.INSERT) {
-          return vscode.commands.executeCommand('default:type', args);
-        }
-        const ctx = makeCtx(editor, st);
-        for (const ch of text) {
-          if (!(await Engine.handleChar(ctx, ch))) {
-            await vscode.commands.executeCommand('default:type', { text: ch });
+      vscode.commands.registerCommand(
+        'type',
+        async (args: { text?: string }) => {
+          const editor = vscode.window.activeTextEditor;
+          const text = args?.text ?? '';
+          if (!editor || text === '') {
+            return vscode.commands.executeCommand('default:type', args);
           }
-        }
-      }),
+          const st = stateFor(editor);
+          if (!st || st.mode === MeowMode.INSERT) {
+            return vscode.commands.executeCommand('default:type', args);
+          }
+          const ctx = makeCtx(editor, st);
+          for (const ch of text) {
+            if (!(await Engine.handleChar(ctx, ch))) {
+              await vscode.commands.executeCommand('default:type', {
+                text: ch,
+              });
+            }
+          }
+        },
+      ),
     );
   } catch {
     void vscode.window.showErrorMessage(
@@ -489,10 +559,18 @@ export function activate(context: vscode.ExtensionContext): void {
 
     // windmove: Shift+arrows (manifest keybindings, meow editors only) and
     // SPC w h/j/k/l from the rc
-    vscode.commands.registerCommand('codemeow.windmoveLeft', () => windmove('left')),
-    vscode.commands.registerCommand('codemeow.windmoveRight', () => windmove('right')),
-    vscode.commands.registerCommand('codemeow.windmoveUp', () => windmove('up')),
-    vscode.commands.registerCommand('codemeow.windmoveDown', () => windmove('down')),
+    vscode.commands.registerCommand('codemeow.windmoveLeft', () =>
+      windmove('left'),
+    ),
+    vscode.commands.registerCommand('codemeow.windmoveRight', () =>
+      windmove('right'),
+    ),
+    vscode.commands.registerCommand('codemeow.windmoveUp', () =>
+      windmove('up'),
+    ),
+    vscode.commands.registerCommand('codemeow.windmoveDown', () =>
+      windmove('down'),
+    ),
 
     // double-ESC in a tool window focuses the editor (ideameow's
     // ToolWindowEscape): the manifest binds escape on the terminal, lists,
@@ -501,28 +579,37 @@ export function activate(context: vscode.ExtensionContext): void {
     // (that binding only fires when codemeow.toolWindowEscape is listed in
     // terminal.integrated.commandsToSkipShell), lists get their own ESC
     // command (list.clear, verified in microsoft/vscode listCommands.ts)
-    vscode.commands.registerCommand('codemeow.toolWindowEscape', (surface: unknown) => {
-      if (typeof surface !== 'string') return;
-      if (ToolWindowEscape.onEscape(surface, Date.now())) {
-        return vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
-      }
-      if (surface === 'terminal') {
-        return vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
-          text: String.fromCharCode(27), // the ESC byte the shell was owed
-        });
-      }
-      if (surface === 'list') {
-        return vscode.commands.executeCommand('list.clear');
-      }
-    }),
+    vscode.commands.registerCommand(
+      'codemeow.toolWindowEscape',
+      (surface: unknown) => {
+        if (typeof surface !== 'string') return;
+        if (ToolWindowEscape.onEscape(surface, Date.now())) {
+          return vscode.commands.executeCommand(
+            'workbench.action.focusActiveEditorGroup',
+          );
+        }
+        if (surface === 'terminal') {
+          return vscode.commands.executeCommand(
+            'workbench.action.terminal.sendSequence',
+            {
+              text: String.fromCharCode(27), // the ESC byte the shell was owed
+            },
+          );
+        }
+        if (surface === 'list') {
+          return vscode.commands.executeCommand('list.clear');
+        }
+      },
+    ),
 
     vscode.commands.registerCommand('codemeow.reloadRc', () => {
       const c = loadUserRc();
       syncTreeKeys();
-      const problems = c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
+      const problems =
+        c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
         `Reloaded ~/${Rc.FILE_NAME}: ${c.normal.size} normal map(s), ${c.motion.size} motion map(s), ` +
-        `${c.keypad.size} keypad map(s), ${c.keypadDesc.size} description(s)${problems}`,
+          `${c.keypad.size} keypad map(s), ${c.keypadDesc.size} description(s)${problems}`,
       );
     }),
 
@@ -537,13 +624,16 @@ export function activate(context: vscode.ExtensionContext): void {
         } else {
           // a missing bundled rc is an extension bug (loadDefaults reports
           // it); leave a minimal self-describing file so SPC c m still works
-          fs.writeFileSync(p, [
-            `" ~/${Rc.FILE_NAME} — codemeow configuration`,
-            '" the bundled defaults (full meow layout + keypad table) stay',
-            '" underneath — lines here override them entry by entry, e.g.:',
-            '" nmap Q meow-goto-line',
-            '',
-          ].join('\n'));
+          fs.writeFileSync(
+            p,
+            [
+              `" ~/${Rc.FILE_NAME} — codemeow configuration`,
+              '" the bundled defaults (full meow layout + keypad table) stay',
+              '" underneath — lines here override them entry by entry, e.g.:',
+              '" nmap Q meow-goto-line',
+              '',
+            ].join('\n'),
+          );
         }
       }
       const doc = await vscode.workspace.openTextDocument(p);
@@ -563,7 +653,8 @@ export function activate(context: vscode.ExtensionContext): void {
       const ids = (await vscode.commands.getCommands(true)).sort();
       const recordButton: vscode.QuickInputButton = {
         iconPath: new vscode.ThemeIcon('record-keys'),
-        tooltip: 'What does a key run? Record keys in the Keyboard Shortcuts editor',
+        tooltip:
+          'What does a key run? Record keys in the Keyboard Shortcuts editor',
       };
       const logButton: vscode.QuickInputButton = {
         iconPath: new vscode.ThemeIcon('output'),
@@ -571,16 +662,24 @@ export function activate(context: vscode.ExtensionContext): void {
       };
       const qp = vscode.window.createQuickPick();
       qp.title = 'command ids';
-      qp.placeholder = 'command id for <action>(...) rc mappings — Enter copies it to the clipboard';
+      qp.placeholder =
+        'command id for <action>(...) rc mappings — Enter copies it to the clipboard';
       qp.items = ids.map((id) => ({ label: id }));
       qp.buttons = [recordButton, logButton];
       qp.onDidTriggerButton((b) => {
         qp.hide();
         if (b === recordButton) {
-          void vscode.commands.executeCommand('workbench.action.openGlobalKeybindings')
-            .then(() => vscode.commands.executeCommand('keybindings.editor.recordSearchKeys'));
+          void vscode.commands
+            .executeCommand('workbench.action.openGlobalKeybindings')
+            .then(() =>
+              vscode.commands.executeCommand(
+                'keybindings.editor.recordSearchKeys',
+              ),
+            );
         } else {
-          void vscode.commands.executeCommand('workbench.action.toggleKeybindingsLog');
+          void vscode.commands.executeCommand(
+            'workbench.action.toggleKeybindingsLog',
+          );
         }
       });
       qp.onDidAccept(async () => {
@@ -588,7 +687,10 @@ export function activate(context: vscode.ExtensionContext): void {
         qp.hide();
         if (picked !== undefined) {
           await vscode.env.clipboard.writeText(picked);
-          void vscode.window.setStatusBarMessage(`meow: copied ${picked}`, 3000);
+          void vscode.window.setStatusBarMessage(
+            `meow: copied ${picked}`,
+            3000,
+          );
         }
       });
       qp.onDidHide(() => qp.dispose());
@@ -602,7 +704,9 @@ export function activate(context: vscode.ExtensionContext): void {
       if (!st) return;
       const ctx = makeCtx(editor, st);
       // same path as SPC ?
-      void import('../core/keypad').then((k) => ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET));
+      void import('../core/keypad').then((k) =>
+        ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET),
+      );
     }),
 
     { dispose: closeWhichKeyMenu },
@@ -615,14 +719,22 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.onDidChangeActiveTextEditor((editor) => {
       if (!editor) {
         statusBar.hide();
-        void vscode.commands.executeCommand('setContext', 'codemeow.active', false);
+        void vscode.commands.executeCommand(
+          'setContext',
+          'codemeow.active',
+          false,
+        );
         return;
       }
       const st = stateFor(editor);
       if (st) applyMode(editor, st);
       else {
         statusBar.hide();
-        void vscode.commands.executeCommand('setContext', 'codemeow.active', false);
+        void vscode.commands.executeCommand(
+          'setContext',
+          'codemeow.active',
+          false,
+        );
       }
     }),
 

@@ -20,10 +20,10 @@ The states you know from meow:
 - **NORMAL** — keys are commands, block cursor. You start here.
 - **INSERT** — keys type text. `i a c I A` get you in, `ESC` gets you out.
 - **MOTION** — meow's reduced state for special contexts, rebindable with
-  `mmap`. Read-only views do *not* use it: like read-only buffers in Emacs
+  `mmap`. Read-only views do _not_ use it: like read-only buffers in Emacs
   they stay in NORMAL — every motion, selection, search and avy jump works,
   and the modify commands are simply inert (meow's `meow--allow-modify-p`).
-  What *does* answer to it, like special buffers in Emacs: the workbench
+  What _does_ answer to it, like special buffers in Emacs: the workbench
   trees — see below.
 - **KEYPAD** — `SPC` as the leader, dispatching editor commands Emacs-style
   (`SPC x f` = quick open, `SPC w v` = split…). A which-key menu pops up
@@ -42,7 +42,7 @@ native editing.
 timeline, and every other sidebar or panel tree — answer to the MOTION map,
 like special buffers in Emacs: `j`/`k` move the selection, `h` collapses or
 goes to the parent, `l` expands or enters, `q` hides the side bar.
-Everything else stays native: `Enter` opens, and any *unmapped* letter still
+Everything else stays native: `Enter` opens, and any _unmapped_ letter still
 starts the tree's type-to-find. Add your own tree keys with `mmap` lines in
 `~/.codemeowrc`, e.g. `mmap o <action>(filesExplorer.openFilePreserveFocus)`
 (open the file but keep navigating) or
@@ -69,7 +69,7 @@ on `codemeow.toolWindowEscape` with that context if you want it there.
 **Windows** — `(windmove-default-keybindings)` from `init.el`, ported:
 `Shift+←→↑↓` select the editor window in that direction, and the same four
 commands live on `SPC w h/j/k/l`, mirroring init.el's `C-c w` window map.
-The "windows" are the editor groups *plus* the two panes of a side-by-side
+The "windows" are the editor groups _plus_ the two panes of a side-by-side
 diff, which plain group focus never crosses — `S-left` in the modified pane
 enters the original, `S-left` again leaves the diff toward the group on its
 left. No wrap-around, and where Emacs would complain, codemeow does too:
@@ -78,13 +78,13 @@ balances the split sizes (init.el's `C-c w b`); the `H/J/K/L` window swaps
 exist in ideameow only — VS Code has no command to exchange two groups'
 contents. The Shift+arrow
 chords live in the manifest keybindings (modifier chords never reach the
-modal engine) — rebind them under *Preferences → Keyboard Shortcuts →
-Windmove* — and inside meow buffers they shadow shift-selection, the exact
+modal engine) — rebind them under _Preferences → Keyboard Shortcuts →
+Windmove_ — and inside meow buffers they shadow shift-selection, the exact
 tradeoff the Emacs binding makes (select with meow instead; anywhere meow
 doesn't attach keeps native shift-select).
 
 And one idea borrowed straight from meow itself: **the extension binds no
-keys in code.** The entire keymap — the NORMAL/MOTION layout *and* the whole
+keys in code.** The entire keymap — the NORMAL/MOTION layout _and_ the whole
 `SPC` keypad table — lives in a `.codemeowrc` file bundled inside the
 extension, and a `~/.codemeowrc` in your home directory overrides it entry by
 entry. Rebind anything; relayout everything.
@@ -118,12 +118,12 @@ guided tour.
 any other selection is cancelled), and `H J K L` extend a char selection.
 `w`/`W` mark the word/symbol at point — and push it to the search ring, which
 is why `n` finds the next occurrence right afterwards. `e`/`E` and `b`/`B` go
-to the next/previous word or symbol, and after a `w` they *extend* the
+to the next/previous word or symbol, and after a `w` they _extend_ the
 selection instead of replacing it (meow's `(expand . word)` rule). `x` selects
 the line — repeat it or press digits to take more lines. `Q`/`X` go to a line,
 `f`/`t` find/till a character, `o`/`O` select the enclosing block / to its
 end, `m` selects the join region, and `,` `.` `[` `]` select inner/bounds/
-begin/end of a *thing* (`r` round, `s` square, `c` curly, `g` string, `e`
+begin/end of a _thing_ (`r` round, `s` square, `c` curly, `g` string, `e`
 symbol, `w` window, `b` buffer, `p` paragraph, `l` line, `v` visual line, `d`
 defun, `.` sentence — meow's exact char-thing table). `;` reverses the
 selection, `z` pops back to the previous one, `v` visits a regexp, `n`
@@ -167,20 +167,20 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 
 **Syntax reference**
 
-| Line | Meaning |
-|---|---|
-| `" text` or `# text` | comment (also at the end of a line: `nmap S <action>(X) " jump`) |
-| `nmap <key> <meow-command>` | bind a NORMAL key to a named meow command, e.g. `nmap n meow-mark-word` — this is how you remap the layout itself |
-| `nmap <key> <action>(command.id)` | NORMAL key runs a VS Code command |
-| `nmap <key> <keys>` | NORMAL key replays a meow key sequence, e.g. `nmap Z ,b` |
-| `nnoremap` / `noremap` | like `nmap`/`map`, but the replayed keys resolve through the bundled defaults, ignoring your other mappings |
-| `mmap` / `mnoremap` | the same three target forms, for MOTION mode — the keymap of the workbench trees (read-only views stay in NORMAL) |
-| `map <leader><seq> <action>(id)` | keypad entry: `SPC` + sequence runs the command (yours override the bundled defaults) |
-| `map <leader><seq> <keys>` | keypad entry replaying meow keys after the keypad closes |
-| `desc <leader><seq> <text>` | which-key label for an entry (exact seq) or a group (prefix) |
-| `let g:WhichKeyDesc_x = "<leader>x text"` | same as `desc` — paste `.ideavimrc` lines unchanged |
-| `set timeoutlen=300` | which-key hint delay in milliseconds (the bundled default sets 300) |
-| `set which-key` / `set nowhich-key` | hint on/off (default on) |
+| Line                                      | Meaning                                                                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `" text` or `# text`                      | comment (also at the end of a line: `nmap S <action>(X) " jump`)                                                  |
+| `nmap <key> <meow-command>`               | bind a NORMAL key to a named meow command, e.g. `nmap n meow-mark-word` — this is how you remap the layout itself |
+| `nmap <key> <action>(command.id)`         | NORMAL key runs a VS Code command                                                                                 |
+| `nmap <key> <keys>`                       | NORMAL key replays a meow key sequence, e.g. `nmap Z ,b`                                                          |
+| `nnoremap` / `noremap`                    | like `nmap`/`map`, but the replayed keys resolve through the bundled defaults, ignoring your other mappings       |
+| `mmap` / `mnoremap`                       | the same three target forms, for MOTION mode — the keymap of the workbench trees (read-only views stay in NORMAL) |
+| `map <leader><seq> <action>(id)`          | keypad entry: `SPC` + sequence runs the command (yours override the bundled defaults)                             |
+| `map <leader><seq> <keys>`                | keypad entry replaying meow keys after the keypad closes                                                          |
+| `desc <leader><seq> <text>`               | which-key label for an entry (exact seq) or a group (prefix)                                                      |
+| `let g:WhichKeyDesc_x = "<leader>x text"` | same as `desc` — paste `.ideavimrc` lines unchanged                                                               |
+| `set timeoutlen=300`                      | which-key hint delay in milliseconds (the bundled default sets 300)                                               |
+| `set which-key` / `set nowhich-key`       | hint on/off (default on)                                                                                          |
 
 Key notation: plain printable characters, plus `<Space>` and `<lt>`. To find
 a command's id, press `SPC i d` — a filterable list of every command id the
@@ -189,9 +189,9 @@ is the sibling of ideameow's `SPC i d` action-id tracking; VS Code's stable
 API has no "command executed" listener, so codemeow gives you a searchable
 directory instead of live tracking.) For tracking's other half — "what does
 this key run?" — the list's two title buttons hand you to the platform's own
-tools: one opens *Keyboard Shortcuts* in record-keys mode (press the chord,
-see its commands, right-click → *Copy Command ID*), the other toggles the
-keystroke log (*Toggle Keyboard Shortcuts Troubleshooting*), which logs every
+tools: one opens _Keyboard Shortcuts_ in record-keys mode (press the chord,
+see its commands, right-click → _Copy Command ID_), the other toggles the
+keystroke log (_Toggle Keyboard Shortcuts Troubleshooting_), which logs every
 keypress with the command it dispatched to the Window log until toggled off.
 
 **Relayouting (Dvorak, Colemak, …).** The layout section of the bundled
@@ -245,7 +245,7 @@ it searches the current editor's visible area only (no `avy-all-windows`),
 and there is no `DEL` editing of the input — the pause ends it. Split
 resizing sits on `=` `_` `+`; `-` keeps meow's negative-argument (this engine
 has real negative counts, so it doesn't need vim's workaround). The file's
-footer lists what deliberately *isn't* ported, with reasons. And since a
+footer lists what deliberately _isn't_ ported, with reasons. And since a
 later line for the same key wins, `Q` ends up on the avy line jump — put
 `nmap Q meow-goto-line` in your home rc if you want meow's own binding back
 (`X` has it regardless).
@@ -276,7 +276,7 @@ All deliberate, none accidental:
   `meow--allow-modify-p` — kill / change / backspace / replace silently
   inert, delete / yank / open / swap-grab answering "Buffer is read-only".
   `i`/`a` still switch to INSERT (as in Emacs) but typing lands in a
-  read-only surface. No *editor* attaches to MOTION by default — the
+  read-only surface. No _editor_ attaches to MOTION by default — the
   workbench trees answer to it instead (see above).
 - `ESC` in NORMAL is consumed while a meow buffer is focused (VS Code has no
   "run the default escape" escape hatch); the usual widgets — suggest, find,
@@ -290,23 +290,23 @@ under its meow name, keys only ever resolve through rc bindings — and the
 engine never imports `vscode`, which is what makes the whole behavior suite
 run headless in milliseconds.
 
-| Where | What |
-|---|---|
-| `src/core/engine.ts` | the dispatcher: key → binding → command; repeat (`'`) and rc-replay bookkeeping |
-| `src/core/registry.ts` | the command registry every rc binding resolves against |
-| `src/core/motions.ts` | movement and the selections it creates: hjkl, words, lines, find/till |
-| `src/core/selections.ts` | the selection primitive (meow's expand/select model), reverse/cancel/pop, digit expand |
-| `src/core/search.ts` | meow-search / meow-visit and the shared regexp ring |
-| `src/core/structures.ts` | the char-thing table dispatch, blocks, join |
-| `src/core/grab.ts` | grab / swap / sync and the beacon (multi-cursor) reaction |
-| `src/core/edits.ts` | everything that mutates text: insert/change/delete/kill/yank/… |
-| `src/core/things.ts` | what a "thing" is: pairs, strings, paragraphs, defuns… |
-| `src/core/rc.ts` / `rcParser.ts` | the two rc layers (bundled defaults + `~/.codemeowrc`) and the line syntax |
-| `src/core/treeMeow.ts` | the tree surface: MOTION-map dispatch on workbench trees (`j k h l` → the `list.*` arrow commands) |
-| `src/core/windmove.ts` | windmove's step decision: diff panes are windows, then directional group focus |
-| `src/core/port.ts` | the editor/clipboard/UI interfaces the core sees — the seam that keeps `vscode` out |
-| `src/vscode/` | the thin adapter: the `type` override, decorations, status bar, rc files on disk, the per-key tree keybindings (`treeKeys.ts`) |
-| `src/test/` | the behavior suite over a fake editor — a straight port of ideameow's specs |
+| Where                            | What                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `src/core/engine.ts`             | the dispatcher: key → binding → command; repeat (`'`) and rc-replay bookkeeping                                                |
+| `src/core/registry.ts`           | the command registry every rc binding resolves against                                                                         |
+| `src/core/motions.ts`            | movement and the selections it creates: hjkl, words, lines, find/till                                                          |
+| `src/core/selections.ts`         | the selection primitive (meow's expand/select model), reverse/cancel/pop, digit expand                                         |
+| `src/core/search.ts`             | meow-search / meow-visit and the shared regexp ring                                                                            |
+| `src/core/structures.ts`         | the char-thing table dispatch, blocks, join                                                                                    |
+| `src/core/grab.ts`               | grab / swap / sync and the beacon (multi-cursor) reaction                                                                      |
+| `src/core/edits.ts`              | everything that mutates text: insert/change/delete/kill/yank/…                                                                 |
+| `src/core/things.ts`             | what a "thing" is: pairs, strings, paragraphs, defuns…                                                                         |
+| `src/core/rc.ts` / `rcParser.ts` | the two rc layers (bundled defaults + `~/.codemeowrc`) and the line syntax                                                     |
+| `src/core/treeMeow.ts`           | the tree surface: MOTION-map dispatch on workbench trees (`j k h l` → the `list.*` arrow commands)                             |
+| `src/core/windmove.ts`           | windmove's step decision: diff panes are windows, then directional group focus                                                 |
+| `src/core/port.ts`               | the editor/clipboard/UI interfaces the core sees — the seam that keeps `vscode` out                                            |
+| `src/vscode/`                    | the thin adapter: the `type` override, decorations, status bar, rc files on disk, the per-key tree keybindings (`treeKeys.ts`) |
+| `src/test/`                      | the behavior suite over a fake editor — a straight port of ideameow's specs                                                    |
 
 Behavior is pinned by the specs in `src/test` (given/whenKeys/then…) — every
 assertion was cross-checked against meow's source, and the layout contract is

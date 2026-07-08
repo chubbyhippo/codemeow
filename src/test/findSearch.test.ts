@@ -115,7 +115,10 @@ describe('FindSearchSpec', () => {
     await s.whenKeys(',e'); // transient symbol selection "bar" — doesn't match zzz
     await s.whenKeys('n'); // meow-search adopts the region as the new pattern
     s.thenSelection('bar');
-    assert.equal(Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active), 12);
+    assert.equal(
+      Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active),
+      12,
+    );
   });
 
   it('given no pattern and no selection when n then nothing is selected', async () => {
@@ -140,6 +143,9 @@ describe('FindSearchSpec', () => {
     s.given('repeats', '<caret>alpha beta gamma beta');
     s.givenMinibufferAnswers('beta');
     await s.whenKeys('vn');
-    assert.equal(Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active), 17);
+    assert.equal(
+      Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active),
+      17,
+    );
   });
 });

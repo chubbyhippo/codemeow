@@ -66,13 +66,24 @@ export function parse(lines: string[]): Config {
     const cmd = m[1];
     const rest = (m[2] ?? '').trim();
     switch (cmd) {
-      case 'let': break; // mapleader and friends: accepted, nothing to do
-      case 'set': parseSet(c, rest); break;
-      case 'desc': parseDescBody(c, rest, err); break;
-      case 'map': case 'noremap': case 'nmap': case 'nnoremap': case 'mmap': case 'mnoremap':
+      case 'let':
+        break; // mapleader and friends: accepted, nothing to do
+      case 'set':
+        parseSet(c, rest);
+        break;
+      case 'desc':
+        parseDescBody(c, rest, err);
+        break;
+      case 'map':
+      case 'noremap':
+      case 'nmap':
+      case 'nnoremap':
+      case 'mmap':
+      case 'mnoremap':
         parseMap(c, cmd, rest, err);
         break;
-      default: err(`unknown command '${cmd}'`);
+      default:
+        err(`unknown command '${cmd}'`);
     }
   });
   return c;
@@ -82,14 +93,21 @@ function parseSet(c: Config, rest: string): void {
   if (rest === 'which-key') c.whichKey = true;
   else if (rest === 'nowhich-key') c.whichKey = false;
   else if (rest.startsWith('timeoutlen')) {
-    const eq = rest.includes('=') ? rest.slice(rest.indexOf('=') + 1).trim() : '';
-    const n = eq !== '' ? parseInt(eq, 10) : parseInt(rest.split(/\s+/)[1] ?? '', 10);
+    const eq = rest.includes('=')
+      ? rest.slice(rest.indexOf('=') + 1).trim()
+      : '';
+    const n =
+      eq !== '' ? parseInt(eq, 10) : parseInt(rest.split(/\s+/)[1] ?? '', 10);
     if (!Number.isNaN(n) && n >= 0) c.whichKeyDelayMs = n;
   }
   // ignore unknown options so .ideavimrc content pastes cleanly
 }
 
-function parseDescBody(c: Config, body: string, err: (m: string) => void): void {
+function parseDescBody(
+  c: Config,
+  body: string,
+  err: (m: string) => void,
+): void {
   if (!body.startsWith('<leader>')) {
     err(`descriptions must start with <leader>: ${body}`);
     return;
@@ -106,7 +124,12 @@ function parseDescBody(c: Config, body: string, err: (m: string) => void): void 
   c.keypadDesc.set(seq, desc);
 }
 
-function parseMap(c: Config, cmd: string, rest: string, err: (m: string) => void): void {
+function parseMap(
+  c: Config,
+  cmd: string,
+  rest: string,
+  err: (m: string) => void,
+): void {
   const m = /^(\S+)\s+(.*)$/.exec(rest);
   if (!m) {
     err(`${cmd} needs a key and a target`);
@@ -145,7 +168,9 @@ function parseMap(c: Config, cmd: string, rest: string, err: (m: string) => void
     if (seq === null) return;
     if (seq === '') err('<leader> alone cannot be mapped');
     else if ('0123456789?/'.includes(seq[0])) {
-      err(`keypad ${seq[0]} is reserved (digit argument / cheatsheet / describe)`);
+      err(
+        `keypad ${seq[0]} is reserved (digit argument / cheatsheet / describe)`,
+      );
     } else c.keypad.set(seq, binding);
     return;
   }
@@ -153,7 +178,9 @@ function parseMap(c: Config, cmd: string, rest: string, err: (m: string) => void
   const keys = parseKeys(lhs, err);
   if (keys === null) return;
   if (keys.length !== 1) {
-    err(`${motion ? 'motion' : 'normal'}-mode key must be a single printable key: ${lhs}`);
+    err(
+      `${motion ? 'motion' : 'normal'}-mode key must be a single printable key: ${lhs}`,
+    );
   } else if (keys === ' ') {
     err('SPC is the keypad key and cannot be remapped');
   } else {
@@ -178,7 +205,9 @@ function parseKeys(s: string, err: (m: string) => void): string | null {
       if (token === 'space') out += ' ';
       else if (token === 'lt') out += '<';
       else {
-        err(`unsupported key token ${s.slice(i, close + 1)} (only printable keys reach the meow engine)`);
+        err(
+          `unsupported key token ${s.slice(i, close + 1)} (only printable keys reach the meow engine)`,
+        );
         return null;
       }
       i = close + 1;

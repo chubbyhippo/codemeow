@@ -67,7 +67,10 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
   }
   let hasPrefix = false;
   for (const seq of keypad.keys()) {
-    if (seq.startsWith(cur)) { hasPrefix = true; break; }
+    if (seq.startsWith(cur)) {
+      hasPrefix = true;
+      break;
+    }
   }
   if (!hasPrefix) {
     exit(ctx);
@@ -93,7 +96,10 @@ function describe(ctx: Ctx, c: string): void {
       return `SPC ${seq.split('').join(' ')}  ->  ${target}${desc}`;
     })
     .join('\n');
-  ctx.ui.info(`Meow Describe: SPC ${c}`, entries === '' ? `SPC ${c} is undefined` : entries);
+  ctx.ui.info(
+    `Meow Describe: SPC ${c}`,
+    entries === '' ? `SPC ${c} is undefined` : entries,
+  );
 }
 
 export const CHEATSHEET = `

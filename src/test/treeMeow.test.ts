@@ -29,7 +29,10 @@ describe('TreeMeowSpec', () => {
     children: TreeNode[] = [];
     expanded = false;
 
-    constructor(readonly name: string, readonly parent: TreeNode | null) {}
+    constructor(
+      readonly name: string,
+      readonly parent: TreeNode | null,
+    ) {}
 
     add(name: string): TreeNode {
       const child = new TreeNode(name, this);
@@ -60,8 +63,10 @@ describe('TreeMeowSpec', () => {
           else if (this.focus.parent) this.focus = this.focus.parent;
           break;
         case 'list.expand': // unfold, else enter the first child
-          if (this.focus.children.length > 0 && !this.focus.expanded) this.focus.expanded = true;
-          else if (this.focus.children.length > 0) this.focus = this.focus.children[0];
+          if (this.focus.children.length > 0 && !this.focus.expanded)
+            this.focus.expanded = true;
+          else if (this.focus.children.length > 0)
+            this.focus = this.focus.children[0];
           break;
         default:
           this.ran.push(id);
@@ -80,7 +85,9 @@ describe('TreeMeowSpec', () => {
 
     select(name: string): void {
       const find = (n: TreeNode): TreeNode | null =>
-        n.name === name ? n : n.children.map(find).find((r) => r !== null) ?? null;
+        n.name === name
+          ? n
+          : (n.children.map(find).find((r) => r !== null) ?? null);
       this.focus = find(this.root)!;
     }
 
@@ -124,13 +131,23 @@ describe('TreeMeowSpec', () => {
       const ch = String.fromCharCode(code);
       assert.ok(chars.has(ch), `printable '${ch}' must have a tree keybinding`);
     }
-    assert.equal(TREE_KEYS.length, 94, 'exactly the printable non-space ASCII chars');
+    assert.equal(
+      TREE_KEYS.length,
+      94,
+      'exactly the printable non-space ASCII chars',
+    );
 
     const pkg = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
     ) as { contributes: { keybindings: Array<{ command: string }> } };
-    const contributed = pkg.contributes.keybindings.filter((k) => k.command === 'codemeow.tree');
-    assert.deepEqual(contributed, treeKeybindings(), 'package.json must carry the generated table');
+    const contributed = pkg.contributes.keybindings.filter(
+      (k) => k.command === 'codemeow.tree',
+    );
+    assert.deepEqual(
+      contributed,
+      treeKeybindings(),
+      'package.json must carry the generated table',
+    );
   });
 
   it('given the bundled rc then it binds the tree keys', () => {
@@ -140,7 +157,10 @@ describe('TreeMeowSpec', () => {
     assert.equal(d.get('k')?.command, 'meow-prev');
     assert.equal(d.get('h')?.command, 'meow-left');
     assert.equal(d.get('l')?.command, 'meow-right');
-    assert.equal(d.get('q')?.action, 'workbench.action.toggleSidebarVisibility');
+    assert.equal(
+      d.get('q')?.action,
+      'workbench.action.toggleSidebarVisibility',
+    );
   });
 
   // --------------------------------------------------------- j k h l keys
@@ -176,7 +196,11 @@ describe('TreeMeowSpec', () => {
     await TreeMeow.dispatch(tree.run, 'h');
     assert.equal(tree.selectedText(), 'a');
     await TreeMeow.dispatch(tree.run, 'h');
-    assert.equal(tree.isExpanded('a'), false, 'h on an expanded node collapses it');
+    assert.equal(
+      tree.isExpanded('a'),
+      false,
+      'h on an expanded node collapses it',
+    );
     assert.equal(tree.selectedText(), 'a');
     await TreeMeow.dispatch(tree.run, 'h');
     assert.equal(tree.selectedText(), 'root');
@@ -189,7 +213,11 @@ describe('TreeMeowSpec', () => {
     s.givenRc('mmap w meow-next-word');
     const tree = givenTree();
     await TreeMeow.dispatch(tree.run, 'w');
-    assert.equal(tree.selectedText(), 'root', 'a word motion has no tree meaning');
+    assert.equal(
+      tree.selectedText(),
+      'root',
+      'a word motion has no tree meaning',
+    );
     assert.deepEqual(tree.ran, []);
   });
 
@@ -216,7 +244,11 @@ describe('TreeMeowSpec', () => {
     await TreeMeow.dispatch(tree.run, 'j');
     assert.equal(tree.selectedText(), 'root', 'a user-shadowed j is inert');
     await TreeMeow.dispatch(tree.run, 'g');
-    assert.equal(tree.selectedText(), 'b', 'the replay resolves j via the defaults');
+    assert.equal(
+      tree.selectedText(),
+      'b',
+      'the replay resolves j via the defaults',
+    );
   });
 
   it('given an <action> mmap then it dispatches with the tree as context', async () => {
@@ -232,13 +264,21 @@ describe('TreeMeowSpec', () => {
     s.givenRc('mmap w meow-next-word');
     const bound = TreeMeow.boundChars();
     for (const c of 'jkhlqw') assert.ok(bound.has(c), `'${c}' must be bound`);
-    assert.equal(bound.has('z'), false, 'unmapped letters stay native (type-to-find)');
+    assert.equal(
+      bound.has('z'),
+      false,
+      'unmapped letters stay native (type-to-find)',
+    );
   });
 
   it('given mmap q ignore then the key returns to the tree', () => {
     const s = freshSpec();
     s.givenRc('mmap q ignore');
-    assert.equal(TreeMeow.boundChars().has('q'), false, 'an ignored key leaves the shortcut set');
+    assert.equal(
+      TreeMeow.boundChars().has('q'),
+      false,
+      'an ignored key leaves the shortcut set',
+    );
     assert.ok(TreeMeow.boundChars().has('j'), 'the other defaults stay');
   });
 });

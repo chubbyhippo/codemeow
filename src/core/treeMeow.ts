@@ -60,9 +60,13 @@ const LIST_MOTIONS = new Map([
  *  returns a default key to the tree (native type-to-find). */
 export function boundChars(): Set<string> {
   const chars = [...Rc.defaults().motion.keys(), ...Rc.cfg().motion.keys()];
-  return new Set(chars.filter(
-    (c) => (Rc.cfg().motion.get(c) ?? Rc.defaults().motion.get(c))?.command !== 'ignore',
-  ));
+  return new Set(
+    chars.filter(
+      (c) =>
+        (Rc.cfg().motion.get(c) ?? Rc.defaults().motion.get(c))?.command !==
+        'ignore',
+    ),
+  );
 }
 
 /** Resolve one key against the MOTION map and run it through [run] — the
@@ -76,7 +80,9 @@ export async function dispatch(
   noremap = false,
   depth = 0,
 ): Promise<void> {
-  const b = (noremap ? undefined : Rc.cfg().motion.get(c)) ?? Rc.defaults().motion.get(c);
+  const b =
+    (noremap ? undefined : Rc.cfg().motion.get(c)) ??
+    Rc.defaults().motion.get(c);
   if (!b) return;
   if (b.command !== undefined) {
     const listCommand = LIST_MOTIONS.get(b.command);
@@ -89,5 +95,6 @@ export async function dispatch(
   }
   if (b.keys === undefined) return;
   if (depth >= 8) return;
-  for (const k of b.keys) await dispatch(run, k, noremap || !b.recursive, depth + 1);
+  for (const k of b.keys)
+    await dispatch(run, k, noremap || !b.recursive, depth + 1);
 }

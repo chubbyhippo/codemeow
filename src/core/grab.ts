@@ -72,7 +72,11 @@ function grab(ctx: Ctx): void {
   clear(ctx);
   const sel = Sel.primary(ctx);
   if (Sel.hasSelection(sel)) {
-    set(ctx, Math.min(sel.anchor, sel.active), Math.max(sel.anchor, sel.active));
+    set(
+      ctx,
+      Math.min(sel.anchor, sel.active),
+      Math.max(sel.anchor, sel.active),
+    );
   }
   Sel.cancel(ctx);
 }
@@ -80,7 +84,10 @@ function grab(ctx: Ctx): void {
 /** meow-sync-grab: secondary := region; selection cancelled. */
 function sync(ctx: Ctx): void {
   const sel = Sel.primary(ctx);
-  if (!Sel.hasSelection(sel)) { ctx.ui.hint('meow-sync-grab needs a selection'); return; }
+  if (!Sel.hasSelection(sel)) {
+    ctx.ui.hint('meow-sync-grab needs a selection');
+    return;
+  }
   clear(ctx);
   set(ctx, Math.min(sel.anchor, sel.active), Math.max(sel.anchor, sel.active));
   Sel.cancel(ctx);
@@ -93,8 +100,14 @@ async function swap(ctx: Ctx): Promise<void> {
   const { port, st } = ctx;
   const g = st.grab;
   const sel = Sel.primary(ctx);
-  if (!g) { ctx.ui.hint('No grab'); return; }
-  if (!Sel.hasSelection(sel)) { ctx.ui.hint('meow-swap-grab needs a selection'); return; }
+  if (!g) {
+    ctx.ui.hint('No grab');
+    return;
+  }
+  if (!Sel.hasSelection(sel)) {
+    ctx.ui.hint('meow-swap-grab needs a selection');
+    return;
+  }
   const gs = g.start;
   const ge = g.end;
   const ss = Math.min(sel.anchor, sel.active);
@@ -160,7 +173,8 @@ export function beacon(ctx: Ctx): void {
     case SelType.CHAR: {
       const selText = text.slice(ss, se);
       if (selText.trim() === '') return;
-      const bounded = st.selType === SelType.WORD || st.selType === SelType.SYMBOL;
+      const bounded =
+        st.selType === SelType.WORD || st.selType === SelType.SYMBOL;
       const re = new RegExp(
         bounded ? `\\b${escapeRegExp(selText)}\\b` : escapeRegExp(selText),
         'g',
@@ -169,7 +183,10 @@ export function beacon(ctx: Ctx): void {
       let added = 0;
       let m: RegExpExecArray | null;
       while ((m = re.exec(region)) !== null) {
-        if (m[0].length === 0) { re.lastIndex++; continue; }
+        if (m[0].length === 0) {
+          re.lastIndex++;
+          continue;
+        }
         const s0 = g.start + m.index;
         const e0 = s0 + m[0].length;
         if (s0 !== ss) {

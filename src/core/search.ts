@@ -45,7 +45,10 @@ function fullyMatches(pattern: string, s: string): boolean {
   }
 }
 
-interface Match { start: number; end: number }
+interface Match {
+  start: number;
+  end: number;
+}
 
 function allMatches(text: string, pattern: string): Match[] {
   let re: RegExp;
@@ -57,7 +60,10 @@ function allMatches(text: string, pattern: string): Match[] {
   const out: Match[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
-    if (m[0].length === 0) { re.lastIndex++; continue; }
+    if (m[0].length === 0) {
+      re.lastIndex++;
+      continue;
+    }
     out.push({ start: m.index, end: m.index + m[0].length });
   }
   return out;
@@ -69,17 +75,29 @@ function allMatches(text: string, pattern: string): Match[] {
 function search(ctx: Ctx): void {
   const st = ctx.st;
   const sel = Sel.primary(ctx);
-  let pattern = st.searchHistory.length > 0 ? st.searchHistory[st.searchHistory.length - 1] : null;
+  let pattern =
+    st.searchHistory.length > 0
+      ? st.searchHistory[st.searchHistory.length - 1]
+      : null;
   if (Sel.hasSelection(sel)) {
-    const selText = ctx.port.getText().slice(
-      Math.min(sel.anchor, sel.active), Math.max(sel.anchor, sel.active),
-    );
-    if (selText.length > 0 && (pattern === null || !fullyMatches(pattern, selText))) {
+    const selText = ctx.port
+      .getText()
+      .slice(
+        Math.min(sel.anchor, sel.active),
+        Math.max(sel.anchor, sel.active),
+      );
+    if (
+      selText.length > 0 &&
+      (pattern === null || !fullyMatches(pattern, selText))
+    ) {
       pattern = escapeRegExp(selText);
       push(st, pattern);
     }
   }
-  if (pattern === null) { ctx.ui.hint('No search pattern'); return; }
+  if (pattern === null) {
+    ctx.ui.hint('No search pattern');
+    return;
+  }
   searchWith(ctx, pattern, st.takeCount(1) < 0 || Sel.backwardP(ctx));
 }
 
@@ -107,9 +125,15 @@ function searchWith(ctx: Ctx, pattern: string, backward: boolean): void {
     m = matches.find((x) => x.start >= caret) ?? matches[0];
   } else {
     const before = matches.filter((x) => x.end <= caret);
-    m = before.length > 0 ? before[before.length - 1] : matches[matches.length - 1];
+    m =
+      before.length > 0
+        ? before[before.length - 1]
+        : matches[matches.length - 1];
   }
-  if (!m) { ctx.ui.hint(`No match: ${pattern}`); return; }
+  if (!m) {
+    ctx.ui.hint(`No match: ${pattern}`);
+    return;
+  }
   if (!backward) Sel.select(ctx, SelType.VISIT, m.start, m.end, false);
   else Sel.select(ctx, SelType.VISIT, m.end, m.start, false);
 }
