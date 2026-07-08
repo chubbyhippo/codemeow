@@ -27,6 +27,27 @@ describe('FindSearchSpec', () => {
     s.thenSelType(SelType.TILL);
   });
 
+  it('given w then f X then a fresh find selection runs from the word end through the char', async () => {
+    const s = freshSpec();
+    s.given('comma separated', 'w<caret>ord1, word2 word3');
+    await s.whenKeys('w');
+    s.thenSelection('word1');
+    await s.whenKeys('f3');
+    // probed (meow 1.5.0): find REPLACES the word selection with
+    // (select . find) from the old point — region [6,19)
+    s.thenSelection(', word2 word3');
+    s.thenSelType(SelType.FIND);
+    s.thenCaretAtSelectionEnd();
+  });
+
+  it('given w then t X then the till selection stops before the char', async () => {
+    const s = freshSpec();
+    s.given('comma separated', 'w<caret>ord1, word2 word3');
+    await s.whenKeys('wt3');
+    s.thenSelection(', word2 word'); // probed: region [6,18)
+    s.thenSelType(SelType.TILL);
+  });
+
   it('given a count when 2 f a then the second occurrence is reached', async () => {
     const s = freshSpec();
     s.given('repeating', '<caret>xaxaxa');

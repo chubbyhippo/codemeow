@@ -149,13 +149,22 @@ function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
   const sel = Sel.primary(ctx);
   const lo = Math.min(sel.anchor, sel.active);
   const hi = Math.max(sel.anchor, sel.active);
+  // meow-next-thing: a selection of another type (or none) is cancelled
+  // FIRST — meow--cancel-selection, so the chain history restarts and a
+  // later z pops the null placeholder, not the foreign selection
+  if (!(Sel.hasSelection(sel) && ctx.st.selType === type)) Sel.cancel(ctx);
   const extend = ctx.st.selExpand && ctx.st.selType === type && Sel.hasSelection(sel);
   const from = extend ? (n < 0 ? lo : hi) : sel.active;
-  const anchor = extend ? (n < 0 ? hi : lo) : from;
   const target = n > 0
     ? Words.nextEnd(text, from, n, charPred(symbol))
     : Words.prevStart(text, from, -n, charPred(symbol));
   if (target === from) return;
+  // meow--fix-thing-selection-mark: a fresh selection snaps its mark to the
+  // word's own bounds — the separators between the old point and the word
+  // stay OUTSIDE (e e e steps bare words)
+  const anchor = extend
+    ? (n < 0 ? hi : lo)
+    : Words.fixSelectionMark(text, target, from, charPred(symbol));
   Sel.select(ctx, type, anchor, target, extend);
 }
 

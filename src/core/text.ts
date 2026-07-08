@@ -126,6 +126,20 @@ export const Words = {
     return i;
   },
 
+  /** meow--fix-thing-selection-mark (meow 1.5.0): the mark of a fresh
+   *  next/back-thing selection snaps to the selected thing's own bounds,
+   *  so the separators between the old point and the thing stay outside —
+   *  e e e steps bare word by bare word (batch-probed). Forward
+   *  (mark < pos): max(mark, start of the thing ending at pos); backward:
+   *  min(mark, end of the thing starting at pos). Expand chains ignore
+   *  this (the anchor comes from the region ends). */
+  fixSelectionMark(text: string, pos: number, mark: number, pred: (c: string) => boolean): number {
+    const probe = clamp(mark > pos ? pos : pos - 1, 0, Math.max(text.length - 1, 0));
+    const bounds = Words.boundsAt(text, probe, pred);
+    if (!bounds) return mark;
+    return mark > pos ? Math.min(mark, bounds[1]) : Math.max(mark, bounds[0]);
+  },
+
   boundsAt(text: string, offset: number, pred: (c: string) => boolean): [number, number] | null {
     let o = offset;
     if (o >= text.length || !pred(text[o])) {

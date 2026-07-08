@@ -48,7 +48,51 @@ describe('SelectionSpec', () => {
     await s.whenKeys('e');
     s.thenSelection('one');
     await s.whenKeys('e');
-    s.thenSelection(' two');
+    // meow--fix-thing-selection-mark: the mark snaps past the separator,
+    // a fresh selection is the bare word (batch-probed, meow 1.5.0)
+    s.thenSelection('two');
+  });
+
+  it('given words separated by punctuation when e e e then each selection is one bare word', async () => {
+    const s = freshSpec();
+    s.given('comma separated', '<caret>word1, word2 word3');
+    await s.whenKeys('ee');
+    s.thenSelection('word2'); // probed: [8,13), the ", " stays outside
+    await s.whenKeys('e');
+    s.thenSelection('word3');
+    s.thenCaretAtSelectionEnd();
+  });
+
+  it('given b b b from the end then each selection is one bare word', async () => {
+    const s = freshSpec();
+    s.given('comma separated', 'word1, word2 word3<caret>');
+    await s.whenKeys('b');
+    s.thenSelection('word3');
+    s.thenCaretAtSelectionStart();
+    await s.whenKeys('bb');
+    s.thenSelection('word1'); // probed: [1,6), separators never included
+  });
+
+  it('given e then b then the same word is re-selected backward', async () => {
+    const s = freshSpec();
+    s.given('comma separated', '<caret>word1, word2 word3');
+    await s.whenKeys('eb');
+    s.thenSelection('word1'); // probed: [1,6) point 1 — b flips onto the word
+    s.thenCaretAtSelectionStart();
+  });
+
+  it('given a selection of another type when e then the history restarts at the cancel', async () => {
+    const s = freshSpec();
+    s.given('two lines', '<caret>hello world\nnext line');
+    await s.whenKeys('x');
+    s.thenSelection('hello world');
+    await s.whenKeys('e');
+    s.thenSelection('next'); // mark snapped past the newline
+    await s.whenKeys('z');
+    // probed: meow-next-thing cancelled the line selection first, so z
+    // pops the null placeholder — no region, caret at the chain start
+    s.thenNoSelection();
+    s.thenCaretAt(11);
   });
 
   it('given w first when e then the word selection extends (meow expand-word rule)', async () => {
@@ -249,7 +293,7 @@ describe('SelectionSpec', () => {
     await s.whenKeys('w2');
     s.thenSelection('one two three');
     await s.whenKeys('e'); // (select . word) does not match (expand . word): fresh selection
-    s.thenSelection(' four');
+    s.thenSelection('four'); // bare word — the mark-fix applies to every fresh selection
   });
 
   it('given x 2 then x re-selects the current line instead of extending', async () => {
