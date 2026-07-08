@@ -51,6 +51,21 @@ starts the tree's type-to-find. Add your own tree keys with `mmap` lines in
 `q` type into the find again). Meow commands other than the four motions
 have no tree meaning and are simply inert there.
 
+**Double-ESC leaves any tool window** — press `ESC` twice quickly (within
+500 ms) in the terminal, a sidebar or panel view, and focus jumps back to
+the editor; a lone `ESC` keeps its native meaning (lists still clear their
+selection, the shell still receives its escape byte). One setting is needed
+for the terminal half — by default VS Code sends every unlisted key to the
+shell, so let the codemeow binding through:
+
+```json
+"terminal.integrated.commandsToSkipShell": ["codemeow.toolWindowEscape"]
+```
+
+Chat-style webview inputs are the one surface this can't reach generically —
+their extensions own their `when` contexts; add your own `escape` keybinding
+on `codemeow.toolWindowEscape` with that context if you want it there.
+
 **Windows** — `(windmove-default-keybindings)` from `init.el`, ported:
 `Shift+←→↑↓` select the editor window in that direction, and the same four
 commands live on `SPC w h/j/k/l`, mirroring init.el's `C-c w` window map.

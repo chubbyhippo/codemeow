@@ -24,6 +24,7 @@ import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
 import { Config, Rc } from '../core/rc';
 import { MeowMode, MeowState } from '../core/state';
+import * as ToolWindowEscape from '../core/toolWindowEscape';
 import * as TreeMeow from '../core/treeMeow';
 import { keypadRows, THINGS } from '../core/whichKey';
 import { DiffSideView, noWindowMessage, plan, WindmoveDir } from '../core/windmove';
@@ -492,6 +493,28 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.windmoveRight', () => windmove('right')),
     vscode.commands.registerCommand('codemeow.windmoveUp', () => windmove('up')),
     vscode.commands.registerCommand('codemeow.windmoveDown', () => windmove('down')),
+
+    // double-ESC in a tool window focuses the editor (ideameow's
+    // ToolWindowEscape): the manifest binds escape on the terminal, lists,
+    // and the other side-bar/panel/secondary-side-bar views. A lone press
+    // keeps its native meaning — the terminal gets its escape byte back
+    // (that binding only fires when codemeow.toolWindowEscape is listed in
+    // terminal.integrated.commandsToSkipShell), lists get their own ESC
+    // command (list.clear, verified in microsoft/vscode listCommands.ts)
+    vscode.commands.registerCommand('codemeow.toolWindowEscape', (surface: unknown) => {
+      if (typeof surface !== 'string') return;
+      if (ToolWindowEscape.onEscape(surface, Date.now())) {
+        return vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+      }
+      if (surface === 'terminal') {
+        return vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
+          text: String.fromCharCode(27), // the ESC byte the shell was owed
+        });
+      }
+      if (surface === 'list') {
+        return vscode.commands.executeCommand('list.clear');
+      }
+    }),
 
     vscode.commands.registerCommand('codemeow.reloadRc', () => {
       const c = loadUserRc();

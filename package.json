@@ -90,6 +90,24 @@
         "when": "editorTextFocus && codemeow.active"
       },
       {
+        "key": "escape",
+        "command": "codemeow.toolWindowEscape",
+        "args": "terminal",
+        "when": "terminalFocus"
+      },
+      {
+        "key": "escape",
+        "command": "codemeow.toolWindowEscape",
+        "args": "list",
+        "when": "listFocus && !inputFocus && !editorTextFocus && !terminalFocus && (sideBarFocus || panelFocus || auxiliaryBarFocus)"
+      },
+      {
+        "key": "escape",
+        "command": "codemeow.toolWindowEscape",
+        "args": "view",
+        "when": "!listFocus && !inputFocus && !editorTextFocus && !terminalFocus && (sideBarFocus || panelFocus || auxiliaryBarFocus)"
+      },
+      {
         "key": "a",
         "command": "codemeow.tree",
         "args": "a",
