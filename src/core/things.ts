@@ -124,34 +124,62 @@ function pair(
 }
 
 /**
- * String thing: scan the whole buffer tracking quote state (handles \
- * escapes); if [offset] is inside a quoted run, return it. Heuristic —
- * comments containing apostrophes can fool it, like any text-based scan.
+ * String thing (meow `g`): the quoted run at point. meow delegates to the
+ * major-mode syntax table (`bounds-of-thing-at-point 'string` plus skip-syntax
+ * over the `"|` classes, which strips the WHOLE delimiter run); this port is a
+ * text scan instead, so `,g`/`.g` still work in plain-text and
+ * language-agnostic buffers — a deliberate divergence (see meow-semantics.md).
+ * It recognizes single AND triple runs of the three quote chars ' " ` , so
+ * Python/Kotlin triple quotes, Markdown/JS fences and template literals all
+ * select. inner() drops the full delimiter run on each side, bounds() keeps it
+ * (mirroring the skip-syntax intent). A single-char run stays on one line; a
+ * triple run spans lines (docstrings/fences). A backslash escapes the next
+ * char. Unterminated openers are skipped so a stray apostrophe can't swallow
+ * the rest of the buffer — but, like meow, a text scan can still be fooled by
+ * an odd quote elsewhere on the same line.
  */
 function stringThing(
   text: string,
   offset: number,
   inner: boolean,
 ): Bounds | null {
+  const n = text.length;
   let i = 0;
-  let quote = '';
-  let start = -1;
-  while (i < text.length) {
+  while (i < n) {
     const c = text[i];
-    if (quote !== '') {
-      if (c === '\\') {
-        i += 2;
+    if (c === '"' || c === "'" || c === '`') {
+      const triple = i + 2 < n && text[i + 1] === c && text[i + 2] === c;
+      const len = triple ? 3 : 1;
+      const open = i;
+      let j = i + len;
+      let closeEnd = -1;
+      while (j < n) {
+        const d = text[j];
+        if (!triple && d === '\n') break; // single-char runs stay on one line
+        if (d === '\\') {
+          j += 2;
+          continue;
+        }
+        const closes = triple
+          ? j + 2 < n && text[j + 1] === c && text[j + 2] === c
+          : true;
+        if (d === c && closes) {
+          closeEnd = j + len;
+          break;
+        }
+        j++;
+      }
+      if (closeEnd < 0) {
+        i = open + len; // unterminated opener: skip it, keep scanning
         continue;
       }
-      if (c === quote) {
-        if ((offset > start && offset <= i) || offset === start) {
-          return inner ? { start: start + 1, end: i } : { start, end: i + 1 };
-        }
-        quote = '';
+      if (offset >= open && offset < closeEnd) {
+        return inner
+          ? { start: open + len, end: closeEnd - len }
+          : { start: open, end: closeEnd };
       }
-    } else if (c === '"' || c === "'" || c === '`') {
-      quote = c;
-      start = i;
+      i = closeEnd;
+      continue;
     }
     i++;
   }

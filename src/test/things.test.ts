@@ -46,13 +46,81 @@ describe('ThingsSpec', () => {
     s.thenSelection('{b c}');
   });
 
-  it('given a string thing when comma g then the quoted run is selected', async () => {
+  it('given a double quoted string when comma g then the quoted run is selected', async () => {
     const s = freshSpec();
     s.given('string', 'say "hi th<caret>ere" now');
     await s.whenKeys(',g');
     s.thenSelection('hi there');
     await s.whenKeys('.g');
     s.thenSelection('"hi there"');
+  });
+
+  it('given a single quoted string when comma g then inner selects the run and dot g keeps the quotes', async () => {
+    const s = freshSpec();
+    s.given('single quotes', "say 'hi th<caret>ere' now");
+    await s.whenKeys(',g');
+    s.thenSelection('hi there');
+    await s.whenKeys('.g');
+    s.thenSelection("'hi there'");
+  });
+
+  it('given a backtick string when comma g then inner selects the run and dot g keeps the backticks', async () => {
+    const s = freshSpec();
+    s.given('backticks', 'say `hi th<caret>ere` now');
+    await s.whenKeys(',g');
+    s.thenSelection('hi there');
+    await s.whenKeys('.g');
+    s.thenSelection('`hi there`');
+  });
+
+  it('given a triple double quoted string when comma g then inner drops all three quotes and dot g keeps them', async () => {
+    const s = freshSpec();
+    s.given('triple double', 'say """hi th<caret>ere""" now');
+    await s.whenKeys(',g');
+    s.thenSelection('hi there');
+    await s.whenKeys('.g');
+    s.thenSelection('"""hi there"""');
+  });
+
+  it('given a triple single quoted string when comma g then inner drops all three quotes and dot g keeps them', async () => {
+    const s = freshSpec();
+    s.given('triple single', "say '''hi th<caret>ere''' now");
+    await s.whenKeys(',g');
+    s.thenSelection('hi there');
+    await s.whenKeys('.g');
+    s.thenSelection("'''hi there'''");
+  });
+
+  it('given a triple backtick fence when comma g then inner drops all three backticks and dot g keeps them', async () => {
+    const s = freshSpec();
+    s.given('triple backtick', 'say ```hi th<caret>ere``` now');
+    await s.whenKeys(',g');
+    s.thenSelection('hi there');
+    await s.whenKeys('.g');
+    s.thenSelection('```hi there```');
+  });
+
+  it('given a triple quoted docstring spanning lines when comma g then the whole multiline run is selected', async () => {
+    const s = freshSpec();
+    s.given('multiline docstring', 'x = """\nhe<caret>llo\nworld\n"""');
+    await s.whenKeys(',g');
+    s.thenSelection('\nhello\nworld\n');
+    await s.whenKeys('.g');
+    s.thenSelection('"""\nhello\nworld\n"""');
+  });
+
+  it('given an apostrophe earlier on another line when comma g then the real string below still selects', async () => {
+    const s = freshSpec();
+    s.given('stray apostrophe', "don't\nx = 'h<caret>i'");
+    await s.whenKeys(',g');
+    s.thenSelection('hi');
+  });
+
+  it('given an unterminated quote when comma g then nothing is selected', async () => {
+    const s = freshSpec();
+    s.given('unterminated', "it'<caret>s fine");
+    await s.whenKeys(',g');
+    s.thenNoSelection();
   });
 
   it('given a symbol thing when comma e then the symbol is selected', async () => {
