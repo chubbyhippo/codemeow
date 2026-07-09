@@ -207,7 +207,7 @@ function expandOrCount(ctx: Ctx, n: number): void {
 }
 
 function expand(ctx: Ctx, n: number): void {
-  const st: MeowState = ctx.st;
+  const st = ctx.st;
   const text = ctx.port.getText();
   const back = backwardP(ctx);
   const caret = primary(ctx).active;

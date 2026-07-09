@@ -44,7 +44,6 @@ export const Things = {
   bounds(ctx: Ctx, ch: string, offset: number): Promise<Bounds | null> {
     return compute(ctx, ch, offset, false);
   },
-  pair,
 };
 
 async function compute(
