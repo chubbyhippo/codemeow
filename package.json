@@ -25,7 +25,8 @@
       {
         "command": "codemeow.reloadRc",
         "title": "Reload .codemeowrc",
-        "category": "codemeow"
+        "category": "codemeow",
+        "icon": "$(refresh)"
       },
       {
         "command": "codemeow.editRc",
@@ -63,6 +64,15 @@
         "category": "codemeow"
       }
     ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "codemeow.reloadRc",
+          "when": "resourceFilename == .codemeowrc && codemeow.rcChanged",
+          "group": "navigation"
+        }
+      ]
+    },
     "keybindings": [
       {
         "key": "escape",

@@ -16,6 +16,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { parse as parseRc } from './rcParser';
+import { RcState } from './rcState';
 
 /**
  * The two rc layers and their layering rules. Like meow in Emacs, the engine
@@ -65,11 +66,13 @@ export const Rc = {
   /** Load (or reload) the user layer from rc lines. */
   setUserLines(lines: string[]): Config {
     userConfig = parseRc(lines);
+    RcState.saveParsed(userConfig); // the reload button's "loaded" snapshot
     return userConfig;
   },
 
   setForTest(c: Config): void {
     userConfig = c;
+    RcState.resetForTest(); // no stale reload-button state across specs
   },
 
   cfg(): Config {

@@ -4,8 +4,11 @@
 
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
+import * as fs from 'fs';
+import * as path from 'path';
 import { freshSpec } from './helpers';
 import { Rc } from '../core/rc';
+import { RcState } from '../core/rcState';
 import { keypadRows } from '../core/whichKey';
 import { MeowMode } from '../core/state';
 
@@ -57,6 +60,32 @@ describe('RcSpec', () => {
     const c = Rc.parse(['nmap Z meow-frobnicate']);
     assert.equal(c.errors.length, 1);
     assert.ok(c.errors[0].includes('meow-frobnicate'));
+  });
+
+  it('given comment-only rc edits then the reload button reports no changes', () => {
+    // the editor-title button compares the PARSED config (IdeaVim's
+    // VimRcFileState hashes the parsed Script the same way) — formatting
+    // and comment edits never demand a reload
+    freshSpec();
+    Rc.setUserLines(['nmap Z ,b']);
+    assert.ok(RcState.equalTo(Rc.parse(['" just a comment', 'nmap Z ,b'])));
+    assert.ok(!RcState.equalTo(Rc.parse(['nmap Q meow-goto-line'])));
+  });
+
+  it('given the manifest then the rc editor-title reload button is contributed', () => {
+    const manifest = JSON.parse(
+      fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
+    ) as {
+      contributes: {
+        menus: Record<string, { command: string; when: string }[]>;
+      };
+    };
+    const item = manifest.contributes.menus['editor/title'].find(
+      (m) => m.command === 'codemeow.reloadRc',
+    );
+    assert.ok(item, 'editor/title must carry the reload button');
+    assert.ok(item.when.includes('resourceFilename == .codemeowrc'));
+    assert.ok(item.when.includes('codemeow.rcChanged'));
   });
 
   it('given a parameterized action then the whole serialized command is kept', () => {

@@ -23,6 +23,7 @@ import { attachMode } from '../core/attachPolicy';
 import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
 import { Config, Rc } from '../core/rc';
+import { RcState } from '../core/rcState';
 import { MeowMode, MeowState } from '../core/state';
 import * as ToolWindowEscape from '../core/toolWindowEscape';
 import * as TreeMeow from '../core/treeMeow';
@@ -427,6 +428,27 @@ function userRcPath(): string {
   return path.join(os.homedir(), Rc.FILE_NAME);
 }
 
+/** Is this document the user's ~/.codemeowrc? */
+function isRcDocument(d: vscode.TextDocument): boolean {
+  return path.resolve(d.uri.fsPath) === path.resolve(userRcPath());
+}
+
+/** Keep the codemeow.rcChanged context key (the editor-title Reload button's
+ *  when-clause) in step with a parse-level comparison: comment/formatting
+ *  edits never light the button up (RcState — IdeaVim's VimRcFileState
+ *  design, same as ideameow's RcFileState). */
+function syncRcChanged(): void {
+  const doc = vscode.workspace.textDocuments.find(isRcDocument);
+  const changed =
+    doc !== undefined &&
+    !RcState.equalTo(Rc.parse(doc.getText().split(/\r?\n/)));
+  void vscode.commands.executeCommand(
+    'setContext',
+    'codemeow.rcChanged',
+    changed,
+  );
+}
+
 function loadUserRc(): Config {
   const p = userRcPath();
   const lines = fs.existsSync(p)
@@ -508,6 +530,23 @@ export function activate(context: vscode.ExtensionContext): void {
   loadDefaults(context.extensionPath);
   loadUserRc();
   syncTreeKeys();
+  syncRcChanged();
+  // the editor-title Reload button (the ideameow/IdeaVim floating-toolbar
+  // analog): its when-clause gates on codemeow.rcChanged, kept in sync with
+  // a parse-hash comparison against the loaded config — comment edits don't
+  // light it up
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeTextDocument((e) => {
+      if (isRcDocument(e.document)) {
+        syncRcChanged();
+      }
+    }),
+    vscode.workspace.onDidOpenTextDocument((d) => {
+      if (isRcDocument(d)) {
+        syncRcChanged();
+      }
+    }),
+  );
 
   // the modal heart: intercept typing before it becomes an insertion
   try {
@@ -617,6 +656,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       const c = loadUserRc();
       syncTreeKeys();
+      syncRcChanged(); // the title button drops back to hidden
       const problems =
         c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
