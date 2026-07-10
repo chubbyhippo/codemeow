@@ -176,7 +176,17 @@ map <leader>xpc <action>(workbench.action.tasks.build)
 map <leader>cf <action>(workbench.action.quickOpen)
 map <leader>cs <action>(workbench.action.files.saveAll)
 map <leader>ck <action>(workbench.action.closeActiveEditor)
-map <leader>cb <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+map <leader>cb0 <action>(numberedBookmarks.toggleBookmark0)
+map <leader>cb1 <action>(numberedBookmarks.toggleBookmark1)
+map <leader>cb2 <action>(numberedBookmarks.toggleBookmark2)
+map <leader>cb3 <action>(numberedBookmarks.toggleBookmark3)
+map <leader>cb4 <action>(numberedBookmarks.toggleBookmark4)
+map <leader>cb5 <action>(numberedBookmarks.toggleBookmark5)
+map <leader>cb6 <action>(numberedBookmarks.toggleBookmark6)
+map <leader>cb7 <action>(numberedBookmarks.toggleBookmark7)
+map <leader>cb8 <action>(numberedBookmarks.toggleBookmark8)
+map <leader>cb9 <action>(numberedBookmarks.toggleBookmark9)
+map <leader>cbj <action>(numberedBookmarks.listFromAllFiles)
 map <leader>cr <action>(workbench.action.findInFiles)
 map <leader>ce <action>(editor.action.smartSelect.expand)
 map <leader>ca <action>(workbench.actions.view.problems)
@@ -256,6 +266,7 @@ desc <leader>b buffers (MRU editors)
 desc <leader>x C-x · file / buffer / window
 desc <leader>xp C-x p · project
 desc <leader>c C-c · commands (= M-m)
+desc <leader>cb C-c b · bookmark (0-9 set / j jump)
 desc <leader>cj C-c j · avy jump
 desc <leader>m M- · meta
 desc <leader>ms M-s · search
