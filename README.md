@@ -234,7 +234,7 @@ it, naturally).
 **What the bundled default gives you.** The full meow QWERTY layout, the
 complete keypad table, and the same leader scheme as the companion
 `.ideavimrc`/ideameow configs, ported to VS Code commands where analogs exist
-(`SPC .` settings, `SPC a` views, `SPC d/e/f/g/…` groups, `SPC ]`/`SPC [` for
+(`SPC ;` settings, `SPC a` views, `SPC d/e/f/g/…` groups, `SPC .`/`SPC ,` for
 next/prev change, diff, and error). `S`/`Q` are avy jumps — a native port of
 avy 0.5.0's `avy-goto-char-timer` and `avy-goto-line`, nothing to install:
 `S`, type a few chars, pause 0.25 s, and home-row labels (`a s d f g h j k l`,

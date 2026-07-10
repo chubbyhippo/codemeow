@@ -281,18 +281,18 @@ desc <leader>w window map (Emacs C-c w)
 " ============================================================================
 
 " --- SPC . — settings / UI ---------------------------------------------------
-desc <leader>. settings / UI
-map <leader>.c <action>(workbench.action.toggleActivityBarVisibility)
-map <leader>.C <action>(workbench.action.closeFolder)
-map <leader>.d <action>(workbench.action.toggleZenMode)
-map <leader>.f <action>(workbench.action.toggleFullScreen)
-map <leader>.k <action>(workbench.action.openGlobalKeybindings)
-map <leader>.p <action>(workbench.view.extensions)
-map <leader>.r <action>(workbench.action.debug.selectandstart)
-map <leader>.R <action>(workbench.action.reloadWindow)
-map <leader>.s <action>(workbench.action.openSettings)
-map <leader>.t <action>(workbench.action.selectTheme)
-map <leader>.z <action>(workbench.action.toggleZenMode)
+desc <leader>; settings / UI
+map <leader>;c <action>(workbench.action.toggleActivityBarVisibility)
+map <leader>;C <action>(workbench.action.closeFolder)
+map <leader>;d <action>(workbench.action.toggleZenMode)
+map <leader>;f <action>(workbench.action.toggleFullScreen)
+map <leader>;k <action>(workbench.action.openGlobalKeybindings)
+map <leader>;p <action>(workbench.view.extensions)
+map <leader>;r <action>(workbench.action.debug.selectandstart)
+map <leader>;R <action>(workbench.action.reloadWindow)
+map <leader>;s <action>(workbench.action.openSettings)
+map <leader>;t <action>(workbench.action.selectTheme)
+map <leader>;z <action>(workbench.action.toggleZenMode)
 
 " --- SPC a — activate views (tool windows) -----------------------------------
 desc <leader>a activate view
@@ -501,14 +501,14 @@ map <leader>vP <action>(git.push)
 " ideavimrc used ]c [c ]d [d ]e [e in NORMAL; multi-key NORMAL sequences don't
 " exist here ([ ] are meow's beginning/end-of-thing), so they live on the
 " keypad instead.
-desc <leader>] next (change / diff / error)
-map <leader>]c <action>(workbench.action.editor.nextChange)
-map <leader>]d <action>(workbench.action.compareEditor.nextChange)
-map <leader>]e <action>(editor.action.marker.nextInFiles)
-desc <leader>[ previous (change / diff / error)
-map <leader>[c <action>(workbench.action.editor.previousChange)
-map <leader>[d <action>(workbench.action.compareEditor.previousChange)
-map <leader>[e <action>(editor.action.marker.prevInFiles)
+desc <leader>. next (change / diff / error)
+map <leader>.c <action>(workbench.action.editor.nextChange)
+map <leader>.d <action>(workbench.action.compareEditor.nextChange)
+map <leader>.e <action>(editor.action.marker.nextInFiles)
+desc <leader>, previous (change / diff / error)
+map <leader>,c <action>(workbench.action.editor.previousChange)
+map <leader>,d <action>(workbench.action.compareEditor.previousChange)
+map <leader>,e <action>(editor.action.marker.prevInFiles)
 
 " ============================================================================
 " NOT ported from .ideavimrc / .ideameowrc, and why

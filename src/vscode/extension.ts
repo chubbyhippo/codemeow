@@ -602,7 +602,19 @@ export function activate(context: vscode.ExtensionContext): void {
       },
     ),
 
-    vscode.commands.registerCommand('codemeow.reloadRc', () => {
+    vscode.commands.registerCommand('codemeow.reloadRc', async () => {
+      // the rc is usually edited right here (SPC c m) and may sit in a dirty
+      // editor — reloading straight from disk would re-read stale content and
+      // look dead until something saves it. Same guard as ideameow's
+      // ReloadRcAction; IdeaVim's ReloadVimRc saves the document as-is before
+      // re-executing for the same reason (ui/ReloadVimRc.kt).
+      const rc = path.resolve(userRcPath());
+      const dirty = vscode.workspace.textDocuments.find(
+        (d) => d.isDirty && path.resolve(d.uri.fsPath) === rc,
+      );
+      if (dirty) {
+        await dirty.save();
+      }
       const c = loadUserRc();
       syncTreeKeys();
       const problems =
