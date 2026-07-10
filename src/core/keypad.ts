@@ -137,9 +137,14 @@ KEYPAD (SPC)
   SPC i d find a command id — filterable list, Enter copies the id
           to use in <action>(...) mappings; its title buttons open
           record-keys mode and the keystroke log ("what runs this key?")
+  REPEAT  some entries start a run (Emacs repeat-mode): after
+          SPC . e keep tapping . / , to walk errors, after SPC w i
+          keep tapping i (or = - o u 0) to keep zooming — any other
+          key ends the run and keeps its normal meaning
 
 ~/.codemeowrc: nmap <key> <action>(command.id) | nmap <key> meow-command | nmap <key> <meow keys>
   mmap ... (MOTION mode) | map <leader><seq> ... | desc <leader><seq> text | set nowhich-key
+  repeat <group> <key> <target> — tap-to-continue groups (the REPEAT runs above)
   every binding above is an rc line — the defaults ship as a bundled
   .codemeowrc inside the extension; ~/.codemeowrc overrides them key by key
 `.trim();

@@ -28,10 +28,15 @@ import type { Config } from './rc';
 let state: string | null = null;
 
 function serialize(c: Config): string {
+  const byKey = ([a]: [string, unknown], [b]: [string, unknown]) =>
+    a < b ? -1 : a > b ? 1 : 0;
   const maps = [c.normal, c.motion, c.keypad, c.keypadDesc].map((m) =>
-    [...m.entries()].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
+    [...m.entries()].sort(byKey),
   );
-  return JSON.stringify([maps, c.whichKey, c.whichKeyDelayMs]);
+  const repeat = [...c.repeat.entries()]
+    .sort(byKey)
+    .map(([g, members]) => [g, [...members.entries()].sort(byKey)]);
+  return JSON.stringify([maps, repeat, c.whichKey, c.whichKeyDelayMs]);
 }
 
 export const RcState = {

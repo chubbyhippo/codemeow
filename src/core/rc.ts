@@ -42,6 +42,10 @@ export class Config {
   motion = new Map<string, Binding>();
   keypad = new Map<string, Binding>();
   keypadDesc = new Map<string, string>();
+
+  /** Repeat groups (Emacs repeat-mode transient maps): group name ->
+   *  member key -> the binding it re-dispatches while the run is live. */
+  repeat = new Map<string, Map<string, Binding>>();
   whichKey: boolean | null = null;
   whichKeyDelayMs: number | null = null;
   errors: string[] = [];
@@ -93,6 +97,47 @@ export const Rc = {
   /** Effective which-key labels: bundled defaults with ~/.codemeowrc on top. */
   keypadDescs(): Map<string, string> {
     return new Map([...defaultConfig.keypadDesc, ...userConfig.keypadDesc]);
+  },
+
+  /** Effective repeat groups: ~/.codemeowrc lines layer per (group, key)
+   *  over the bundled defaults; a member re-bound to `ignore` gives its key
+   *  back (like `mmap <key> ignore` on trees) and an emptied group is gone. */
+  repeatGroups(): Map<string, Map<string, Binding>> {
+    const merged = new Map<string, Map<string, Binding>>();
+    for (const [group, members] of defaultConfig.repeat) {
+      merged.set(group, new Map(members));
+    }
+    for (const [group, members] of userConfig.repeat) {
+      const m = merged.get(group) ?? new Map<string, Binding>();
+      for (const [key, b] of members) m.set(key, b);
+      merged.set(group, m);
+    }
+    for (const [group, members] of merged) {
+      for (const [key, b] of members) {
+        if (b.command === 'ignore') members.delete(key);
+      }
+      if (members.size === 0) merged.delete(group);
+    }
+    return merged;
+  },
+
+  /** The transient map a just-dispatched binding arms — Emacs' repeat-map
+   *  symbol property, ported: membership is the TARGET (action, command or
+   *  keys — not the key that ran it, repeat-check-key 'no style), and the
+   *  first declared group wins. Null when the binding repeats nothing. */
+  repeatMapFor(b: Binding): Map<string, Binding> | null {
+    for (const members of this.repeatGroups().values()) {
+      for (const m of members.values()) {
+        if (
+          m.action === b.action &&
+          m.command === b.command &&
+          m.keys === b.keys
+        ) {
+          return members;
+        }
+      }
+    }
+    return null;
   },
 
   whichKeyEnabled(): boolean {

@@ -31,6 +31,13 @@ import { COMMANDS } from './registry';
  *   desc <leader>g goto things
  *   let g:WhichKeyDesc_g = "<leader>g goto things"   (ideavimrc-compatible)
  *   set nowhich-key / set timeoutlen=300
+ *   repeat error . <action>(editor.action.marker.nextInFiles)
+ *                                       repeat group (Emacs repeat-mode):
+ *                                       dispatching any binding with a target
+ *                                       listed in a group arms it — the member
+ *                                       keys then re-dispatch until another key
+ *                                       ends the run (see engine); `ignore` as
+ *                                       the target gives a default key back
  *
  * A RHS that names a command in the registry binds the command; a misspelled
  * `meow-*` name is an error; any other RHS is replayed as keys. Keypad keys
@@ -85,6 +92,9 @@ export function parse(lines: string[]): Config {
       case 'mmap':
       case 'mnoremap':
         parseMap(c, cmd, rest, err);
+        break;
+      case 'repeat':
+        parseRepeat(c, rest, err);
         break;
       default:
         err(`unknown command '${cmd}'`);
@@ -144,24 +154,8 @@ function parseMap(
   const recursive = cmd === 'map' || cmd === 'nmap' || cmd === 'mmap';
   const motion = cmd === 'mmap' || cmd === 'mnoremap';
 
-  const action = ACTION_RE.exec(rhs)?.[1];
-  let binding: Binding;
-  if (action !== undefined) {
-    binding = { action, recursive };
-  } else if (COMMANDS.has(rhs)) {
-    binding = { command: rhs, recursive };
-  } else if (rhs.startsWith('meow-')) {
-    err(`unknown meow command '${rhs}'`);
-    return;
-  } else {
-    const keys = parseKeys(rhs.replace(/\s+/g, ''), err);
-    if (keys === null) return;
-    if (keys === '') {
-      err(`empty target in '${cmd} ${rest}'`);
-      return;
-    }
-    binding = { keys, recursive };
-  }
+  const binding = parseTarget(rhs, recursive, `${cmd} ${rest}`, err);
+  if (binding === null) return;
 
   if (lhs.startsWith('<leader>')) {
     if (motion) {
@@ -189,6 +183,61 @@ function parseMap(
     err('SPC is the keypad key and cannot be remapped');
   } else {
     (motion ? c.motion : c.normal).set(keys, binding);
+  }
+}
+
+/** The shared RHS grammar of map and repeat lines: an <action>(...), a
+ *  named command in the registry, or replayed meow keys. */
+function parseTarget(
+  rhs: string,
+  recursive: boolean,
+  errContext: string,
+  err: (m: string) => void,
+): Binding | null {
+  const action = ACTION_RE.exec(rhs)?.[1];
+  if (action !== undefined) return { action, recursive };
+  if (COMMANDS.has(rhs)) return { command: rhs, recursive };
+  if (rhs.startsWith('meow-')) {
+    err(`unknown meow command '${rhs}'`);
+    return null;
+  }
+  const keys = parseKeys(rhs.replace(/\s+/g, ''), err);
+  if (keys === null) return null;
+  if (keys === '') {
+    err(`empty target in '${errContext}'`);
+    return null;
+  }
+  return { keys, recursive };
+}
+
+/** `repeat <group> <key> <target>` — Emacs repeat-mode's transient maps as
+ *  rc lines. Dispatching any binding whose target is listed in a group arms
+ *  it: the member keys re-dispatch their targets (shadowing the normal map)
+ *  until a non-member key falls through and ends the run. The entering key
+ *  needn't be a member — init.el's repeat-check-key 'no. */
+function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
+  const m = /^(\S+)\s+(\S+)\s+(.*)$/.exec(rest);
+  if (!m) {
+    err('repeat needs a group, a member key and a target');
+    return;
+  }
+  const group = m[1];
+  const keyToken = m[2];
+  const key = parseKeys(keyToken, err);
+  if (key === null) return;
+  if (key.length !== 1) {
+    err(`repeat member key must be a single printable key: ${keyToken}`);
+  } else if (key === ' ') {
+    err('SPC is the keypad key and cannot be a repeat member');
+  } else {
+    const binding = parseTarget(m[3].trim(), true, `repeat ${rest}`, err);
+    if (binding === null) return;
+    let members = c.repeat.get(group);
+    if (!members) {
+      members = new Map<string, Binding>();
+      c.repeat.set(group, members);
+    }
+    members.set(key, binding);
   }
 }
 

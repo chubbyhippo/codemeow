@@ -511,6 +511,38 @@ map <leader>,d <action>(workbench.action.compareEditor.previousChange)
 map <leader>,e <action>(editor.action.marker.prevInFiles)
 
 " ============================================================================
+" Repeat groups — Emacs repeat-mode, ported (init.el's transient repeat maps)
+" ----------------------------------------------------------------------------
+" After any binding whose TARGET is listed in a group below — membership is
+" the target, not the key, like the repeat-map property on an Emacs command —
+" the next keypress is first looked up in that group: a member key
+" re-dispatches its target and keeps the run alive; any other key (or ESC)
+" ends the run and keeps its normal meaning (Emacs transient-keymap
+" fall-through — nothing is swallowed, and there is no timeout). The entering
+" keypad key needn't be a member: init.el sets repeat-check-key 'no for the
+" same reason. Syntax:
+"   repeat <group> <key> <target>     target grammar = the map-line RHS
+"   repeat <group> <key> ignore       give a bundled group's key back
+" Ported 1:1 from init.el: flymake -> error, diff-hl -> change, text-scale ->
+" zoom, expreg -> expand (winner-mode has no analog — no layout history).
+" So: SPC . e then . . , walks errors; SPC w i then i i i keeps zooming.
+repeat error . <action>(editor.action.marker.nextInFiles)
+repeat error , <action>(editor.action.marker.prevInFiles)
+repeat change . <action>(workbench.action.editor.nextChange)
+repeat change , <action>(workbench.action.editor.previousChange)
+repeat zoom i <action>(editor.action.fontZoomIn)
+repeat zoom = <action>(editor.action.fontZoomIn)
+repeat zoom o <action>(editor.action.fontZoomOut)
+repeat zoom - <action>(editor.action.fontZoomOut)
+repeat zoom u <action>(editor.action.fontZoomReset)
+repeat zoom 0 <action>(editor.action.fontZoomReset)
+repeat expand . <action>(editor.action.smartSelect.expand)
+repeat expand , <action>(editor.action.smartSelect.shrink)
+" not a default group (init.el has none for diffs) — add your own like:
+"   repeat diff . <action>(workbench.action.compareEditor.nextChange)
+"   repeat diff , <action>(workbench.action.compareEditor.previousChange)
+
+" ============================================================================
 " NOT ported from .ideavimrc / .ideameowrc, and why
 " ----------------------------------------------------------------------------
 " * the whole meow-emulation section — the extension implements real meow;

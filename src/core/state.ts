@@ -16,6 +16,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import type { AvySession } from './avy';
+import type { Binding } from './rc';
 
 export enum MeowMode {
   NORMAL = 'NORMAL',
@@ -100,6 +101,11 @@ export class MeowState {
 
   /** An in-flight avy jump (S / Q) — keys route to it until it ends. */
   avy: AvySession | null = null;
+
+  /** The armed repeat transient (Emacs repeat-mode, see Rc repeat groups):
+   *  member keys re-dispatch their binding, any other key or ESC ends the
+   *  run and falls through to the normal map. */
+  repeatMap: Map<string, Binding> | null = null;
 
   keypad = '';
   unit: string[] = [];

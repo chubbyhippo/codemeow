@@ -28,9 +28,12 @@ import * as Avy from './avy';
  * The key dispatcher. Like meow in Emacs, the engine binds no keys of its
  * own: every command is registered by its meow name in the registry, and
  * keys resolve through rc bindings only — ~/.codemeowrc over the bundled
- * default .codemeowrc (see Rc). Besides dispatch, this module owns the two
+ * default .codemeowrc (see Rc). Besides dispatch, this module owns the
  * pieces of behavior that need the whole-keystroke view: the repeat unit
- * (`'`) and rc-binding replay with its noremap/recursion bookkeeping.
+ * (`'`), rc-binding replay with its noremap/recursion bookkeeping, and the
+ * repeat transient (Emacs repeat-mode: rc `repeat` groups arm a one-shot map
+ * whose member keys re-dispatch — tap `.`/`,` to keep walking errors after
+ * SPC . e).
  */
 
 const KEYPAD_BINDING: Binding = { command: 'meow-keypad', recursive: true };
@@ -56,11 +59,19 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   ctx.ui.clearExpandHints();
 
   const pend = st.pending;
+  // the repeat transient: a member key of the armed group re-dispatches
+  // its binding, shadowing the normal map for exactly that keypress
+  // (runBinding re-arms it); any other key ends the run and falls through
+  // to the resolve below — Emacs set-transient-map semantics, never
+  // swallowed. ESC ends the run too (escapeKey).
+  const repeatBinding = pend === null ? (st.repeatMap?.get(c) ?? null) : null;
+  if (pend === null && repeatBinding === null) st.repeatMap = null;
   // like Emacs: read-only buffers stay in NORMAL with every motion working
   // (the modify commands gate themselves via allow-modify in edits); the
   // motion map applies only to the MOTION state proper
   const motionish = st.mode === MeowMode.MOTION;
-  const binding = pend === null ? resolve(ctx, c, motionish) : null;
+  const binding =
+    pend === null ? (repeatBinding ?? resolve(ctx, c, motionish)) : null;
   const cmd = binding?.command;
 
   // the repeat unit: everything since the last complete command, so `'`
@@ -138,8 +149,23 @@ export async function repeatLast(ctx: Ctx): Promise<void> {
 
 /** Run a binding: a named meow command, a host command, or meow keys
  *  replayed through the engine (noremap bindings skip user maps while
- *  replaying). */
+ *  replaying). Afterwards, Emacs repeat-mode's post-command arming: a
+ *  binding whose target sits in an rc repeat group arms that group's
+ *  transient — membership by target identity (the repeat-map symbol
+ *  property), no entered-with-key check (init.el sets repeat-check-key
+ *  'no for every keypad-entered map, and keypad keys are never members). */
 export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
+  await dispatch(ctx, b);
+  const map = Rc.repeatMapFor(b);
+  if (!map) return;
+  if (ctx.st.repeatMap === null) {
+    // repeat-echo-message, once per run: "Repeat with ., ,"
+    ctx.ui.hint(`Repeat with ${[...map.keys()].join(', ')}`);
+  }
+  ctx.st.repeatMap = map;
+}
+
+async function dispatch(ctx: Ctx, b: Binding): Promise<void> {
   const st = ctx.st;
   if (b.command !== undefined) {
     const cmd = COMMANDS.get(b.command);
@@ -186,6 +212,7 @@ export function escapeKey(ctx: Ctx): boolean {
     return true;
   }
   st.pending = null;
+  st.repeatMap = null; // ESC always ends a repeat run (a non-member key)
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();
   if (st.mode === MeowMode.INSERT || st.mode === MeowMode.KEYPAD) {
