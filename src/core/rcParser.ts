@@ -39,7 +39,11 @@ import { COMMANDS } from './registry';
  * pasted without errors.
  */
 
-const ACTION_RE = /^<action>\(([\w.\-$]+)\)$/i;
+// the id is either a bare command id or the shared rc dialect's serialized
+// *parameterized* form commandId(paramId=value,...) — some sibling ports'
+// hosts serialize parameters into the id, and rc lines must keep pasting
+// between the ports; an id VS Code doesn't know just hints at dispatch
+const ACTION_RE = /^<action>\(([\w.\-$(),=]+)\)$/i;
 const WHICHKEY_LET_RE = /^let\s+g:WhichKeyDesc\w*\s*=\s*"(.+)"$/;
 
 export function parse(lines: string[]): Config {

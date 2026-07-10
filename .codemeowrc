@@ -146,6 +146,9 @@ mmap q <action>(workbench.action.toggleSidebarVisibility)
 " Preferences > Keyboard Shortcuts, right-click an entry, "Copy Command ID".
 " ============================================================================
 
+" SPC b — bookmarks via the alefragnani.numbered-bookmarks extension (0-9
+" toggle a numbered slot, j lists bookmarks across files; without the
+" extension installed these fail with a status-bar hint). b b = MRU editors.
 map <leader>bb <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
 map <leader>b0 <action>(numberedBookmarks.toggleBookmark0)
 map <leader>b1 <action>(numberedBookmarks.toggleBookmark1)

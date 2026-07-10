@@ -59,6 +59,19 @@ describe('RcSpec', () => {
     assert.ok(c.errors[0].includes('meow-frobnicate'));
   });
 
+  it('given a parameterized action then the whole serialized command is kept', () => {
+    // VS Code ids are always bare (args travel as JSON, never inside the id) —
+    // the commandId(param=value,...) form exists in the shared rc dialect
+    // because some sibling ports' hosts serialize command parameters into the
+    // id. An rc written for one meow port must keep parsing in the others:
+    // the line binds as an action, never as a keys-replay.
+    const id =
+      'com.example.showView(com.example.viewId=com.example.SomeView,com.example.focus=true)';
+    const c = Rc.parse([`map <leader>bj <action>(${id})`]);
+    assert.equal(c.keypad.get('bj')?.action, id);
+    assert.deepEqual(c.errors, []);
+  });
+
   it('given leader mappings and descriptions then the keypad table extends', () => {
     const s = freshSpec();
     s.givenRc(
