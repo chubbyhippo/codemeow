@@ -75,7 +75,7 @@ describe('RcSpec', () => {
     );
     // bundled defaults stay beneath
     assert.equal(
-      Rc.keypad().get('b')!.action,
+      Rc.keypad().get('bb')!.action,
       'workbench.action.showAllEditorsByMostRecentlyUsed',
     );
   });
@@ -140,7 +140,7 @@ describe('RcSpec', () => {
     assert.equal(d.motion.get('k')?.command, 'meow-prev');
     // the keypad table lives in the file too — nothing is bound in code
     assert.equal(
-      d.keypad.get('b')?.action,
+      d.keypad.get('bb')?.action,
       'workbench.action.showAllEditorsByMostRecentlyUsed',
     );
     assert.equal(
@@ -214,8 +214,8 @@ describe('RcSpec', () => {
   it('given an rc keypad mapping then it overrides the bundled entry', async () => {
     const s = freshSpec();
     s.given('two words', 'on<caret>e two');
-    s.givenRc('map <leader>b ,b'); // bundled-default SPC b = MRU editors
-    await s.whenKeys(' b');
+    s.givenRc('map <leader>bb ,b'); // bundled-default SPC b b = MRU editors
+    await s.whenKeys(' bb');
     s.thenSelection('one two');
   });
 

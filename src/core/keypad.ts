@@ -131,7 +131,7 @@ NORMAL — selection first, then act
            a cursor lands on every match — edit them all, ESC to finish
 
 KEYPAD (SPC)
-  SPC b buffers   SPC x file/buffer/window   SPC c commands   SPC m meta
+  SPC b bookmarks/buffers   SPC x file/buffer/window   SPC c commands   SPC m meta
   SPC w windows   SPC 1-9 count   SPC ? this sheet   SPC / describe key
   SPC c m edit ~/.codemeowrc   SPC c M reload it
   SPC i d find a command id — filterable list, Enter copies the id

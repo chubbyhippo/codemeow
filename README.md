@@ -144,9 +144,10 @@ While a grab is active, any selection you make inside it — `w`, `x`, `f`… �
 drops a cursor on every similar range: change them all, then `ESC`. `R`
 swap-grab exchanges the selection and grab texts; `Y` sync-grab re-stashes.
 
-**Keypad.** `SPC b/x/c/m/w …` mirror the Emacs/meow keypad of the companion
+**Keypad.** `SPC x/c/m/w …` mirror the Emacs/meow keypad of the companion
 `init.el`/`.ideavimrc`/ideameow setups (quick open, save all, splits, font
-size…). `SPC 1-9` is a digit argument, `SPC ?` opens the cheatsheet, `SPC /`
+size…); `SPC b` is bookmarks (`0-9` numbered set, `j` jump, `b` MRU editors).
+`SPC 1-9` is a digit argument, `SPC ?` opens the cheatsheet, `SPC /`
 describes a key, and `SPC c m` / `SPC c M` edit / reload your config.
 
 ## ~/.codemeowrc — configuring everything
