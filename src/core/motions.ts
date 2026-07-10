@@ -316,6 +316,8 @@ export function findTill(ctx: Ctx, ch: string, till: boolean): void {
     ctx.ui.hint(`char not found: ${ch}`);
     return;
   }
-  Sel.select(ctx, till ? SelType.TILL : SelType.FIND, caret, target, false);
+  // BEFORE the select: its expand hints preview further occurrences of
+  // THIS char (a stale lastFind painted the previous find's positions)
   ctx.st.lastFind = ch;
+  Sel.select(ctx, till ? SelType.TILL : SelType.FIND, caret, target, false);
 }

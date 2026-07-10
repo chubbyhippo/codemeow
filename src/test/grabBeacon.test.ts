@@ -95,6 +95,22 @@ describe('GrabBeaconSpec', () => {
     s.thenCaretCount(3);
   });
 
+  it('given beacon cursors when c then every cursor lands at its own edit', async () => {
+    // editCarets re-bases each cursor by the edits below it: the cursors
+    // must sit at POST-edit offsets, not at the pre-edit match positions
+    const s = freshSpec();
+    s.given('repeats', '<caret>foo bar foo baz foo');
+    await s.whenKeys(',bG');
+    s.givenCaretAt(0);
+    await s.whenKeys('wc');
+    s.thenText(' bar  baz ');
+    assert.deepEqual(s.editor.sels, [
+      { anchor: 0, active: 0 },
+      { anchor: 5, active: 5 },
+      { anchor: 10, active: 10 },
+    ]);
+  });
+
   it('given a grab when x inside it then a cursor lands on every line (line beacon)', async () => {
     const s = freshSpec();
     s.given('three lines', '<caret>a\nb\nc');

@@ -193,6 +193,15 @@ describe('SelectionSpec', () => {
     assert.equal(s.ui.expandHints.length, 0);
   });
 
+  it('given a find selection when the target char sits at the caret then the first hint marks it', async () => {
+    // the preview runs the same nthCharTarget scan as the digit expand: a
+    // second X right at the caret is one expand away and must be hinted
+    const s = freshSpec();
+    s.given('chars', '<caret>aXX');
+    await s.whenKeys('fX');
+    assert.deepEqual(s.ui.expandHints, [3]);
+  });
+
   it('given digits after w then the selection expands by that many words', async () => {
     const s = freshSpec();
     s.given('five words', '<caret>one two three four five');

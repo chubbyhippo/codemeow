@@ -17,7 +17,13 @@
 
 import { Ctx } from './port';
 import { Pending, SelType } from './state';
-import { lineCount, lineEnd, lineOfOffset, lineStart } from './text';
+import {
+  isBlankLine,
+  lineCount,
+  lineEnd,
+  lineOfOffset,
+  lineStart,
+} from './text';
 import { Things } from './things';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
@@ -177,8 +183,7 @@ function join(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;
   const n = ctx.st.takeCount(1);
-  const blank = (l: number) =>
-    text.slice(lineStart(text, l), lineEnd(text, l)).trim() === '';
+  const blank = (l: number) => isBlankLine(text, l);
   const ln = lineOfOffset(text, Sel.primary(ctx).active);
   if (n >= 0) {
     let pl = ln - 1;

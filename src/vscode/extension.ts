@@ -69,7 +69,24 @@ interface WhichKeyItem extends vscode.QuickPickItem {
   /** The raw char this row dispatches ('SPC' displays, ' ' dispatches). */
   meowKey: string;
 }
-let hintTimer: ReturnType<typeof setTimeout> | undefined;
+/** The 1 s expand-hint removal timer AND the editor it will clean: one hint
+ *  overlay is live at a time, so arming a new one first sweeps the previous
+ *  editor's decorations instead of orphaning them on an editor switch. */
+let hintTimer:
+  | { handle: ReturnType<typeof setTimeout>; editor: vscode.TextEditor }
+  | undefined;
+
+function sweepHintTimer(): void {
+  if (hintTimer === undefined) return;
+  clearTimeout(hintTimer.handle);
+  const prev = hintTimer.editor;
+  hintTimer = undefined;
+  try {
+    prev.setDecorations(hintDecoration, []);
+  } catch {
+    // the previous editor was disposed — its decorations died with it
+  }
+}
 let infoBody = '';
 const infoEmitter = new vscode.EventEmitter<vscode.Uri>();
 const INFO_URI = vscode.Uri.parse('codemeow:meow-info');
@@ -150,7 +167,10 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
         })),
       );
       // meow-expand-hint-remove-delay: 1 second
-      hintTimer = setTimeout(() => clearExpandHints(editor), 1000);
+      hintTimer = {
+        handle: setTimeout(() => clearExpandHints(editor), 1000),
+        editor,
+      };
     },
 
     clearExpandHints: () => clearExpandHints(editor),
@@ -312,12 +332,15 @@ function dispatchMenuKeys(
       const ctx = makeCtx(editor, st);
       for (const ch of keys) await Engine.handleChar(ctx, ch);
     })
-    .catch(() => undefined);
+    // surface like the type handler would (its errors reach the extension
+    // host log) instead of vanishing with the menu
+    .catch((e: unknown) =>
+      console.error('codemeow: which-key dispatch failed', e),
+    );
 }
 
 function clearExpandHints(editor: vscode.TextEditor): void {
-  if (hintTimer !== undefined) clearTimeout(hintTimer);
-  hintTimer = undefined;
+  sweepHintTimer();
   editor.setDecorations(hintDecoration, []);
 }
 
@@ -695,62 +718,7 @@ export function activate(context: vscode.ExtensionContext): void {
       await vscode.window.showTextDocument(doc);
     }),
 
-    vscode.commands.registerCommand('codemeow.commandIds', async () => {
-      // the ideameow Track Action IDs analog (keypad: SPC i d). VS Code's
-      // stable API has no "command executed" listener (vscode.d.ts, checked),
-      // so instead of live tracking this lists every command id the editor
-      // knows — the ids <action>(...) rc lines take — and Enter copies one.
-      // The title buttons cover tracking's "what does this key run?" half
-      // with the platform's own tools (ids source-verified 2026-07): the
-      // Keyboard Shortcuts editor in record-keys mode, and the keystroke
-      // log (Toggle Keyboard Shortcuts Troubleshooting — logging on also
-      // opens the Window log, where each keypress shows its command).
-      const ids = (await vscode.commands.getCommands(true)).sort();
-      const recordButton: vscode.QuickInputButton = {
-        iconPath: new vscode.ThemeIcon('record-keys'),
-        tooltip:
-          'What does a key run? Record keys in the Keyboard Shortcuts editor',
-      };
-      const logButton: vscode.QuickInputButton = {
-        iconPath: new vscode.ThemeIcon('output'),
-        tooltip: 'Toggle the keystroke log (every keypress logs its command)',
-      };
-      const qp = vscode.window.createQuickPick();
-      qp.title = 'command ids';
-      qp.placeholder =
-        'command id for <action>(...) rc mappings — Enter copies it to the clipboard';
-      qp.items = ids.map((id) => ({ label: id }));
-      qp.buttons = [recordButton, logButton];
-      qp.onDidTriggerButton((b) => {
-        qp.hide();
-        if (b === recordButton) {
-          void vscode.commands
-            .executeCommand('workbench.action.openGlobalKeybindings')
-            .then(() =>
-              vscode.commands.executeCommand(
-                'keybindings.editor.recordSearchKeys',
-              ),
-            );
-        } else {
-          void vscode.commands.executeCommand(
-            'workbench.action.toggleKeybindingsLog',
-          );
-        }
-      });
-      qp.onDidAccept(async () => {
-        const picked = qp.activeItems[0]?.label;
-        qp.hide();
-        if (picked !== undefined) {
-          await vscode.env.clipboard.writeText(picked);
-          void vscode.window.setStatusBarMessage(
-            `meow: copied ${picked}`,
-            3000,
-          );
-        }
-      });
-      qp.onDidHide(() => qp.dispose());
-      qp.show();
-    }),
+    vscode.commands.registerCommand('codemeow.commandIds', showCommandIds),
 
     vscode.commands.registerCommand('codemeow.cheatsheet', () => {
       const editor = vscode.window.activeTextEditor;
@@ -772,6 +740,7 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.window.onDidChangeActiveTextEditor((editor) => {
+      dropHiddenAvySessions();
       if (!editor) {
         statusBar.hide();
         void vscode.commands.executeCommand(
@@ -794,6 +763,8 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.workspace.onDidCloseTextDocument((doc) => {
+      const st = states.get(doc.uri.toString());
+      if (st) dropAvySession(st); // the pending timer must not fire on a dead editor
       states.delete(doc.uri.toString());
     }),
   );
@@ -805,6 +776,86 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 }
 
+/** The ideameow Track Action IDs analog (keypad: SPC i d). VS Code's
+ *  stable API has no "command executed" listener (vscode.d.ts, checked),
+ *  so instead of live tracking this lists every command id the editor
+ *  knows — the ids <action>(...) rc lines take — and Enter copies one.
+ *  The title buttons cover tracking's "what does this key run?" half
+ *  with the platform's own tools (ids source-verified 2026-07): the
+ *  Keyboard Shortcuts editor in record-keys mode, and the keystroke
+ *  log (Toggle Keyboard Shortcuts Troubleshooting — logging on also
+ *  opens the Window log, where each keypress shows its command). */
+async function showCommandIds(): Promise<void> {
+  const ids = (await vscode.commands.getCommands(true)).sort();
+  const recordButton: vscode.QuickInputButton = {
+    iconPath: new vscode.ThemeIcon('record-keys'),
+    tooltip:
+      'What does a key run? Record keys in the Keyboard Shortcuts editor',
+  };
+  const logButton: vscode.QuickInputButton = {
+    iconPath: new vscode.ThemeIcon('output'),
+    tooltip: 'Toggle the keystroke log (every keypress logs its command)',
+  };
+  const qp = vscode.window.createQuickPick();
+  qp.title = 'command ids';
+  qp.placeholder =
+    'command id for <action>(...) rc mappings — Enter copies it to the clipboard';
+  qp.items = ids.map((id) => ({ label: id }));
+  qp.buttons = [recordButton, logButton];
+  qp.onDidTriggerButton((b) => {
+    qp.hide();
+    if (b === recordButton) {
+      void vscode.commands
+        .executeCommand('workbench.action.openGlobalKeybindings')
+        .then(() =>
+          vscode.commands.executeCommand('keybindings.editor.recordSearchKeys'),
+        );
+    } else {
+      void vscode.commands.executeCommand(
+        'workbench.action.toggleKeybindingsLog',
+      );
+    }
+  });
+  qp.onDidAccept(async () => {
+    const picked = qp.activeItems[0]?.label;
+    qp.hide();
+    if (picked !== undefined) {
+      await vscode.env.clipboard.writeText(picked);
+      void vscode.window.setStatusBarMessage(`meow: copied ${picked}`, 3000);
+    }
+  });
+  qp.onDidHide(() => qp.dispose());
+  qp.show();
+}
+
+/** Drop a state's armed avy session and its pending input timer WITHOUT
+ *  painting — for editors that are gone (the TextEditor object is disposed;
+ *  its decorations died with it, and the timer's finishInput must not fire
+ *  against it). */
+function dropAvySession(st: MeowState): void {
+  const session = st.avy;
+  if (session) {
+    if (session.timer != null) clearTimeout(session.timer);
+    st.avy = null;
+  }
+}
+
+/** An armed avy session dies with its surface: when its document is no
+ *  longer visible, the captured TextEditor is disposed — sweep the session
+ *  before its timer paints on it. */
+function dropHiddenAvySessions(): void {
+  const visible = new Set(
+    vscode.window.visibleTextEditors.map((e) => e.document.uri.toString()),
+  );
+  for (const [uri, st] of states) {
+    if (st.avy && !visible.has(uri)) dropAvySession(st);
+  }
+}
+
 export function deactivate(): void {
+  sweepHintTimer();
+  if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
+  if (whichKeyCloseTimer !== undefined) clearTimeout(whichKeyCloseTimer);
+  for (const st of states.values()) dropAvySession(st);
   states.clear();
 }

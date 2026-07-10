@@ -67,7 +67,11 @@ export const commands: Map<string, MeowCommand> = new Map([
 
 /** One undo step over every cursor, highest offset first: [compute] receives
  *  a selection and returns its edit (or null) plus the cursor's new range.
- *  Descending order keeps every not-yet-processed offset valid. */
+ *  Descending order keeps every not-yet-processed offset valid. compute
+ *  answers in PRE-edit coordinates; applying the batch shifts everything
+ *  above an edit, so each cursor is re-based by the length delta of the
+ *  edits below it (its own edit excluded — its sel already sits where
+ *  compute put it, e.g. after a yank's insertion). */
 async function editCarets(
   ctx: Ctx,
   compute: (
@@ -81,12 +85,25 @@ async function editCarets(
     .map((sel, index) => ({ sel, index, lo: Math.min(sel.anchor, sel.active) }))
     .sort((a, b) => b.lo - a.lo);
   const edits: TextEdit[] = [];
-  const newSels: SelRange[] = new Array(sels.length);
+  const results: Array<{ edit: TextEdit | null; sel: SelRange }> = new Array(
+    sels.length,
+  );
   for (const item of order) {
     const hi = Math.max(item.sel.anchor, item.sel.active);
     const r = compute(item.sel, item.lo, hi);
     if (r.edit) edits.push(r.edit);
-    newSels[item.index] = r.sel;
+    results[item.index] = r;
+  }
+  const newSels: SelRange[] = new Array(sels.length);
+  let delta = 0;
+  for (const item of [...order].reverse()) {
+    // ascending offsets
+    const r = results[item.index];
+    newSels[item.index] = {
+      anchor: r.sel.anchor + delta,
+      active: r.sel.active + delta,
+    };
+    if (r.edit) delta += r.edit.text.length - (r.edit.end - r.edit.start);
   }
   GrabMod.adjustForEdits(ctx.st, edits);
   if (edits.length > 0) await ctx.port.edit(edits);
@@ -227,6 +244,28 @@ function killRange(
   return { lo, hi };
 }
 
+/** The region-bearing selections in buffer order — the cursors a kill or
+ *  save reads. */
+function regionsInOrder(sels: SelRange[]): SelRange[] {
+  return sels
+    .filter((s) => s.anchor !== s.active)
+    .sort(
+      (a, b) => Math.min(a.anchor, a.active) - Math.min(b.anchor, b.active),
+    );
+}
+
+/** The \n-joined kill-ring text those regions contribute, each through
+ *  [killRange] — one rule for kill AND save, so the hand-probed newline
+ *  behavior cannot drift between them. */
+function joinedKillText(ctx: Ctx, text: string, regions: SelRange[]): string {
+  return regions
+    .map((s) => {
+      const r = killRange(ctx, s, text.length);
+      return text.slice(r.lo, r.hi);
+    })
+    .join('\n');
+}
+
 async function kill(ctx: Ctx): Promise<void> {
   if (!allowModify(ctx)) return; // meow gates kill silently
   const st = ctx.st;
@@ -238,19 +277,9 @@ async function kill(ctx: Ctx): Promise<void> {
   }
   if (Sel.hasSelection(prim)) {
     // cut: the kill-ring is the clipboard; multi-cursor kills join with \n
-    const sels = ctx.port
-      .getSelections()
-      .filter((s) => s.anchor !== s.active)
-      .sort(
-        (a, b) => Math.min(a.anchor, a.active) - Math.min(b.anchor, b.active),
-      );
-    const killed = sels
-      .map((s) => {
-        const r = killRange(ctx, s, text.length);
-        return text.slice(r.lo, r.hi);
-      })
-      .join('\n');
-    await ctx.clipboard.write(killed);
+    await ctx.clipboard.write(
+      joinedKillText(ctx, text, regionsInOrder(ctx.port.getSelections())),
+    );
     await editCarets(ctx, (sel, lo, hi) => {
       if (lo === hi) return { edit: null, sel };
       const r = killRange(ctx, sel, text.length);
@@ -306,19 +335,9 @@ async function joinKill(ctx: Ctx): Promise<void> {
 async function save(ctx: Ctx): Promise<void> {
   const text = ctx.port.getText();
   const sels = ctx.port.getSelections();
-  const withSel = sels
-    .filter((s) => s.anchor !== s.active)
-    .sort(
-      (a, b) => Math.min(a.anchor, a.active) - Math.min(b.anchor, b.active),
-    );
+  const withSel = regionsInOrder(sels);
   if (withSel.length === 0) return;
-  const copied = withSel
-    .map((s) => {
-      const r = killRange(ctx, s, text.length);
-      return text.slice(r.lo, r.hi);
-    })
-    .join('\n');
-  await ctx.clipboard.write(copied);
+  await ctx.clipboard.write(joinedKillText(ctx, text, withSel));
   ctx.port.setSelections(
     sels.map((s) => {
       if (s.anchor === s.active) return s;

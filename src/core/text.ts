@@ -56,6 +56,12 @@ export function lineEnd(text: string, line: number): number {
   return nl < 0 ? text.length : nl;
 }
 
+/** Empty or whitespace-only line — THE paragraph/join boundary, shared so
+ *  structures (join) and things (paragraph) cannot disagree on blankness. */
+export function isBlankLine(text: string, line: number): boolean {
+  return text.slice(lineStart(text, line), lineEnd(text, line)).trim() === '';
+}
+
 // ------------------------------------------------------------- char classes
 
 export function isWordChar(c: string): boolean {

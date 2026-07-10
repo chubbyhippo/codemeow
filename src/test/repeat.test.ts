@@ -103,7 +103,10 @@ describe('RepeatSpec', () => {
       d.get('change')!.get(',')!.action,
       'workbench.action.editor.previousChange',
     );
-    assert.deepEqual(new Set(d.get('zoom')!.keys()), new Set(['i', '=', 'o', '-', 'u', '0']));
+    assert.deepEqual(
+      new Set(d.get('zoom')!.keys()),
+      new Set(['i', '=', 'o', '-', 'u', '0']),
+    );
     assert.equal(
       d.get('expand')!.get('.')!.action,
       'editor.action.smartSelect.expand',
@@ -119,7 +122,9 @@ describe('RepeatSpec', () => {
     // are part of it, so editing one must light the button up
     freshSpec();
     Rc.setUserLines(['nmap Z ,b']);
-    assert.ok(!RcState.equalTo(Rc.parse(['nmap Z ,b', 'repeat nav . meow-next'])));
+    assert.ok(
+      !RcState.equalTo(Rc.parse(['nmap Z ,b', 'repeat nav . meow-next'])),
+    );
   });
 
   // ------------------------------------------------------------------ dispatch

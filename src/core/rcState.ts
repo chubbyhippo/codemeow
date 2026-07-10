@@ -45,11 +45,9 @@ export const RcState = {
     state = serialize(c);
   },
 
-  loaded(): boolean {
-    return state !== null;
-  },
-
-  /** Does this PARSED config match the user layer the engine is running? */
+  /** Does this PARSED config match the user layer the engine is running?
+   *  False before any load — the not-yet-loaded guard the ideameow sibling
+   *  keeps as a separate loaded() (its floating action needs both). */
   equalTo(c: Config): boolean {
     return state !== null && serialize(c) === state;
   },

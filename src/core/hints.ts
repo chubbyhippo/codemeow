@@ -19,12 +19,11 @@ import { Ctx } from './port';
 import { SelType } from './state';
 import {
   charPred,
-  indexOfChar,
-  lastIndexOfChar,
   lineCount,
   lineEnd,
   lineOfOffset,
   lineStart,
+  nthCharTarget,
   Words,
 } from './text';
 
@@ -70,16 +69,14 @@ export function expandHintPositions(ctx: Ctx, count = 10): number[] {
     case SelType.TILL: {
       const c = st.lastFind;
       if (c === null) return out;
-      let i = caret;
-      for (let k = 0; k < count; k++) {
-        const next = backward
-          ? lastIndexOfChar(text, c, i - 1)
-          : indexOfChar(text, c, i + 1);
-        if (next < 0) break;
-        out.push(
-          st.selType === SelType.TILL ? next : Math.min(next + 1, text.length),
-        );
-        i = next;
+      // the SAME scan the digit expand runs (nthCharTarget), so the painted
+      // digits can never disagree with where the selection would land —
+      // e.g. a target char sitting right at the caret
+      const till = st.selType === SelType.TILL;
+      for (let k = 1; k <= count; k++) {
+        const t = nthCharTarget(text, c, caret, k, backward, till);
+        if (t < 0) break;
+        out.push(t);
       }
       break;
     }

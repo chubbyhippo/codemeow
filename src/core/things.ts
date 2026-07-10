@@ -18,6 +18,7 @@
 import { Ctx } from './port';
 import {
   clamp,
+  isBlankLine,
   isSymbolChar,
   lineCount,
   lineEnd,
@@ -213,8 +214,7 @@ function paragraph(
 ): Bounds | null {
   if (text.length === 0) return null;
   const count = lineCount(text);
-  const blank = (l: number) =>
-    text.slice(lineStart(text, l), lineEnd(text, l)).trim() === '';
+  const blank = (l: number) => isBlankLine(text, l);
   const ln = lineOfOffset(text, clamp(offset, 0, text.length));
   if (blank(ln)) return null;
   let first = ln;
