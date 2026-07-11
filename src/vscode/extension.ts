@@ -614,6 +614,23 @@ export function activate(context: vscode.ExtensionContext): void {
       if (st) Engine.escapeKey(makeCtx(editor, st));
     }),
 
+    // meow-keypad from ANY state, INSERT included — init.el's global M-SPC
+    // (`keymap-global-set "M-SPC" #'meow-keypad`), = ideameow's Alt+;. The
+    // manifest binds alt+; on meow editors; a modifier chord never reaches
+    // the modal engine, so this is a command, not an rc line. Entry records
+    // the state and every keypad exit returns there (meow-keypad.el /
+    // meow--exit-keypad-state) — a command run from INSERT drops you back
+    // in INSERT. A no-op when KEYPAD is already active, like meow's
+    // overriding keypad map.
+    vscode.commands.registerCommand('codemeow.keypad', () => {
+      const editor = vscode.window.activeTextEditor;
+      if (!editor) return;
+      const st = stateFor(editor);
+      if (st && st.mode !== MeowMode.KEYPAD) {
+        Engine.enterKeypad(makeCtx(editor, st));
+      }
+    }),
+
     // the tree surface: the per-key manifest keybindings (gated on the
     // codemeow.tree.* contexts, see treeKeys.ts) land here with the pressed
     // char, and the MOTION map decides what it does on the focused tree

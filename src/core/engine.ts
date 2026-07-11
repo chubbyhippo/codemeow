@@ -38,6 +38,16 @@ import * as Avy from './avy';
 
 const KEYPAD_BINDING: Binding = { command: 'meow-keypad', recursive: true };
 
+/** meow-keypad (meow-keypad.el): record meow--keypad-previous-state, then
+ *  switch — Keypad.exit restores it, so SPC round-trips to NORMAL and the
+ *  Alt+; chord returns to INSERT. Shared by the rc-dispatched 'meow-keypad'
+ *  registry command and the adapter's codemeow.keypad command. */
+export function enterKeypad(ctx: Ctx): void {
+  ctx.st.keypadPreviousState = ctx.st.mode;
+  setMode(ctx, MeowMode.KEYPAD);
+  ctx.ui.scheduleWhichKey('keypad', '');
+}
+
 /** @return true when the key was consumed (the type handler skips insertion). */
 export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   const st = ctx.st;
@@ -200,9 +210,10 @@ async function dispatch(ctx: Ctx, b: Binding): Promise<void> {
 }
 
 /**
- * The ESC key: INSERT/KEYPAD -> NORMAL, drops pending keys, collapses beacon
- * cursors. @return false when there was nothing meow-related to do (the host
- * may fall through to its own escape behavior).
+ * The ESC key: INSERT -> NORMAL, KEYPAD -> the state it was entered from,
+ * drops pending keys, collapses beacon cursors. @return false when there was
+ * nothing meow-related to do (the host may fall through to its own escape
+ * behavior).
  */
 export function escapeKey(ctx: Ctx): boolean {
   const st = ctx.st;
@@ -215,8 +226,14 @@ export function escapeKey(ctx: Ctx): boolean {
   st.repeatMap = null; // ESC always ends a repeat run (a non-member key)
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();
-  if (st.mode === MeowMode.INSERT || st.mode === MeowMode.KEYPAD) {
+  if (st.mode === MeowMode.INSERT) {
     setMode(ctx, MeowMode.NORMAL);
+    ctx.ui.refresh(st);
+    return true;
+  }
+  if (st.mode === MeowMode.KEYPAD) {
+    // meow-keypad-quit: back to the state keypad was entered from
+    Keypad.exit(ctx);
     ctx.ui.refresh(st);
     return true;
   }

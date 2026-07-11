@@ -44,6 +44,11 @@
         "category": "codemeow"
       },
       {
+        "command": "codemeow.keypad",
+        "title": "Meow Keypad",
+        "category": "codemeow"
+      },
+      {
         "command": "codemeow.windmoveLeft",
         "title": "Windmove Left",
         "category": "codemeow"
@@ -78,6 +83,11 @@
         "key": "escape",
         "command": "codemeow.escape",
         "when": "editorTextFocus && codemeow.active && !suggestWidgetVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !inSnippetMode"
+      },
+      {
+        "key": "alt+;",
+        "command": "codemeow.keypad",
+        "when": "editorTextFocus && codemeow.active"
       },
       {
         "key": "shift+left",

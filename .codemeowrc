@@ -139,7 +139,7 @@ mmap q <action>(workbench.action.toggleSidebarVisibility)
 " ----------------------------------------------------------------------------
 " In Emacs, SPC x / c / m reach the C-x / C-c / M- keymaps; here the same
 " sequences dispatch VS Code commands, mirroring the companion .ideavimrc /
-" .ideameowrc leader scheme. SPC 1-9 (digit argument), SPC ? (cheatsheet) and
+" .ideameowrc leader scheme. SPC 0-9 (digit argument), SPC ? (cheatsheet) and
 " SPC / (describe key) are reserved by the keypad itself and cannot be
 " remapped. Finding a command's id for <action>(...): SPC i d lists every
 " command id (type to filter, Enter copies it to the clipboard), or
@@ -186,6 +186,9 @@ map <leader>xpg <action>(workbench.action.findInFiles)
 map <leader>xpr <action>(workbench.action.replaceInFiles)
 map <leader>xpc <action>(workbench.action.tasks.build)
 
+" SPC x r = C-x r: bookmarks (init.el: C-x r b = consult-bookmark)
+map <leader>xrb <action>(numberedBookmarks.listFromAllFiles)
+
 " SPC c = C-c: personal commands
 map <leader>cf <action>(workbench.action.quickOpen)
 map <leader>cs <action>(workbench.action.files.saveAll)
@@ -214,7 +217,7 @@ map <leader>mr <action>(editor.action.smartSelect.expand)
 map <leader>mR <action>(editor.action.smartSelect.shrink)
 map <leader>my <action>(editor.action.clipboardPasteAction)
 map <leader>m. <action>(editor.action.revealDefinition)
-map <leader>mg <action>(workbench.action.gotoLine)
+map <leader>mg avy-goto-line
 map <leader>msr <action>(workbench.action.findInFiles)
 map <leader>msl <action>(actions.find)
 map <leader>mss <action>(actions.find)
@@ -268,6 +271,7 @@ nmap + <action>(workbench.action.evenEditorWidths)
 desc <leader>b bookmark (0-9 set / j jump) · b buffers
 desc <leader>x C-x · file / buffer / window
 desc <leader>xp C-x p · project
+desc <leader>xr C-x r · bookmarks
 desc <leader>c C-c · commands (= M-m)
 desc <leader>cj C-c j · avy jump
 desc <leader>m M- · meta
@@ -301,6 +305,7 @@ map <leader>ac <action>(workbench.view.scm)
 map <leader>ad <action>(workbench.view.debug)
 map <leader>af <action>(workbench.view.search)
 map <leader>ag <action>(workbench.view.scm)
+map <leader>ai <action>(workbench.action.chat.open)
 map <leader>ak <action>(workbench.action.toggleScreencastMode)
 map <leader>an <action>(notifications.showList)
 map <leader>ap <action>(workbench.view.explorer)
@@ -379,6 +384,7 @@ map <leader>il <action>(editor.action.refactor)
 map <leader>im <action>(editor.action.sourceAction)
 map <leader>in <action>(editor.action.refactor)
 map <leader>ip <action>(editor.action.refactor)
+map <leader>iP <action>(editor.action.refactor)
 map <leader>iv <action>(editor.action.refactor)
 
 " --- SPC j — quick docs / implementations -----------------------------------------
@@ -439,6 +445,11 @@ map <leader>rB <action>(git.clean)
 map <leader>rd <action>(workbench.action.debug.start)
 map <leader>re <action>(editor.action.refactor)
 map <leader>rf <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
+" r h: the change under the caret — "Show Next Change" peeks the caret's own
+" hunk when it sits on one (the dirty-diff lookup is caret-inclusive,
+" verified in VS Code 1.107) — the VcsShowCurrentChangeMarker analog
+map <leader>rh <action>(editor.action.dirtydiff.next)
+map <leader>ri <action>(revealFileInOS)
 map <leader>rl <action>(workbench.action.navigateToLastEditLocation)
 map <leader>rm <action>(workbench.action.debug.selectandstart)
 map <leader>rn <action>(editor.action.rename)
@@ -453,6 +464,7 @@ map <leader>rw <action>(workbench.action.replaceInFiles)
 desc <leader>s search / show / step
 map <leader>ss <action>(actions.find)
 map <leader>sS <action>(workbench.action.showAllSymbols)
+map <leader>sH <action>(timeline.focus)
 map <leader>sI <action>(editor.action.quickFix)
 map <leader>sa <action>(workbench.action.showCommands)
 map <leader>sc <action>(workbench.action.showAllSymbols)

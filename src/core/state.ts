@@ -108,6 +108,10 @@ export class MeowState {
   repeatMap: Map<string, Binding> | null = null;
 
   keypad = '';
+
+  /** meow--keypad-previous-state: the state KEYPAD returns to on exit. */
+  keypadPreviousState: MeowMode = MeowMode.NORMAL;
+
   unit: string[] = [];
   lastKeys: string[] = [];
   replaying = false;

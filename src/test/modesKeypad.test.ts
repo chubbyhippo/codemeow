@@ -4,8 +4,9 @@
 
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { freshSpec } from './helpers';
+import { freshSpec, Spec } from './helpers';
 import { MeowMode } from '../core/state';
+import * as Engine from '../core/engine';
 
 describe('ModesKeypadSpec', () => {
   // State transitions: INSERT/NORMAL/MOTION/KEYPAD, escape, keypad dispatch.
@@ -70,6 +71,55 @@ describe('ModesKeypadSpec', () => {
     await s.whenKeys('d'); // meow-delete: Emacs' "Buffer is read-only" — inert
     await s.whenKeys('p'); // meow-yank: same
     s.thenText('one\ntwo');
+    s.thenMode(MeowMode.NORMAL);
+  });
+
+  /** The alt+; chord's path: the codemeow.keypad command calls the same
+   *  core enterKeypad the rc-dispatched 'meow-keypad' command uses. */
+  const fireKeypadAction = (s: Spec): void => Engine.enterKeypad(s.ctx);
+
+  it('given INSERT when the keypad action fires then a keypad command returns to INSERT', async () => {
+    // init.el: M-SPC reaches the leader even from INSERT; meow records
+    // meow--keypad-previous-state and every exit path restores it
+    const s = freshSpec();
+    s.given('word', 'ab<caret>cd');
+    s.givenRc('map <leader>zz meow-left'); // = ideameow's <action>(EditorLeft)
+    await s.whenKeys('i');
+    s.thenMode(MeowMode.INSERT);
+    fireKeypadAction(s);
+    s.thenMode(MeowMode.KEYPAD);
+    assert.deepEqual(
+      s.ui.modes,
+      [MeowMode.INSERT, MeowMode.KEYPAD],
+      'the adapter swaps INSERT bar for the KEYPAD block cursor',
+    );
+    await s.whenKeys('zz');
+    s.thenMode(MeowMode.INSERT);
+    assert.deepEqual(
+      s.ui.modes,
+      [MeowMode.INSERT, MeowMode.KEYPAD, MeowMode.INSERT],
+      "back to INSERT's bar cursor",
+    );
+    s.thenCaretAt(1);
+  });
+
+  it('given INSERT when the keypad action then escape then back to INSERT', async () => {
+    // meow-keypad-quit -> meow--exit-keypad-state: previous state returns
+    const s = freshSpec();
+    s.given('word', '<caret>hello');
+    await s.whenKeys('i');
+    fireKeypadAction(s);
+    s.thenMode(MeowMode.KEYPAD);
+    s.pressEsc();
+    s.thenMode(MeowMode.INSERT);
+  });
+
+  it('given NORMAL when the keypad action fires then KEYPAD round-trips to NORMAL', () => {
+    const s = freshSpec();
+    s.given('word', '<caret>hello');
+    fireKeypadAction(s);
+    s.thenMode(MeowMode.KEYPAD);
+    s.pressEsc();
     s.thenMode(MeowMode.NORMAL);
   });
 

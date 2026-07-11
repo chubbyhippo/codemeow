@@ -16,7 +16,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Ctx, setMode } from './port';
-import { MeowMode } from './state';
 import { Rc } from './rc';
 import * as Engine from './engine';
 
@@ -25,7 +24,7 @@ import * as Engine from './engine';
  * the same key sequences dispatch editor commands. Like the NORMAL/MOTION
  * layout, the whole table lives in rc lines: the bundled default .codemeowrc
  * defines it and ~/.codemeowrc `map <leader>...` entries layer on top (see
- * Rc.keypad()). SPC 1-9 = digit argument, SPC ? = cheatsheet, SPC / =
+ * Rc.keypad()). SPC 0-9 = digit argument, SPC ? = cheatsheet, SPC / =
  * describe key. A which-key hint lists continuations of a prefix.
  */
 
@@ -80,9 +79,12 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
   }
 }
 
-function exit(ctx: Ctx): void {
+/** Every keypad exit path — execute, quit/ESC, undefined sequence — lands
+ *  here (the engine's escape handler calls it too). */
+export function exit(ctx: Ctx): void {
   ctx.ui.hideWhichKey();
-  setMode(ctx, MeowMode.NORMAL);
+  // meow--exit-keypad-state: back to meow--keypad-previous-state
+  setMode(ctx, ctx.st.keypadPreviousState);
 }
 
 function describe(ctx: Ctx, c: string): void {
@@ -130,9 +132,9 @@ NORMAL — selection first, then act
   BEACON   grab a region (G), then select w/x/f... inside it:
            a cursor lands on every match — edit them all, ESC to finish
 
-KEYPAD (SPC)
+KEYPAD (SPC — or Alt+; from ANY state, INSERT included; returns there)
   SPC b bookmarks/buffers   SPC x file/buffer/window   SPC c commands   SPC m meta
-  SPC w windows   SPC 1-9 count   SPC ? this sheet   SPC / describe key
+  SPC w windows   SPC 0-9 count   SPC ? this sheet   SPC / describe key
   SPC c m edit ~/.codemeowrc   SPC c M reload it
   SPC i d find a command id — filterable list, Enter copies the id
           to use in <action>(...) mappings; its title buttons open

@@ -15,8 +15,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { Ctx, setMode } from './port';
-import { MeowMode } from './state';
+import { Ctx } from './port';
 import { MeowCommand } from './command';
 import * as Motions from './motions';
 import * as Sel from './selections';
@@ -25,7 +24,7 @@ import * as Structures from './structures';
 import * as Grab from './grab';
 import * as Edits from './edits';
 import * as Avy from './avy';
-import * as Engine from './engine'; // used lazily inside `repeat` — safe under the require cycle
+import * as Engine from './engine'; // used lazily inside `repeat`/`meow-keypad` — safe under the require cycle
 
 /**
  * Every command under its meow name (plus Emacs' `repeat` and `ignore`,
@@ -57,13 +56,7 @@ export const COMMANDS: Map<string, MeowCommand> = new Map([
     },
   ],
   ['meow-quit', (ctx: Ctx) => ctx.port.closeEditor()],
-  [
-    'meow-keypad',
-    (ctx: Ctx) => {
-      setMode(ctx, MeowMode.KEYPAD);
-      ctx.ui.scheduleWhichKey('keypad', '');
-    },
-  ],
+  ['meow-keypad', (ctx: Ctx) => Engine.enterKeypad(ctx)],
   ['repeat', (ctx: Ctx) => Engine.repeatLast(ctx)],
   ['ignore', () => {}],
 ]);
