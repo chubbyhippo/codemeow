@@ -25,12 +25,6 @@ export enum MeowMode {
   KEYPAD = 'KEYPAD',
 }
 
-/**
- * Selection types mirror meow's (expand/select . type) pairs:
- * [MeowState.selExpand] is the cdr flag that makes follow-up commands of the
- * same family extend the selection instead of re-creating it
- * (meow-mark-word -> meow-next-word).
- */
 export enum SelType {
   NONE = 'NONE',
   CHAR = 'CHAR',
@@ -45,7 +39,6 @@ export enum SelType {
   TRANSIENT = 'TRANSIENT',
 }
 
-/** Commands that read one more key before acting. */
 export enum Pending {
   FIND = 'FIND',
   TILL = 'TILL',
@@ -55,11 +48,6 @@ export enum Pending {
   END = 'END',
 }
 
-/**
- * A recorded selection, meow--selection style: type null is the placeholder
- * meow pushes when a selection is created from nothing — popping it returns
- * the caret to where the selection chain started.
- */
 export interface SavedSelection {
   type: SelType | null;
   expand: boolean;
@@ -67,56 +55,41 @@ export interface SavedSelection {
   active: number;
 }
 
-/** Everything meow remembers about one editor. */
 export class MeowState {
   mode: MeowMode = MeowMode.NORMAL;
   selType: SelType = SelType.NONE;
   selExpand = false;
   pending: Pending | null = null;
 
-  // digit-argument (keypad SPC 1-9, or plain digits with no selection) and
-  // negative-argument, consumed by the next command
   pendingCount = 0;
   negative = false;
 
   lastFind: string | null = null;
 
-  /** last entry is the active pattern (regexp source), meow's search ring. */
   searchHistory: string[] = [];
 
-  /** meow--selection-history; cleared by meow--cancel-selection. */
   selectionHistory: SavedSelection[] = [];
 
-  /** meow--selection: survives region-killing edits (stale on purpose). */
   lastSelection: SavedSelection | null = null;
 
-  /** temporary-goal-column for consecutive vertical moves (j/k chains). */
   goalColumn: number | null = null;
 
-  /** last dispatched command name — the this-command/last-command handoff. */
   lastCommand: string | null = null;
 
-  /** The grab region (secondary selection); offsets track core-applied edits. */
   grab: { start: number; end: number } | null = null;
 
-  /** An in-flight avy jump (S / Q) — keys route to it until it ends. */
   avy: AvySession | null = null;
 
-  /** The armed repeat transient (Emacs repeat-mode, see Rc repeat groups):
-   *  member keys re-dispatch their binding, any other key or ESC ends the
-   *  run and falls through to the normal map. */
   repeatMap: Map<string, Binding> | null = null;
 
   keypad = '';
 
-  /** meow--keypad-previous-state: the state KEYPAD returns to on exit. */
   keypadPreviousState: MeowMode = MeowMode.NORMAL;
 
   unit: string[] = [];
   lastKeys: string[] = [];
   replaying = false;
 
-  // ~/.codemeowrc binding replay: recursion guard, and noremap bypass depth
   replayDepth = 0;
   noremapDepth = 0;
 

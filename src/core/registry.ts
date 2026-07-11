@@ -24,15 +24,8 @@ import * as Structures from './structures';
 import * as Grab from './grab';
 import * as Edits from './edits';
 import * as Avy from './avy';
-import * as Engine from './engine'; // used lazily inside `repeat`/`meow-keypad` — safe under the require cycle
+import * as Engine from './engine';
 
-/**
- * Every command under its meow name (plus Emacs' `repeat` and `ignore`,
- * exactly as meow's suggested layout spells them) — the targets a
- * ~/.codemeowrc line can bind a key to. Each command family contributes its
- * own map; the dispatcher-level entries (counts, keypad, repeat, quit,
- * no-op) live here.
- */
 export const COMMANDS: Map<string, MeowCommand> = new Map([
   ...Motions.commands,
   ...Sel.commands,
@@ -47,8 +40,6 @@ export const COMMANDS: Map<string, MeowCommand> = new Map([
       ctx.st.negative = true;
     },
   ],
-  // meow's QWERTY table binds Emacs' own `negative-argument`; accept that
-  // exact spelling too so the canonical table pastes verbatim
   [
     'negative-argument',
     (ctx: Ctx) => {

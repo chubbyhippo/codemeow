@@ -15,44 +15,18 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/**
- * The tree-surface key universe: every printable US-layout char an rc `mmap`
- * line can bind, as one static keybinding contribution each. VS Code has no
- * runtime keybinding registration, so each keybinding is gated
- * on a `codemeow.tree.<name>` context key and the adapter turns exactly the
- * mmap-bound set on (extension.ts syncTreeKeys, re-run on rc reload). The
- * package.json keybindings block is generated from this table and pinned by
- * the TreeMeowSpec suite — the two cannot drift silently.
- *
- * No vscode import: the spec suite reads this table headlessly.
- */
-
 interface TreeKey {
-  /** The char an rc mmap line binds. */
   ch: string;
-  /** The keybinding producing that char on a US layout. */
   key: string;
-  /** Context-key suffix: `codemeow.tree.<ctx>` gates the binding. */
   ctx: string;
 }
 
-/**
- * The `when` shared by every tree keybinding. The first three terms mirror
- * VS Code's own arrow-key rules for lists (WorkbenchListFocusContextKey,
- * listService.ts — the odd `treestickyScrollFocused` casing is the
- * platform's): a focused workbench list/tree outside input boxes (the
- * Explorer's inline rename included). `!treeFindOpen` gives the find widget
- * priority — while it is open, typing into it always
- * wins — and notebooks are excluded because their cell list is not a tree
- * surface (cells keep native keys, like the attach policy's editor side).
- */
 const TREE_WHEN =
   'listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused';
 
 const LETTERS = 'abcdefghijklmnopqrstuvwxyz';
 const DIGITS = '0123456789';
 
-/** Shifted digit row: char produced, base key, context-key name. */
 const SHIFTED_DIGITS: Array<[string, string, string]> = [
   ['!', '1', 'exclam'],
   ['@', '2', 'at'],
@@ -66,7 +40,6 @@ const SHIFTED_DIGITS: Array<[string, string, string]> = [
   [')', '0', 'parenRight'],
 ];
 
-/** Punctuation keys: char, key, name, then the shifted char and its name. */
 const PUNCTUATION: Array<[string, string, string, string, string]> = [
   ['`', '`', 'backquote', '~', 'tilde'],
   ['-', '-', 'minus', '_', 'underscore'],
@@ -81,8 +54,6 @@ const PUNCTUATION: Array<[string, string, string, string, string]> = [
   ['/', '/', 'slash', '?', 'question'],
 ];
 
-/** All 94 printable US-layout chars (ASCII 33-126; SPC is the keypad key
- *  and unmappable in the rc). */
 export const TREE_KEYS: TreeKey[] = [
   ...[...LETTERS].map((c) => ({ ch: c, key: c, ctx: c })),
   ...[...LETTERS].map((c) => ({
@@ -98,9 +69,6 @@ export const TREE_KEYS: TreeKey[] = [
   ]),
 ];
 
-/** The contributes.keybindings entries package.json must carry, verbatim —
- *  pinned by the TreeMeowSpec suite. Each dispatches the pressed char to
- *  the codemeow.tree command (core/treeMeow resolves it via the mmap). */
 export function treeKeybindings(): Array<{
   key: string;
   command: string;

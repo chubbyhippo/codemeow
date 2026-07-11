@@ -20,14 +20,9 @@ import { MeowState, SelType } from './state';
 import { escapeRegExp, lineEnd, lineOfOffset, lineStart } from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
-import * as Edits from './edits'; // used only at call time — safe under the require cycle
+import * as Edits from './edits';
 
-/**
- * meow-grab / swap-grab / sync-grab — the secondary-selection stand-in — plus
- * the BEACON approximation: while a grab is active, a selection created
- * inside it drops a cursor on every similar range, so native multiple cursors
- * do the job of meow's kmacro replay.
- */
+const MAX_GRAB_SYNC_MATCHES = 500;
 
 export const commands: Map<string, MeowCommand> = new Map([
   ['meow-grab', (ctx: Ctx) => grab(ctx)],
@@ -45,10 +40,6 @@ function set(ctx: Ctx, start: number, end: number): void {
   ctx.ui.setGrabHighlight(end > start ? { start, end } : null);
 }
 
-/**
- * Keep the grab tracking core-applied edits, like a range marker would:
- * edits before it shift it, edits inside it grow/shrink it.
- */
 export function adjustForEdits(st: MeowState, edits: TextEdit[]): void {
   const g = st.grab;
   if (!g) return;
@@ -66,8 +57,6 @@ export function adjustForEdits(st: MeowState, edits: TextEdit[]): void {
   if (g.end < g.start) g.end = g.start;
 }
 
-/** meow-grab: region -> secondary selection; with NO region the grab is
- *  cancelled instead (meow 1.5.0 body, despite its docstring). */
 function grab(ctx: Ctx): void {
   clear(ctx);
   const sel = Sel.primary(ctx);
@@ -81,7 +70,6 @@ function grab(ctx: Ctx): void {
   Sel.cancel(ctx);
 }
 
-/** meow-sync-grab: secondary := region; selection cancelled. */
 function sync(ctx: Ctx): void {
   const sel = Sel.primary(ctx);
   if (!Sel.hasSelection(sel)) {
@@ -93,10 +81,8 @@ function sync(ctx: Ctx): void {
   Sel.cancel(ctx);
 }
 
-/** meow-swap-grab: exchange region and secondary text; the secondary stays
- *  at its location holding the swapped-in text. */
 async function swap(ctx: Ctx): Promise<void> {
-  if (Edits.blockedReadOnly(ctx)) return; // swap-grab edits both regions
+  if (Edits.blockedReadOnly(ctx)) return;
   const { port, st } = ctx;
   const g = st.grab;
   const sel = Sel.primary(ctx);
@@ -119,7 +105,7 @@ async function swap(ctx: Ctx): Promise<void> {
   const text = port.getText();
   const grabText = text.slice(gs, ge);
   const selText = text.slice(ss, se);
-  st.grab = null; // replaced wholesale below; skip marker adjustment
+  st.grab = null;
   await port.edit([
     { start: ss, end: se, text: grabText },
     { start: gs, end: ge, text: selText },
@@ -138,7 +124,6 @@ async function swap(ctx: Ctx): Promise<void> {
   st.selType = SelType.NONE;
 }
 
-/** meow-pop-grab, the pop-selection fallback: grab becomes the selection. */
 export function pop(ctx: Ctx): boolean {
   const g = ctx.st.grab;
   if (!g) return false;
@@ -148,11 +133,6 @@ export function pop(ctx: Ctx): boolean {
   return true;
 }
 
-/**
- * BEACON: with a grab active, creating a selection inside it drops a
- * cursor+selection on every similar range in the grab. Invoked from the
- * selection primitive, so every selecting command participates.
- */
 export function beacon(ctx: Ctx): void {
   const { port, st } = ctx;
   const g = st.grab;
@@ -191,11 +171,11 @@ export function beacon(ctx: Ctx): void {
         const e0 = s0 + m[0].length;
         if (s0 !== ss) {
           sels.push({ anchor: s0, active: e0 });
-          if (++added >= 500) break;
+          if (++added >= MAX_GRAB_SYNC_MATCHES) break;
         }
       }
       if (sels.length === 0) return;
-      sels.unshift({ anchor: ss, active: se }); // the original stays primary
+      sels.unshift({ anchor: ss, active: se });
       break;
     }
     case SelType.LINE: {

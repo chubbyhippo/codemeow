@@ -28,13 +28,6 @@ import { Things } from './things';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
 
-/**
- * Structural selections: the char-thing table behind `, . [ ]` (see Things),
- * bracket blocks (meow-block / meow-to-block), and the join region
- * (meow-join). The thing commands park a [Pending] key and let the dispatcher
- * hand the thing char to [thingSelect].
- */
-
 export const commands: Map<string, MeowCommand> = new Map([
   ['meow-inner-of-thing', (ctx: Ctx) => pendThing(ctx, Pending.INNER)],
   ['meow-bounds-of-thing', (ctx: Ctx) => pendThing(ctx, Pending.BOUNDS)],
@@ -50,7 +43,6 @@ function pendThing(ctx: Ctx, p: Pending): void {
   ctx.ui.scheduleWhichKey('things', '');
 }
 
-/** The second half of the thing commands, once the thing char arrives. */
 export async function thingSelect(
   ctx: Ctx,
   kind: Pending,
@@ -70,8 +62,6 @@ export async function thingSelect(
       Sel.select(ctx, SelType.TRANSIENT, b.start, b.end, false);
       break;
     case Pending.BOUNDS:
-      // meow-thing-selection-directions: bounds select BACKWARD (caret at
-      // the opening delimiter), inner forward — verified by probe
       Sel.select(ctx, SelType.TRANSIENT, b.end, b.start, false);
       break;
     case Pending.BEGIN:
@@ -85,17 +75,11 @@ export async function thingSelect(
   }
 }
 
-// ------------------------------------------------------------------ blocks
-
 interface PairRange {
   open: number;
   close: number;
 }
 
-/**
- * Smallest bracket pair strictly enclosing [s, e). Same-line quoted runs
- * are skipped — a text approximation of syntax-ppss.
- */
 function enclosingPair(text: string, s: number, e: number): PairRange | null {
   const opens = '([{';
   const closes = ')]}';
@@ -138,14 +122,11 @@ function enclosingPair(text: string, s: number, e: number): PairRange | null {
   return best;
 }
 
-/** meow-block: innermost pair INCLUDING delimiters; with an active block
- *  selection it expands to the parent. Backward (caret at the opening
- *  delimiter) when the region is reversed XOR a negative argument. */
 function block(ctx: Ctx): void {
   const text = ctx.port.getText();
   const sel = Sel.primary(ctx);
   const active = ctx.st.selType === SelType.BLOCK && Sel.hasSelection(sel);
-  const back = Sel.backwardP(ctx) !== ctx.st.takeCount(1) < 0; // xor, like meow-block
+  const back = Sel.backwardP(ctx) !== ctx.st.takeCount(1) < 0;
   const s = active ? Math.min(sel.anchor, sel.active) : sel.active;
   const e = active ? Math.max(sel.anchor, sel.active) : sel.active;
   const p = enclosingPair(text, s, e);
@@ -157,9 +138,6 @@ function block(ctx: Ctx): void {
   else Sel.select(ctx, SelType.BLOCK, p.open, p.close + 1, true);
 }
 
-/** meow-to-block: from point to the closing delimiter of the enclosing block
- *  (to the opening one when the block selection is reversed or the argument
- *  is negative). */
 function toBlock(ctx: Ctx): void {
   const text = ctx.port.getText();
   const back =
@@ -174,11 +152,6 @@ function toBlock(ctx: Ctx): void {
   Sel.select(ctx, SelType.BLOCK, caret, back ? p.open : p.close + 1, true);
 }
 
-// -------------------------------------------------------------------- join
-
-/** meow-join: select (expand . join) — end of the previous non-empty line
- *  through this line's indentation (forward variant with a negative arg);
- *  killing that selection is delete-indentation (see edits.joinKill). */
 function join(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;

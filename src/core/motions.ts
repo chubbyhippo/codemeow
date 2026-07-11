@@ -33,14 +33,6 @@ import * as Sel from './selections';
 import * as Grab from './grab';
 import * as Search from './search';
 
-/**
- * Cursor motion and the selections it creates: char/line movement with the
- * -expand variants, word/symbol motions, meow-line, goto-line, and find/till.
- * Every behavior here follows meow-command.el, not vim intuition — see the
- * [wordMotion] doc for the direction-normalization rule that makes `w` then
- * `b` extend instead of re-mark.
- */
-
 export const commands: Map<string, MeowCommand> = new Map([
   ['meow-left', (ctx: Ctx) => moveChar(ctx, -ctx.st.takeCount(1))],
   ['meow-right', (ctx: Ctx) => moveChar(ctx, ctx.st.takeCount(1))],
@@ -55,7 +47,6 @@ export const commands: Map<string, MeowCommand> = new Map([
     'meow-next-symbol',
     (ctx: Ctx) => wordMotion(ctx, true, ctx.st.takeCount(1)),
   ],
-  // meow-back-word = meow-next-thing with -N
   [
     'meow-back-word',
     (ctx: Ctx) => wordMotion(ctx, false, -ctx.st.takeCount(1)),
@@ -84,7 +75,6 @@ export const commands: Map<string, MeowCommand> = new Map([
 
 const wordType = (symbol: boolean) => (symbol ? SelType.SYMBOL : SelType.WORD);
 
-/** The commands whose chains keep Emacs' temporary-goal-column alive. */
 const VERTICAL = new Set([
   'meow-next',
   'meow-prev',
@@ -95,7 +85,6 @@ const VERTICAL = new Set([
 const charSelActive = (ctx: Ctx) =>
   ctx.st.selType === SelType.CHAR && Sel.hasSelection(Sel.primary(ctx));
 
-/** meow-left/right run backward-char/forward-char: offsets, crossing newlines. */
 function movedChar(
   len: number,
   sel: SelRange,
@@ -106,8 +95,6 @@ function movedChar(
   return { anchor: extend ? sel.anchor : active, active };
 }
 
-/** next-line/previous-line: goal column (primary caret), own column for the
- *  rest; past the first/last line the point goes to the buffer edge. */
 function movedLine(
   text: string,
   sel: SelRange,
@@ -128,8 +115,6 @@ function movedLine(
   return { anchor: extend ? sel.anchor : active, active };
 }
 
-/** Set (or keep) the goal column, Emacs temporary-goal-column style: it only
- *  survives while the previous command was a vertical move too. */
 function goalColumn(ctx: Ctx): number {
   const st = ctx.st;
   if (
@@ -146,7 +131,6 @@ function goalColumn(ctx: Ctx): number {
 
 function moveChar(ctx: Ctx, dx: number): void {
   const extend = charSelActive(ctx);
-  // meow-left/right cancel (clearing the history) only with an active region
   if (!extend && Sel.hasSelection(Sel.primary(ctx))) Sel.cancel(ctx);
   const len = ctx.port.getText().length;
   ctx.port.setSelections(
@@ -156,7 +140,6 @@ function moveChar(ctx: Ctx, dx: number): void {
 
 function moveLine(ctx: Ctx, dy: number): void {
   const extend = charSelActive(ctx);
-  // meow-next/prev run meow--cancel-selection unconditionally for other types
   if (!extend) Sel.cancel(ctx);
   const goal = goalColumn(ctx);
   const text = ctx.port.getText();
@@ -167,8 +150,6 @@ function moveLine(ctx: Ctx, dy: number): void {
   );
 }
 
-/** meow-left/right/next/prev-expand: (expand . char) selection through
- *  meow--select — so the history is recorded — then the char/line motion. */
 function moveExpand(ctx: Ctx, dx: number, dy: number): void {
   const text = ctx.port.getText();
   const goal = dy !== 0 ? goalColumn(ctx) : null;
@@ -193,15 +174,6 @@ function moveExpand(ctx: Ctx, dx: number, dy: number): void {
   Grab.beacon(ctx);
 }
 
-/**
- * meow-next-thing for word/symbol: when the current selection is the
- * matching (expand . type), the selection direction is normalized to the
- * motion FIRST (meow--direction-forward/-backward) — so after `w`, `e`
- * extends from the right end and `b` extends from the left end, anchored
- * at the opposite end (meow--make-selection keeps min/max of the original
- * region as the mark). Without a matching selection: fresh (select . type)
- * from point. No motion -> no selection change.
- */
 function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
   if (n === 0) return;
   const text = ctx.port.getText();
@@ -209,9 +181,6 @@ function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
   const sel = Sel.primary(ctx);
   const lo = Math.min(sel.anchor, sel.active);
   const hi = Math.max(sel.anchor, sel.active);
-  // meow-next-thing: a selection of another type (or none) is cancelled
-  // FIRST — meow--cancel-selection, so the chain history restarts and a
-  // later z pops the null placeholder, not the foreign selection
   if (!(Sel.hasSelection(sel) && ctx.st.selType === type)) Sel.cancel(ctx);
   const extend =
     ctx.st.selExpand && ctx.st.selType === type && Sel.hasSelection(sel);
@@ -221,9 +190,6 @@ function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
       ? Words.nextEnd(text, from, n, charPred(symbol))
       : Words.prevStart(text, from, -n, charPred(symbol));
   if (target === from) return;
-  // meow--fix-thing-selection-mark: a fresh selection snaps its mark to the
-  // word's own bounds — the separators between the old point and the word
-  // stay OUTSIDE (e e e steps bare words)
   const anchor = extend
     ? n < 0
       ? hi
@@ -232,8 +198,6 @@ function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
   Sel.select(ctx, type, anchor, target, extend);
 }
 
-/** meow-mark-word/-symbol: select the thing at point as (expand . type)
- *  and push its bounded regexp to the search ring — why `n` works after `w`. */
 function markWord(ctx: Ctx, symbol: boolean): void {
   const neg = ctx.st.takeCount(1) < 0;
   const text = ctx.port.getText();
@@ -248,15 +212,11 @@ function markWord(ctx: Ctx, symbol: boolean): void {
   Search.push(ctx.st, `\\b${escapeRegExp(text.slice(s, e))}\\b`);
 }
 
-/** meow-line: [bol, eol) without the newline; repeats extend in the
- *  selection's direction, a negative argument reverses. */
 function line(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;
   const n = ctx.st.takeCount(1);
   const lastLine = lineCount(text) - 1;
-  // extension needs exactly (expand . line) — a digit-expanded (select . line)
-  // selection re-selects the current line instead
   if (
     ctx.st.selType === SelType.LINE &&
     ctx.st.selExpand &&
@@ -294,7 +254,6 @@ function line(ctx: Ctx): void {
   }
 }
 
-/** meow-goto-line: select the target line (expand . line) and recenter. */
 async function gotoLine(ctx: Ctx): Promise<void> {
   const input = await ctx.ui.input('Goto line:');
   if (input === undefined) return;
@@ -306,7 +265,6 @@ async function gotoLine(ctx: Ctx): Promise<void> {
   Sel.select(ctx, SelType.LINE, lineStart(text, ln), lineEnd(text, ln), true);
 }
 
-/** The second half of meow-find/meow-till, once the char arrives. */
 export function findTill(ctx: Ctx, ch: string, till: boolean): void {
   const n = ctx.st.takeCount(1);
   const text = ctx.port.getText();
@@ -316,8 +274,6 @@ export function findTill(ctx: Ctx, ch: string, till: boolean): void {
     ctx.ui.hint(`char not found: ${ch}`);
     return;
   }
-  // BEFORE the select: its expand hints preview further occurrences of
-  // THIS char (a stale lastFind painted the previous find's positions)
   ctx.st.lastFind = ch;
   Sel.select(ctx, till ? SelType.TILL : SelType.FIND, caret, target, false);
 }

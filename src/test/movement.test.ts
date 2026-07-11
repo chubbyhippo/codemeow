@@ -8,8 +8,6 @@ import { freshSpec } from './helpers';
 import { SelType } from '../core/state';
 
 describe('MovementSpec', () => {
-  // meow-left/right/next/prev and the -expand variants, counts, negative arg.
-
   it('given a caret when l then it moves right without selecting', async () => {
     const s = freshSpec();
     s.given('plain text', '<caret>hello');
@@ -97,11 +95,6 @@ describe('MovementSpec', () => {
     s.thenText('hello');
   });
 
-  // The behaviors below were probed against meow 1.5.0 itself (batch Emacs,
-  // 2026-07-06): h/l are backward-char/forward-char (they cross newlines),
-  // j/k are next-line/previous-line (temporary-goal-column, buffer-edge
-  // overflow).
-
   it('given the caret at bol when h then it crosses to the previous line end', async () => {
     const s = freshSpec();
     s.given('two lines', 'abc\n<caret>def');
@@ -121,9 +114,9 @@ describe('MovementSpec', () => {
     const s = freshSpec();
     s.given('short middle line', 'abcd<caret>ef\nxy\nlmnopq');
     await s.whenKeys('j');
-    s.thenCaretAt(9); // clamped to the short line's end
+    s.thenCaretAt(9);
     await s.whenKeys('j');
-    s.thenCaretAt(14); // back out to column 4
+    s.thenCaretAt(14);
   });
 
   it('given j on the last line then the caret moves to the end of buffer', async () => {

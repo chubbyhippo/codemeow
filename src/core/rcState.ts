@@ -17,14 +17,6 @@
 
 import type { Config } from './rc';
 
-/**
- * Snapshot of the last-LOADED ~/.codemeowrc, as a stable serialization of the
- * PARSED config — so comment and formatting edits never demand a reload. The
- * adapter's editor-title Reload button gates on this (IdeaVim's
- * VimRcFileState hashes the parsed Script for the same reason).
- * Type-only import keeps this cycle-free: rc.ts calls in, nothing calls back.
- */
-
 let state: string | null = null;
 
 function serialize(c: Config): string {
@@ -40,14 +32,10 @@ function serialize(c: Config): string {
 }
 
 export const RcState = {
-  /** Called by Rc.setUserLines with whatever it just parsed. */
   saveParsed(c: Config): void {
     state = serialize(c);
   },
 
-  /** Does this PARSED config match the user layer the engine is running?
-   *  False before any load — a never-loaded rc must always count as
-   *  changed. */
   equalTo(c: Config): boolean {
     return state !== null && serialize(c) === state;
   },

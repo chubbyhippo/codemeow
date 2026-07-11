@@ -11,14 +11,6 @@ import { noWindowMessage, plan } from '../core/windmove';
 import { freshSpec } from './helpers';
 
 describe('WindmoveSpec', () => {
-  // The window surface: windmove. VS Code
-  // exposes no window geometry to extensions, so window.el's caret-band
-  // pick has no analog here — what IS
-  // pinned is the composed step decision (diff panes are windows: crossing
-  // them before leaving the group), Emacs' user-error message verbatim
-  // (batch-verified against Emacs 30.2), the manifest's Shift+arrow
-  // bindings — (windmove-default-keybindings) — and the rc's SPC w map.
-
   const sideBySide = { sideBySide: true };
 
   it('given a side-by-side diff then left from the modified pane crosses to the original', () => {
@@ -36,8 +28,6 @@ describe('WindmoveSpec', () => {
   });
 
   it('given the outer pane then windmove leaves the diff toward the group', () => {
-    // original is the leftmost window of the diff, modified the rightmost:
-    // moving past them is a group move, like any other window edge
     assert.equal(
       plan('left', { onOriginal: true, onModified: false, ...sideBySide }),
       'workbench.action.focusLeftGroup',
@@ -55,7 +45,6 @@ describe('WindmoveSpec', () => {
   });
 
   it('given up or down then it always moves between groups', () => {
-    // the diff panes sit side by side; there is never a pane above/below
     const diff = { onOriginal: false, onModified: true, ...sideBySide };
     assert.equal(plan('up', diff), 'workbench.action.focusAboveGroup');
     assert.equal(plan('down', diff), 'workbench.action.focusBelowGroup');
@@ -69,7 +58,6 @@ describe('WindmoveSpec', () => {
   });
 
   it('given no window in the direction then the message is Emacs verbatim', () => {
-    // batch-verified: (windmove-do-window-select 'left) with one window
     assert.equal(
       noWindowMessage('left'),
       'No window left from selected window',
@@ -81,9 +69,6 @@ describe('WindmoveSpec', () => {
   });
 
   it('given the manifest then shift+arrows dispatch windmove on meow editors', () => {
-    // (windmove-default-keybindings) == shift + left/right/up/down; gated
-    // on codemeow.active so shift-selection survives everywhere meow does
-    // not attach (the Emacs tradeoff applies only inside meow buffers)
     const pkg = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
     ) as {
@@ -114,8 +99,6 @@ describe('WindmoveSpec', () => {
   });
 
   it('given the bundled rc then SPC w b balances the splits', () => {
-    // Emacs' balance-windows; HJKL window swaps are not bound (VS Code has
-    // no command to exchange two groups' contents)
     freshSpec();
     assert.equal(
       Rc.defaults().keypad.get('wb')?.action,

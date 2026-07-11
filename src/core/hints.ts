@@ -27,13 +27,6 @@ import {
   Words,
 } from './text';
 
-/**
- * meow's expand hints: after an expandable selection (word/symbol/line/
- * find/till), digit labels mark where 1-9 and 0 (=10) would take the
- * selection. The core computes the offsets; the adapter renders them as
- * decorations and removes them after meow-expand-hint-remove-delay (1 s)
- * or on the next key, whichever comes first.
- */
 export function expandHintPositions(ctx: Ctx, count = 10): number[] {
   const { port, st } = ctx;
   const text = port.getText();
@@ -69,9 +62,6 @@ export function expandHintPositions(ctx: Ctx, count = 10): number[] {
     case SelType.TILL: {
       const c = st.lastFind;
       if (c === null) return out;
-      // the SAME scan the digit expand runs (nthCharTarget), so the painted
-      // digits can never disagree with where the selection would land —
-      // e.g. a target char sitting right at the caret
       const till = st.selType === SelType.TILL;
       for (let k = 1; k <= count; k++) {
         const t = nthCharTarget(text, c, caret, k, backward, till);

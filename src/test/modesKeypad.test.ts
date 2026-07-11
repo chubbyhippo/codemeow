@@ -9,8 +9,6 @@ import { MeowMode } from '../core/state';
 import * as Engine from '../core/engine';
 
 describe('ModesKeypadSpec', () => {
-  // State transitions: INSERT/NORMAL/MOTION/KEYPAD, escape, keypad dispatch.
-
   it('given INSERT when escape then back to NORMAL', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello');
@@ -39,7 +37,7 @@ describe('ModesKeypadSpec', () => {
     assert.notEqual(s.st.pending, null);
     s.pressEsc();
     assert.equal(s.st.pending, null);
-    await s.whenKeys('l'); // 'l' must act as a motion again, not as the find target
+    await s.whenKeys('l');
     s.thenCaretAt(1);
   });
 
@@ -54,8 +52,6 @@ describe('ModesKeypadSpec', () => {
   });
 
   it('given a read-only document then all motions work and the modify commands are inert', async () => {
-    // like Emacs: a read-only buffer stays in NORMAL — motions, selections
-    // and save all work; only text changes gate (meow--allow-modify-p)
     const s = freshSpec();
     s.given('two lines', '<caret>one\ntwo');
     s.givenReadOnly();
@@ -63,24 +59,20 @@ describe('ModesKeypadSpec', () => {
     assert.equal(s.caretLine(), 1);
     await s.whenKeys('kw');
     s.thenSelection('one');
-    await s.whenKeys('s'); // meow-kill: gated silently — nothing at all happens
+    await s.whenKeys('s');
     s.thenText('one\ntwo');
     s.thenSelection('one');
-    await s.whenKeys('y'); // meow-save is a copy, not a modification: it works
+    await s.whenKeys('y');
     s.thenClipboard('one');
-    await s.whenKeys('d'); // meow-delete: Emacs' "Buffer is read-only" — inert
-    await s.whenKeys('p'); // meow-yank: same
+    await s.whenKeys('d');
+    await s.whenKeys('p');
     s.thenText('one\ntwo');
     s.thenMode(MeowMode.NORMAL);
   });
 
-  /** The alt+; chord's path: the codemeow.keypad command calls the same
-   *  core enterKeypad the rc-dispatched 'meow-keypad' command uses. */
   const fireKeypadAction = (s: Spec): void => Engine.enterKeypad(s.ctx);
 
   it('given INSERT when the keypad action fires then a keypad command returns to INSERT', async () => {
-    // meow's global M-SPC binding reaches the leader even from INSERT;
-    // meow records meow--keypad-previous-state and every exit path restores it
     const s = freshSpec();
     s.given('word', 'ab<caret>cd');
     s.givenRc('map <leader>zz meow-left');
@@ -104,7 +96,6 @@ describe('ModesKeypadSpec', () => {
   });
 
   it('given INSERT when the keypad action then escape then back to INSERT', async () => {
-    // meow-keypad-quit -> meow--exit-keypad-state: previous state returns
     const s = freshSpec();
     s.given('word', '<caret>hello');
     await s.whenKeys('i');
@@ -162,7 +153,7 @@ describe('ModesKeypadSpec', () => {
   it('given a keypad action entry then the host command runs', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello');
-    await s.whenKeys(' xs'); // bundled: SPC x s -> saveAll
+    await s.whenKeys(' xs');
     s.thenMode(MeowMode.NORMAL);
     assert.deepEqual(s.ui.ran, ['workbench.action.files.saveAll']);
   });
@@ -170,14 +161,12 @@ describe('ModesKeypadSpec', () => {
   it('given SPC i d then the command-id finder runs (the ideameow Track Action IDs sibling)', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello');
-    await s.whenKeys(' id'); // bundled: SPC i d -> the filterable id list
+    await s.whenKeys(' id');
     s.thenMode(MeowMode.NORMAL);
     assert.deepEqual(s.ui.ran, ['codemeow.commandIds']);
   });
 
   it('given INSERT then the adapter is told to swap the cursor, and back on escape', async () => {
-    // the block/bar-cursor contract at the port seam: the adapter maps
-    // these notifications to TextEditorCursorStyle.Line / Block
     const s = freshSpec();
     s.given('word', '<caret>hello');
     await s.whenKeys('i');

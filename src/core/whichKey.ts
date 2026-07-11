@@ -17,16 +17,6 @@
 
 import { Rc } from './rc';
 
-/**
- * which-key: after a short delay on a pending prefix (keypad SPC sequences,
- * or the , . [ ] thing table), the adapter lists the available continuations
- * in a QuickPick menu whose input dispatches typed keys through the engine
- * (they never filter — chains must type through the menu unchanged).
- * Descriptions come from `desc` / `let g:WhichKeyDesc_*` entries; delay and
- * on/off from `set timeoutlen` / `set nowhich-key`. The row computation is
- * pure and lives here.
- */
-
 export const THINGS: Array<[string, string]> = [
   ['r', 'round ( )'],
   ['s', 'square [ ]'],
@@ -42,7 +32,6 @@ export const THINGS: Array<[string, string]> = [
   ['.', 'sentence'],
 ];
 
-/** One row per next key continuing [buffer]: terminal label or group desc. */
 export function keypadRows(buffer: string): Array<[string, string]> {
   const descs = Rc.keypadDescs();
   const rows = new Map<string, string>();

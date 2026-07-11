@@ -21,10 +21,7 @@ import { escapeRegExp } from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
 
-/**
- * meow-search / meow-visit and the regexp ring they share. Mark-word pushes
- * into the same ring (see motions), which is why `n` works right after `w`.
- */
+const SEARCH_RING_LIMIT = 50;
 
 export const commands: Map<string, MeowCommand> = new Map([
   ['meow-search', (ctx: Ctx) => search(ctx)],
@@ -34,7 +31,7 @@ export const commands: Map<string, MeowCommand> = new Map([
 export function push(st: MeowState, pattern: string): void {
   st.searchHistory = st.searchHistory.filter((p) => p !== pattern);
   st.searchHistory.push(pattern);
-  while (st.searchHistory.length > 50) st.searchHistory.shift();
+  while (st.searchHistory.length > SEARCH_RING_LIMIT) st.searchHistory.shift();
 }
 
 function fullyMatches(pattern: string, s: string): boolean {
@@ -69,9 +66,6 @@ function allMatches(text: string, pattern: string): Match[] {
   return out;
 }
 
-/** meow-search: car of the ring; a region that doesn't match the pattern
- *  becomes the new pattern (regexp-quoted); wraps at buffer edges; a
- *  reversed selection searches backward. */
 function search(ctx: Ctx): void {
   const st = ctx.st;
   const sel = Sel.primary(ctx);
@@ -101,7 +95,6 @@ function search(ctx: Ctx): void {
   searchWith(ctx, pattern, st.takeCount(1) < 0 || Sel.backwardP(ctx));
 }
 
-/** meow-visit: read a regexp, push it to the ring, select the match. */
 async function visit(ctx: Ctx): Promise<void> {
   const backward = ctx.st.takeCount(1) < 0;
   const input = await ctx.ui.input('Visit (regexp):');

@@ -18,37 +18,6 @@
 import { Binding, Config } from './rc';
 import { COMMANDS } from './registry';
 
-/**
- * The .codemeowrc syntax — an IdeaVim-flavored line format:
- *
- *   " comments start with a double quote (or #)
- *   nmap F <action>(actions.find)       NORMAL key -> editor command
- *   nmap n meow-mark-word               NORMAL key -> a named meow command
- *   nmap Z ,b                           NORMAL key -> meow keys (recursive)
- *   nnoremap Z ,b                       same, but the RHS ignores user maps
- *   mmap j meow-next                    the same, for MOTION (read-only) mode
- *   map <leader>gd <action>(editor.action.revealDefinition)
- *   desc <leader>g goto things
- *   let g:WhichKeyDesc_g = "<leader>g goto things"   (IdeaVim WhichKey-compatible)
- *   set nowhich-key / set timeoutlen=300
- *   repeat error . <action>(editor.action.marker.nextInFiles)
- *                                       repeat group (Emacs repeat-mode):
- *                                       dispatching any binding with a target
- *                                       listed in a group arms it — the member
- *                                       keys then re-dispatch until another key
- *                                       ends the run (see engine); `ignore` as
- *                                       the target gives a default key back
- *
- * A RHS that names a command in the registry binds the command; a misspelled
- * `meow-*` name is an error; any other RHS is replayed as keys. Keypad keys
- * 0-9, ? and / are reserved; SPC itself cannot be remapped. Unknown `set`
- * options and `let` lines are ignored so IdeaVim-style rc content can be
- * pasted without errors.
- */
-
-// the id is either a bare command id or the rc dialect's serialized
-// *parameterized* form commandId(paramId=value,...) — accepted so pasted
-// rc content keeps parsing; an id VS Code doesn't know just hints at dispatch
 const ACTION_RE = /^<action>\(([\w.\-$(),=]+)\)$/i;
 const WHICHKEY_LET_RE = /^let\s+g:WhichKeyDesc\w*\s*=\s*"(.+)"$/;
 
@@ -66,8 +35,6 @@ export function parse(lines: string[]): Config {
       return;
     }
 
-    // trailing `" comment` (checked after the let-line above, whose quoted
-    // value would otherwise be truncated)
     const cut = line.search(/\s"/);
     if (cut >= 0) line = line.slice(0, cut).trimEnd();
     if (line === '') return;
@@ -77,7 +44,7 @@ export function parse(lines: string[]): Config {
     const rest = (m[2] ?? '').trim();
     switch (cmd) {
       case 'let':
-        break; // mapleader and friends: accepted, nothing to do
+        break;
       case 'set':
         parseSet(c, rest);
         break;
@@ -113,7 +80,6 @@ function parseSet(c: Config, rest: string): void {
       eq !== '' ? parseInt(eq, 10) : parseInt(rest.split(/\s+/)[1] ?? '', 10);
     if (!Number.isNaN(n) && n >= 0) c.whichKeyDelayMs = n;
   }
-  // ignore unknown options so IdeaVim-style rc content pastes cleanly
 }
 
 function parseDescBody(
@@ -185,8 +151,6 @@ function parseMap(
   }
 }
 
-/** The shared RHS grammar of map and repeat lines: an <action>(...), a
- *  named command in the registry, or replayed meow keys. */
 function parseTarget(
   rhs: string,
   recursive: boolean,
@@ -209,11 +173,6 @@ function parseTarget(
   return { keys, recursive };
 }
 
-/** `repeat <group> <key> <target>` — Emacs repeat-mode's transient maps as
- *  rc lines. Dispatching any binding whose target is listed in a group arms
- *  it: the member keys re-dispatch their targets (shadowing the normal map)
- *  until a non-member key falls through and ends the run. The entering key
- *  needn't be a member — repeat.el's repeat-check-key 'no. */
 function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
   const m = /^(\S+)\s+(\S+)\s+(.*)$/.exec(rest);
   if (!m) {
@@ -240,7 +199,6 @@ function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
   }
 }
 
-/** `<Space>` and `<lt>` tokens plus plain printable chars; null on error. */
 function parseKeys(s: string, err: (m: string) => void): string | null {
   let out = '';
   let i = 0;

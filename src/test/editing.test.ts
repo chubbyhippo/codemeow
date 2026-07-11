@@ -9,9 +9,6 @@ import { freshSpec } from './helpers';
 import { MeowMode } from '../core/state';
 
 describe('EditingSpec', () => {
-  // meow-insert/append/open, change, delete/backward-delete, kill (+ the
-  // kill-line and join fallbacks), save, yank, replace, undo, repeat.
-
   it('given a selection when i then INSERT starts at the selection beginning', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello world');
@@ -172,11 +169,6 @@ describe('EditingSpec', () => {
     s.thenText('f(x)');
   });
 
-  // Every kill/save behavior below was probed against meow 1.5.0 itself
-  // (batch Emacs, 2026-07-06): kill-ring-save deactivates the mark, and
-  // meow--prepare-region-for-kill extends FORWARD line selections by the
-  // trailing newline before both kill and save.
-
   it('given y then the selection is copied and cancelled (kill-ring-save deactivates the mark)', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello world');
@@ -267,10 +259,6 @@ describe('EditingSpec', () => {
   });
 
   it('given x x then repeated u past the undo stack then nothing blows up', async () => {
-    // performing IntelliJ's UndoAction while disabled fails a platform
-    // assertion; that crash has no analog here: VS Code's `undo`
-    // command is a plain function and an exhausted stack is a silent no-op,
-    // so every press just dispatches it safely
     const s = freshSpec();
     s.given('three lines', '<caret>one\ntwo\nthree');
     await s.whenKeys('xx');
@@ -303,8 +291,6 @@ describe('EditingSpec', () => {
   });
 
   it('given quote after finding a quote char then the find repeats', async () => {
-    // a quote as a pending argument is part of the repeat unit; only the
-    // repeat *command* is excluded from it
     const s = freshSpec();
     s.given('quotes', "<caret>a'b'c");
     await s.whenKeys("f'");

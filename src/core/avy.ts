@@ -20,40 +20,14 @@ import { MeowCommand } from './command';
 import * as Sel from './selections';
 import { lineCount, lineEnd, lineStart } from './text';
 
-/**
- * A native port of avy's two jumps — no Code Ace Jumper extension needed.
- * Every behavior below was read out of avy 0.5.0's source (avy.el), not
- * guessed:
- *
- * - `avy-goto-char-timer`: the first char waits indefinitely; each further
- *   char must arrive within the timeout (0.25 s) and restarts
- *   it; matches highlight live while typing; matching is literal and
- *   case-insensitive (avy-case-fold-search t); zero candidates ends with a
- *   message; exactly one jumps immediately (avy-single-candidate-jump t).
- * - Labeling uses avy-tree/avy-subdiv over avy-keys (a s d f g h j k l):
- *   with more candidates than keys the FIRST keys stay single-char and the
- *   last keys host subtrees; picking a branch key relabels with the shorter
- *   remaining paths (avy-style 'at-full: the full remaining label is painted
- *   OVER the text at the candidate). An unknown key just messages
- *   "No such candidate" and stays; ESC exits.
- * - `avy-goto-line`: labels every visible line beginning; typing a DIGIT
- *   switches to a "Goto line: " number prompt seeded with that digit.
- * - The jump is avy-action-goto = plain goto-char: an active selection
- *   extends to the target, a bare caret just moves.
- */
-
-/** avy-keys default. */
 const KEYS = 'asdfghjkl';
 
-/** avy-timeout-seconds: 0.25 s. */
 const TIMEOUT_MS = 250;
 
 export const commands: Map<string, MeowCommand> = new Map([
   ['avy-goto-char-timer', (ctx: Ctx) => startCharTimer(ctx)],
   ['avy-goto-line', (ctx: Ctx) => startGotoLine(ctx)],
 ]);
-
-// --------------------------------------------------------------- the tree
 
 interface Leaf {
   kind: 'leaf';
@@ -65,7 +39,6 @@ interface Branch {
 }
 type AvyNode = Leaf | Branch;
 
-/** avy-subdiv: distribute N candidates over B keys in a balanced way. */
 export function subdiv(n: number, b: number): number[] {
   const p = Math.floor(Math.log(n) / Math.log(b) + 1e-6) - 1;
   let x1 = 1;
@@ -81,8 +54,6 @@ export function subdiv(n: number, b: number): number[] {
   ];
 }
 
-/** avy-tree: fewer candidates than keys pair up 1:1; otherwise the subdiv
- *  sizes decide which keys are leaves and which host subtrees. */
 function tree(candidates: number[], keys: string = KEYS): Branch {
   if (candidates.length < keys.length) {
     return {
@@ -106,7 +77,6 @@ function tree(candidates: number[], keys: string = KEYS): Branch {
   return { kind: 'branch', children };
 }
 
-/** Every leaf with its remaining label path from [node]. */
 function labels(node: Branch): Array<[number, string]> {
   const out: Array<[number, string]> = [];
   const walk = (n: AvyNode, path: string): void => {
@@ -116,8 +86,6 @@ function labels(node: Branch): Array<[number, string]> {
   walk(node, '');
   return out;
 }
-
-// --------------------------------------------------------------- sessions
 
 export class AvySession {
   phase: 'collecting' | 'selecting' = 'collecting';
@@ -144,7 +112,6 @@ function startGotoLine(ctx: Ctx): void {
   toSelecting(ctx, session, candidates);
 }
 
-/** One key of an active session; printable keys only reach us. */
 export async function key(ctx: Ctx, c: string): Promise<void> {
   const session = ctx.st.avy;
   if (!session) return;
@@ -162,7 +129,6 @@ function collect(ctx: Ctx, session: AvySession, c: string): void {
   );
 }
 
-/** The avy-timeout-seconds pause ended: label (or jump, or give up). */
 export function finishInput(ctx: Ctx): void {
   const session = ctx.st.avy;
   if (!session || session.phase !== 'collecting') return;
@@ -173,7 +139,6 @@ export function finishInput(ctx: Ctx): void {
     cancel(ctx);
     ctx.ui.hint('zero candidates');
   } else if (candidates.length === 1) {
-    // avy-single-candidate-jump
     cancel(ctx);
     jump(ctx, candidates[0]);
   } else {
@@ -193,7 +158,6 @@ function toSelecting(
 }
 
 async function select(ctx: Ctx, session: AvySession, c: string): Promise<void> {
-  // avy-goto-line: a digit switches to plain goto-line by number
   if (session.gotoLine && c >= '0' && c <= '9') {
     cancel(ctx);
     const input = await ctx.ui.input('Goto line:', c);
@@ -209,7 +173,7 @@ async function select(ctx: Ctx, session: AvySession, c: string): Promise<void> {
   if (!node) return;
   const child = node.children.find(([k]) => k === c)?.[1];
   if (child === undefined) {
-    ctx.ui.hint(`No such candidate: ${c}`); // avy-handler-default: stay
+    ctx.ui.hint(`No such candidate: ${c}`);
   } else if (child.kind === 'leaf') {
     cancel(ctx);
     jump(ctx, child.offset);
@@ -219,7 +183,6 @@ async function select(ctx: Ctx, session: AvySession, c: string): Promise<void> {
   }
 }
 
-/** avy-action-goto: plain goto-char — an active selection extends. */
 function jump(ctx: Ctx, offset: number): void {
   const sel = ctx.port.getSelections()[0];
   if (sel.anchor !== sel.active) {
@@ -239,20 +202,16 @@ export function cancel(ctx: Ctx): void {
   ctx.st.avy = null;
 }
 
-// ------------------------------------------------------------- candidates
-
 function visibleLines(ctx: Ctx): { first: number; last: number } {
   const total = lineCount(ctx.port.getText());
   const visible = ctx.port.visibleLineRange();
-  if (!visible) return { first: 0, last: total - 1 }; // unknown: whole buffer
+  if (!visible) return { first: 0, last: total - 1 };
   return {
     first: Math.min(Math.max(visible.first, 0), total - 1),
     last: Math.min(Math.max(visible.last, 0), total - 1),
   };
 }
 
-/** Literal, case-insensitive, non-overlapping matches in the visible
- *  region (avy--read-candidates with regexp-quote + case folding). */
 function matches(ctx: Ctx, input: string): number[] {
   if (input.length === 0) return [];
   const text = ctx.port.getText();
@@ -266,7 +225,7 @@ function matches(ctx: Ctx, input: string): number[] {
   while (i <= to - needle.length) {
     if (haystack.startsWith(needle, i)) {
       out.push(i);
-      i += needle.length; // re-search-forward: non-overlapping
+      i += needle.length;
     } else {
       i++;
     }

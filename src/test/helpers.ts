@@ -31,20 +31,6 @@ import { Config, Rc } from '../core/rc';
 import { MeowMode, MeowState, SelType } from '../core/state';
 import { lineOfOffset } from '../core/text';
 
-/**
- * BDD harness for the meow specs, over a fake editor implementing the same
- * ports the VS Code adapter does:
- *
- *   const s = freshSpec();
- *   s.given('a buffer', 'hello <caret>world');
- *   await s.whenKeys('we');
- *   s.thenSelection('world');
- *
- * Every behavior asserted in these specs was cross-checked against
- * meow-edit/meow's source (docstrings and command bodies) — not against vim
- * intuition.
- */
-
 class FakeEditor implements EditorPort {
   text = '';
   sels: SelRange[] = [{ anchor: 0, active: 0 }];
@@ -124,14 +110,10 @@ class FakeUi implements UiPort {
     this.ran.push(id);
   }
 
-  /** Mode notifications, in order — the adapter turns these into the
-   *  block/bar cursor switch and the status-bar text. */
   modes: MeowMode[] = [];
 
-  /** The offsets the adapter would overlay with digit labels. */
   expandHints: number[] = [];
 
-  /** What the adapter would paint for an avy session. */
   avyMatches: Array<{ start: number; end: number }> = [];
   avyLabels: Array<[number, string]> = [];
 
@@ -285,12 +267,9 @@ export class Spec {
   }
 }
 
-// Prime the bundled defaults exactly like the adapter does — from the repo's
-// .codemeowrc — so the specs exercise the real shipped keymap.
 const rcPath = path.join(__dirname, '..', '..', '.codemeowrc');
 Rc.initDefaults(fs.readFileSync(rcPath, 'utf8').split(/\r?\n/));
 
-/** A spec with an empty user layer: a developer's real ~/.codemeowrc never leaks in. */
 export function freshSpec(): Spec {
   Rc.setForTest(new Config());
   return new Spec();

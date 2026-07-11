@@ -12,19 +12,6 @@ import { TREE_KEYS, treeKeybindings } from '../vscode/treeKeys';
 import { freshSpec } from './helpers';
 
 describe('TreeMeowSpec', () => {
-  // The tree surface: MOTION-map dispatch on workbench trees (treeMeow).
-  // Platform-specific — there is no meow/Emacs source of truth for VS
-  // Code's list widget; what IS pinned against meow is the resolution order
-  // (user maps over bundled defaults, noremap replays skipping user maps),
-  // which must behave exactly like the engine's, and the translation of the
-  // four motion commands to the list widget's native arrow-key commands
-  // (list.focusDown/Up move the focus, collapse folds else goes to the
-  // parent, expand unfolds else enters the first child — listCommands.ts,
-  // the exact JTree ActionMap semantics). The FakeTree
-  // below implements exactly those four command semantics over a model
-  // tree; the manifest spec pins the static keybinding table so
-  // package.json and treeKeys.ts cannot drift.
-
   class TreeNode {
     children: TreeNode[] = [];
     expanded = false;
@@ -41,8 +28,6 @@ describe('TreeMeowSpec', () => {
     }
   }
 
-  /** The focused tree the adapter's run callback stands in front of: the
-   *  four list.* commands act on the model, anything else is recorded. */
   class FakeTree {
     root = new TreeNode('root', null);
     focus = this.root;
@@ -58,11 +43,11 @@ describe('TreeMeowSpec', () => {
         case 'list.focusUp':
           this.focus = rows[Math.max(at - 1, 0)];
           break;
-        case 'list.collapse': // fold, else go to the parent
+        case 'list.collapse':
           if (this.focus.expanded) this.focus.expanded = false;
           else if (this.focus.parent) this.focus = this.focus.parent;
           break;
-        case 'list.expand': // unfold, else enter the first child
+        case 'list.expand':
           if (this.focus.children.length > 0 && !this.focus.expanded)
             this.focus.expanded = true;
           else if (this.focus.children.length > 0)
@@ -104,28 +89,17 @@ describe('TreeMeowSpec', () => {
     }
   }
 
-  /**
-   * root
-   * ├── a
-   * │   ├── a1
-   * │   └── a2
-   * └── b
-   */
   function givenTree(): FakeTree {
     const tree = new FakeTree();
     const a = tree.root.add('a');
     a.add('a1');
     a.add('a2');
     tree.root.add('b');
-    tree.root.expanded = true; // root visible+expanded: rows are root, a, b
+    tree.root.expanded = true;
     return tree;
   }
 
-  // ---------------------------------------------------- the platform contract
-
   it('given the manifest then every printable key has a context-gated tree keybinding', () => {
-    // the JTree-ActionMap pin's analog: the surface VS Code provides is the
-    // static contribution — one gated binding per mmap-bindable char
     const chars = new Set(TREE_KEYS.map((k) => k.ch));
     for (let code = 33; code <= 126; code++) {
       const ch = String.fromCharCode(code);
@@ -163,8 +137,6 @@ describe('TreeMeowSpec', () => {
     );
   });
 
-  // --------------------------------------------------------- j k h l keys
-
   it('given a tree when j and k then the selection moves like the arrow keys', async () => {
     freshSpec();
     const tree = givenTree();
@@ -179,7 +151,7 @@ describe('TreeMeowSpec', () => {
   it('given a collapsed node when l then it expands, and l again enters it', async () => {
     freshSpec();
     const tree = givenTree();
-    tree.select('a'); // collapsed
+    tree.select('a');
     await TreeMeow.dispatch(tree.run, 'l');
     assert.ok(tree.isExpanded('a'), 'l on a collapsed node expands it');
     assert.equal(tree.selectedText(), 'a');
@@ -191,7 +163,7 @@ describe('TreeMeowSpec', () => {
     freshSpec();
     const tree = givenTree();
     tree.select('a');
-    tree.focus.expanded = true; // open "a"
+    tree.focus.expanded = true;
     tree.select('a1');
     await TreeMeow.dispatch(tree.run, 'h');
     assert.equal(tree.selectedText(), 'a');
@@ -205,8 +177,6 @@ describe('TreeMeowSpec', () => {
     await TreeMeow.dispatch(tree.run, 'h');
     assert.equal(tree.selectedText(), 'root');
   });
-
-  // ----------------------------------------------------- resolution rules
 
   it('given an editor-only command in the mmap then it is inert on trees', async () => {
     const s = freshSpec();

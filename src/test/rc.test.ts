@@ -13,11 +13,6 @@ import { keypadRows } from '../core/whichKey';
 import { MeowMode } from '../core/state';
 
 describe('RcSpec', () => {
-  // ~/.codemeowrc parsing, nmap/mmap/map dispatch (including relayouting the
-  // meow keys themselves), and which-key rows.
-
-  // ------------------------------------------------------------------ parsing
-
   it('given an action mapping then it parses into a normal override', () => {
     const c = Rc.parse(['nmap S <action>(extension.aceJump)']);
     assert.equal(c.normal.get('S')!.action, 'extension.aceJump');
@@ -63,9 +58,6 @@ describe('RcSpec', () => {
   });
 
   it('given comment-only rc edits then the reload button reports no changes', () => {
-    // the editor-title button compares the PARSED config (IdeaVim's
-    // VimRcFileState hashes the parsed Script the same way) — formatting
-    // and comment edits never demand a reload
     freshSpec();
     Rc.setUserLines(['nmap Z ,b']);
     assert.ok(RcState.equalTo(Rc.parse(['" just a comment', 'nmap Z ,b'])));
@@ -89,10 +81,6 @@ describe('RcSpec', () => {
   });
 
   it('given a parameterized action then the whole serialized command is kept', () => {
-    // VS Code ids are always bare (args travel as JSON, never inside the id) —
-    // but some editors' command ids carry serialized parameters, and pasted
-    // rc content must keep parsing: the line binds as an action, never as a
-    // keys-replay.
     const id =
       'com.example.showView(com.example.viewId=com.example.SomeView,com.example.focus=true)';
     const c = Rc.parse([`map <leader>bj <action>(${id})`]);
@@ -114,7 +102,6 @@ describe('RcSpec', () => {
       Rc.keypad().get('gd')!.action,
       'editor.action.revealDefinition',
     );
-    // bundled defaults stay beneath
     assert.equal(
       Rc.keypad().get('bb')!.action,
       'workbench.action.showAllEditorsByMostRecentlyUsed',
@@ -133,7 +120,7 @@ describe('RcSpec', () => {
     const c = Rc.parse([
       'set nowhich-key',
       'set timeoutlen=400',
-      'set clipboard+=unnamedplus', // a pasted vim option: ignored
+      'set clipboard+=unnamedplus',
       'let mapleader=" "',
     ]);
     assert.equal(c.whichKey, false);
@@ -143,7 +130,6 @@ describe('RcSpec', () => {
 
   it('which-key settings layer user over bundled defaults', () => {
     const s = freshSpec();
-    // empty user config: the bundled file's `set which-key` / timeoutlen=300
     assert.equal(Rc.whichKeyEnabled(), true);
     assert.equal(Rc.whichKeyDelayMs(), 300);
     s.givenRc('set nowhich-key\nset timeoutlen=150');
@@ -165,8 +151,6 @@ describe('RcSpec', () => {
     freshSpec();
     const d = Rc.defaults();
     assert.deepEqual(d.errors, [], 'bundled default must parse clean');
-    // the layout block must define meow's full QWERTY layout (Q and S are the
-    // deliberate avy overrides further down the file)
     for (const [key, cmd] of QWERTY) {
       if (key === 'Q') continue;
       assert.equal(
@@ -179,7 +163,6 @@ describe('RcSpec', () => {
     assert.equal(d.normal.get('S')?.command, 'avy-goto-char-timer');
     assert.equal(d.motion.get('j')?.command, 'meow-next');
     assert.equal(d.motion.get('k')?.command, 'meow-prev');
-    // the keypad table lives in the file too — nothing is bound in code
     assert.equal(
       d.keypad.get('bb')?.action,
       'workbench.action.showAllEditorsByMostRecentlyUsed',
@@ -199,17 +182,15 @@ describe('RcSpec', () => {
 
   it('given bad lines then errors are collected with line numbers', () => {
     const c = Rc.parse([
-      'frobnicate everything', // unknown command
-      'nmap <Space> ,b', // SPC is reserved
-      'map <leader>1 <action>(X)', // keypad digits are reserved
-      'nmap Q <CR>', // unsupported key token
-      'mmap <leader>x ,b', // keypad entries are mode-independent
+      'frobnicate everything',
+      'nmap <Space> ,b',
+      'map <leader>1 <action>(X)',
+      'nmap Q <CR>',
+      'mmap <leader>x ,b',
     ]);
     assert.equal(c.errors.length, 5);
     assert.ok(c.errors[0].startsWith('line 1'));
   });
-
-  // ------------------------------------------------------------------ dispatch
 
   it('given an rc key-sequence override then the key replays through the engine', async () => {
     const s = freshSpec();
@@ -224,7 +205,7 @@ describe('RcSpec', () => {
     s.given('two words', 'one two<caret>');
     s.givenRc('nmap B ,b\nnmap Y B');
     await s.whenKeys('Y');
-    s.thenSelection('one two'); // Y -> user B -> whole buffer
+    s.thenSelection('one two');
   });
 
   it('given nnoremap then the RHS runs the bundled default instead', async () => {
@@ -232,14 +213,14 @@ describe('RcSpec', () => {
     s.given('two words', 'one two<caret>');
     s.givenRc('nmap B ,b\nnnoremap Z B');
     await s.whenKeys('Z');
-    s.thenSelection('two'); // bundled-default B = back-symbol, not the user map
+    s.thenSelection('two');
   });
 
   it('given a self-referencing map then recursion is depth-limited', async () => {
     const s = freshSpec();
     s.given('plain', '<caret>hello');
     s.givenRc('nmap Z Z');
-    await s.whenKeys('Z'); // must terminate via the depth guard
+    await s.whenKeys('Z');
     s.thenText('hello');
   });
 
@@ -255,7 +236,7 @@ describe('RcSpec', () => {
   it('given an rc keypad mapping then it overrides the bundled entry', async () => {
     const s = freshSpec();
     s.given('two words', 'on<caret>e two');
-    s.givenRc('map <leader>bb ,b'); // bundled-default SPC b b = MRU editors
+    s.givenRc('map <leader>bb ,b');
     await s.whenKeys(' bb');
     s.thenSelection('one two');
   });
@@ -263,7 +244,7 @@ describe('RcSpec', () => {
   it('given a layout rebinding then the key runs the meow command', async () => {
     const s = freshSpec();
     s.given('two words', 'on<caret>e two');
-    s.givenRc('nmap n meow-mark-word'); // bundled-default n = meow-search
+    s.givenRc('nmap n meow-mark-word');
     await s.whenKeys('n');
     s.thenSelection('one');
   });
@@ -277,15 +258,13 @@ describe('RcSpec', () => {
   });
 
   it('given a motion rebinding then MOTION-state editors use it', async () => {
-    // read-only documents stay in NORMAL these days (like Emacs read-only
-    // buffers); the mmap table applies to the MOTION state proper
     const s = freshSpec();
     s.given('three lines', '<caret>one\ntwo\nthree');
     s.givenRc('mmap n meow-next');
     s.st.mode = MeowMode.MOTION;
     await s.whenKeys('n');
     assert.equal(s.caretLine(), 1);
-    await s.whenKeys('j'); // the default motion keys stay underneath
+    await s.whenKeys('j');
     assert.equal(s.caretLine(), 2);
   });
 
@@ -308,8 +287,6 @@ describe('RcSpec', () => {
     await s.whenKeys("'");
     s.thenText('cdef');
   });
-
-  // ------------------------------------------------------------------ which-key
 
   it('given keypad entries then which-key rows show terminals and groups', () => {
     const s = freshSpec();
@@ -343,11 +320,6 @@ describe('RcSpec', () => {
     assert.ok(keypadRows('').some(([k]) => k === 'SPC'));
   });
 
-  /**
-   * meow's suggested QWERTY layout (KEYBINDING_QWERTY in meow's README;
-   * `<` and `>` are aliases for `[` and `]`) — the contract the bundled
-   * .codemeowrc layout block must satisfy.
-   */
   const QWERTY: Map<string, string> = new Map([
     ...Array.from(
       { length: 10 },

@@ -17,14 +17,6 @@
 
 import { MeowMode, MeowState } from './state';
 
-/**
- * The engine's entire view of the host editor. The core never imports
- * 'vscode': the VS Code adapter implements these ports, and the test suite
- * implements them over a plain string buffer — which is what makes every
- * meow behavior testable without an editor process.
- */
-
-/** A directed selection, VS Code style: active is the caret end. */
 export interface SelRange {
   anchor: number;
   active: number;
@@ -38,18 +30,13 @@ export interface TextEdit {
 
 export interface EditorPort {
   getText(): string;
-  /** All selections, primary first. An empty range is a bare caret. */
   getSelections(): SelRange[];
-  /** Replace all selections (primary first) and reveal the primary caret. */
   setSelections(sels: SelRange[]): void;
-  /** Apply non-overlapping edits as ONE undo step. */
   edit(edits: TextEdit[]): Promise<void>;
   isWritable(): boolean;
-  /** Line span currently on screen (the `w` window thing); null = unknown. */
   visibleLineRange(): { first: number; last: number } | null;
   undo(): Promise<void>;
   closeEditor(): Promise<void>;
-  /** Language-aware defun range at offset when the host can provide one. */
   symbolRangeAt(offset: number): Promise<{ start: number; end: number } | null>;
 }
 
@@ -62,24 +49,19 @@ export interface UiPort {
   hint(text: string): void;
   info(title: string, body: string): void;
   input(prompt: string, initial?: string): Promise<string | undefined>;
-  /** Run a host command by id; rejects when the id is unknown. */
   runCommand(id: string): Promise<void>;
   scheduleWhichKey(kind: 'keypad' | 'things', buffer: string): void;
   hideWhichKey(): void;
   showExpandHints(positions: number[]): void;
   clearExpandHints(): void;
-  /** Live match highlights while avy-goto-char-timer collects input. */
   showAvyMatches(ranges: Array<{ start: number; end: number }>): void;
-  /** avy's at-full labels: each [offset, label] painted OVER the text. */
   showAvyLabels(labels: Array<[number, string]>): void;
   clearAvy(): void;
   setGrabHighlight(range: { start: number; end: number } | null): void;
   modeChanged(st: MeowState): void;
-  /** Called after every handled key so the status widget stays fresh. */
   refresh(st: MeowState): void;
 }
 
-/** Everything a command needs, bundled — the one parameter they all take. */
 export interface Ctx {
   port: EditorPort;
   clipboard: ClipboardPort;

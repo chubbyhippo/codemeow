@@ -37,12 +37,12 @@ import {
 import { VscClipboard, VscEditorPort } from './editorPort';
 import { TREE_KEYS } from './treeKeys';
 
-/**
- * The VS Code shell around the meow core: owns the `type` override, the
- * per-document state, the status-bar widget, the decorations (grab region,
- * expand hints), the which-key overlay, and the two rc layers on disk.
- * All editing semantics live in ../core — this file only wires them up.
- */
+const STATUS_MESSAGE_MS = 3000;
+const EXPAND_HINT_MS = 1000;
+const WHICH_KEY_GRACE_MS = 60;
+const FOCUS_SETTLE_MS = 80;
+const STATUS_BAR_PRIORITY = 100;
+const ESC_SEQUENCE = String.fromCharCode(27);
 
 const states = new Map<string, MeowState>();
 const clipboard = new VscClipboard();
@@ -52,26 +52,15 @@ let hintDecoration: vscode.TextEditorDecorationType;
 let avyMatchDecoration: vscode.TextEditorDecorationType;
 let avyLabelDecoration: vscode.TextEditorDecorationType;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
-/** The open which-key menu; `closing` marks a programmatic dispose so
- *  onDidHide can tell it apart from the user's ESC / click-away. */
 let whichKeyMenu:
   { qp: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
-/** Grace timer: between chain steps the menu redraws in place; it is
- *  disposed only when no follow-up schedule arrives (the chain ended). */
 let whichKeyCloseTimer: ReturnType<typeof setTimeout> | undefined;
-/** True when hide() closed a visible menu: the chain's next menu appears
- *  with no delay, like which-key refreshing between prefixes. */
 let whichKeyChain = false;
-/** The engine is a state machine — menu keystrokes dispatch strictly in order. */
 let whichKeyDispatch: Promise<void> = Promise.resolve();
 
 interface WhichKeyItem extends vscode.QuickPickItem {
-  /** The raw char this row dispatches ('SPC' displays, ' ' dispatches). */
   meowKey: string;
 }
-/** The 1 s expand-hint removal timer AND the editor it will clean: one hint
- *  overlay is live at a time, so arming a new one first sweeps the previous
- *  editor's decorations instead of orphaning them on an editor switch. */
 let hintTimer:
   | { handle: ReturnType<typeof setTimeout>; editor: vscode.TextEditor }
   | undefined;
@@ -83,8 +72,8 @@ function sweepHintTimer(): void {
   hintTimer = undefined;
   try {
     prev.setDecorations(hintDecoration, []);
-  } catch {
-    // the previous editor was disposed — its decorations died with it
+  } catch (previousEditorAlreadyDisposed) {
+    void previousEditorAlreadyDisposed;
   }
 }
 let infoBody = '';
@@ -106,7 +95,10 @@ function stateFor(editor: vscode.TextEditor): MeowState | undefined {
 function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
   return {
     hint: (text) =>
-      void vscode.window.setStatusBarMessage(`meow: ${text}`, 3000),
+      void vscode.window.setStatusBarMessage(
+        `meow: ${text}`,
+        STATUS_MESSAGE_MS,
+      ),
 
     info: (title, body) => {
       if (body.includes('\n')) {
@@ -131,7 +123,7 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
 
     scheduleWhichKey: (kind, buffer) => {
       if (whichKeyCloseTimer !== undefined) {
-        clearTimeout(whichKeyCloseTimer); // the chain continues: keep the menu
+        clearTimeout(whichKeyCloseTimer);
         whichKeyCloseTimer = undefined;
       }
       if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
@@ -141,10 +133,9 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
         return;
       }
       if (whichKeyMenu) {
-        fillWhichKeyMenu(whichKeyMenu.qp, kind, buffer); // deeper prefix: redraw in place
+        fillWhichKeyMenu(whichKeyMenu.qp, kind, buffer);
         return;
       }
-      // meow's timeoutlen for the first menu; follow-up prefixes reopen at once
       const delay = whichKeyChain ? 0 : Math.max(Rc.whichKeyDelayMs(), 0);
       whichKeyChain = false;
       whichKeyTimer = setTimeout(() => {
@@ -166,9 +157,8 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
           renderOptions: { after: { contentText: String((i + 1) % 10) } },
         })),
       );
-      // meow-expand-hint-remove-delay: 1 second
       hintTimer = {
-        handle: setTimeout(() => clearExpandHints(editor), 1000),
+        handle: setTimeout(() => clearExpandHints(editor), EXPAND_HINT_MS),
         editor,
       };
     },
@@ -238,13 +228,12 @@ function hideWhichKey(): void {
   if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
   whichKeyTimer = undefined;
   if (whichKeyMenu && whichKeyCloseTimer === undefined) {
-    whichKeyChain = true; // a follow-up prefix in the same chain redraws instantly
-    // dispose only when the chain really ends: scheduleWhichKey cancels this
+    whichKeyChain = true;
     whichKeyCloseTimer = setTimeout(() => {
       whichKeyCloseTimer = undefined;
       whichKeyChain = false;
       closeWhichKeyMenu();
-    }, 60);
+    }, WHICH_KEY_GRACE_MS);
   }
 }
 
@@ -253,20 +242,9 @@ function closeWhichKeyMenu(): void {
   if (!menu) return;
   whichKeyMenu = undefined;
   menu.closing = true;
-  menu.qp.dispose(); // fires onDidHide, which sees `closing` and stays quiet
+  menu.qp.dispose();
 }
 
-/**
- * which-key as a native QuickPick — the established VS Code which-key UX.
- * There is no non-focusable floating widget in the API, so the menu takes
- * the keyboard while it is up; its input box is
- * a key sink: every typed char is swallowed and dispatched through the engine
- * exactly like an editor key (it does NOT filter — filtering would break
- * typing sequences through the menu), so chains behave identically with or
- * without the menu. Enter or a click dispatches the highlighted row's key;
- * ESC / clicking away cancels the pending chain just like ESC in the editor.
- * Appears after timeoutlen, meow-style — fast chains never see it.
- */
 function openWhichKeyMenu(
   editor: vscode.TextEditor,
   st: MeowState,
@@ -274,7 +252,7 @@ function openWhichKeyMenu(
   buffer: string,
 ): void {
   if (kind === 'keypad' && keypadRows(buffer).length === 0) return;
-  closeWhichKeyMenu(); // a stale menu must not leak its handlers
+  closeWhichKeyMenu();
   const qp = vscode.window.createQuickPick<WhichKeyItem>();
   const menu = { qp, closing: false };
   whichKeyMenu = menu;
@@ -282,8 +260,8 @@ function openWhichKeyMenu(
     'keep typing the sequence — Enter or a click runs the highlighted key';
   fillWhichKeyMenu(qp, kind, buffer);
   qp.onDidChangeValue((v) => {
-    if (v === '') return; // our own reset below
-    qp.value = ''; // swallow: keys dispatch, they do not filter
+    if (v === '') return;
+    qp.value = '';
     dispatchMenuKeys(editor, st, v);
   });
   qp.onDidAccept(() => {
@@ -296,8 +274,6 @@ function openWhichKeyMenu(
     qp.dispose();
     if (userHid) {
       whichKeyChain = false;
-      // ESC / click-away cancels the chain the way editor ESC would; the
-      // guard keeps a mode-already-left close from collapsing beacon cursors
       if (st.mode === MeowMode.KEYPAD || st.pending !== null) {
         Engine.escapeKey(makeCtx(editor, st));
       }
@@ -332,8 +308,6 @@ function dispatchMenuKeys(
       const ctx = makeCtx(editor, st);
       for (const ch of keys) await Engine.handleChar(ctx, ch);
     })
-    // surface like the type handler would (its errors reach the extension
-    // host log) instead of vanishing with the menu
     .catch((e: unknown) =>
       console.error('codemeow: which-key dispatch failed', e),
     );
@@ -364,17 +338,12 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
         : beacon
           ? 'MEOW BEACON'
           : st.repeatMap
-            ? // repeat-echo-mode-line: the run is live, these keys continue it
-              `MEOW ${st.mode} [repeat ${[...st.repeatMap.keys()].join(' ')}]`
+            ? `MEOW ${st.mode} [repeat ${[...st.repeatMap.keys()].join(' ')}]`
             : `MEOW ${st.mode}`;
   statusBar.show();
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);
 }
 
-// ----------------------------------------------------------- tree surface
-
-/** Turn on the context gates for exactly the mmap-bound keys. Re-run
- *  after a rc reload (SPC c M) so new mmap lines apply without a restart. */
 function syncTreeKeys(): void {
   const bound = TreeMeow.boundChars();
   for (const { ch, ctx } of TREE_KEYS) {
@@ -386,27 +355,17 @@ function syncTreeKeys(): void {
   }
 }
 
-/** The focused tree's command executor for TreeMeow.dispatch — the list.*
- *  commands act on whichever workbench list/tree has the keyboard, which is
- *  the one that matched the keybinding's `when`. Unknown ids hint, like
- *  runBinding's action arm. */
 async function runTreeCommand(id: string): Promise<void> {
   try {
     await vscode.commands.executeCommand(id);
   } catch {
     void vscode.window.setStatusBarMessage(
       `meow: Unknown command: ${id}`,
-      3000,
+      STATUS_MESSAGE_MS,
     );
   }
 }
 
-// --------------------------------------------------------------- windmove
-
-/** The active text diff as core/windmove sees it: which pane the caret is
- *  in (by URI against the tab's diff input) and whether the panes render
- *  side by side. The per-editor inline/side-by-side toggle is not exposed
- *  to extensions, so the diffEditor.renderSideBySide setting stands in. */
 function diffSideView(): DiffSideView | null {
   const input = vscode.window.tabGroups.activeTabGroup.activeTab?.input;
   if (!(input instanceof vscode.TabInputTextDiff)) return null;
@@ -428,40 +387,30 @@ function focusFingerprint(): string {
   );
 }
 
-/** One windmove step; when nothing changed hands, report what Emacs would
- *  ("No window left from selected window"). The focus fingerprint settles
- *  through extension-host events, hence the small delay before comparing. */
 async function windmove(dir: WindmoveDir): Promise<void> {
   const before = focusFingerprint();
   try {
     await vscode.commands.executeCommand(plan(dir, diffSideView()));
-  } catch {
-    /* an id VS Code doesn't know would be an extension bug; fall through */
+  } catch (unknownWindmoveCommandId) {
+    void unknownWindmoveCommandId;
   }
-  await new Promise((resolve) => setTimeout(resolve, 80));
+  await new Promise((resolve) => setTimeout(resolve, FOCUS_SETTLE_MS));
   if (focusFingerprint() === before) {
     void vscode.window.setStatusBarMessage(
       `meow: ${noWindowMessage(dir)}`,
-      3000,
+      STATUS_MESSAGE_MS,
     );
   }
 }
-
-// -------------------------------------------------------------- rc loading
 
 function userRcPath(): string {
   return path.join(os.homedir(), Rc.FILE_NAME);
 }
 
-/** Is this document the user's ~/.codemeowrc? */
 function isRcDocument(d: vscode.TextDocument): boolean {
   return path.resolve(d.uri.fsPath) === path.resolve(userRcPath());
 }
 
-/** Keep the codemeow.rcChanged context key (the editor-title Reload button's
- *  when-clause) in step with a parse-level comparison: comment/formatting
- *  edits never light the button up (RcState — IdeaVim's VimRcFileState
- *  design). */
 function syncRcChanged(): void {
   const doc = vscode.workspace.textDocuments.find(isRcDocument);
   const changed =
@@ -504,21 +453,14 @@ function loadDefaults(extensionPath: string): void {
   }
 }
 
-// -------------------------------------------------------------- activation
-
 export function activate(context: vscode.ExtensionContext): void {
   statusBar = vscode.window.createStatusBarItem(
     vscode.StatusBarAlignment.Left,
-    100,
+    STATUS_BAR_PRIORITY,
   );
   grabDecoration = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor('diffEditor.insertedTextBackground'),
   });
-  // meow paints the expand digits OVER the text (meow-visual.el: a one-char
-  // overlay whose 'display replaces it) — text must never shift. VS Code's
-  // after-decorations are inline by default (they push the line), so the
-  // injected `position: absolute` takes the label out of the layout flow and
-  // the editor-background fill visually covers the char underneath.
   hintDecoration = vscode.window.createTextEditorDecorationType({
     after: {
       color: new vscode.ThemeColor('editorWarning.foreground'),
@@ -527,9 +469,6 @@ export function activate(context: vscode.ExtensionContext): void {
       textDecoration: 'none; position: absolute; z-index: 1',
     },
   });
-  // the native avy port: live match highlights while collecting input, and
-  // avy-lead-face (white on amaranth) labels painted over the text —
-  // absolutely positioned like the expand hints so nothing shifts
   avyMatchDecoration = vscode.window.createTextEditorDecorationType({
     backgroundColor: new vscode.ThemeColor(
       'editor.findMatchHighlightBackground',
@@ -556,10 +495,6 @@ export function activate(context: vscode.ExtensionContext): void {
   loadUserRc();
   syncTreeKeys();
   syncRcChanged();
-  // the editor-title Reload button (the IdeaVim floating-toolbar
-  // analog): its when-clause gates on codemeow.rcChanged, kept in sync with
-  // a parse-hash comparison against the loaded config — comment edits don't
-  // light it up
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) => {
       if (isRcDocument(e.document)) {
@@ -573,7 +508,6 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
   );
 
-  // the modal heart: intercept typing before it becomes an insertion
   try {
     context.subscriptions.push(
       vscode.commands.registerCommand(
@@ -613,14 +547,6 @@ export function activate(context: vscode.ExtensionContext): void {
       if (st) Engine.escapeKey(makeCtx(editor, st));
     }),
 
-    // meow-keypad from ANY state, INSERT included — meow's global M-SPC
-    // binding (`keymap-global-set "M-SPC" #'meow-keypad`). The
-    // manifest binds alt+; on meow editors; a modifier chord never reaches
-    // the modal engine, so this is a command, not an rc line. Entry records
-    // the state and every keypad exit returns there (meow-keypad.el /
-    // meow--exit-keypad-state) — a command run from INSERT drops you back
-    // in INSERT. A no-op when KEYPAD is already active, like meow's
-    // overriding keypad map.
     vscode.commands.registerCommand('codemeow.keypad', () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
@@ -630,16 +556,11 @@ export function activate(context: vscode.ExtensionContext): void {
       }
     }),
 
-    // the tree surface: the per-key manifest keybindings (gated on the
-    // codemeow.tree.* contexts, see treeKeys.ts) land here with the pressed
-    // char, and the MOTION map decides what it does on the focused tree
     vscode.commands.registerCommand('codemeow.tree', (c: unknown) => {
       if (typeof c !== 'string') return;
       return TreeMeow.dispatch(runTreeCommand, c);
     }),
 
-    // windmove: Shift+arrows (manifest keybindings, meow editors only) and
-    // SPC w h/j/k/l from the rc
     vscode.commands.registerCommand('codemeow.windmoveLeft', () =>
       windmove('left'),
     ),
@@ -653,13 +574,6 @@ export function activate(context: vscode.ExtensionContext): void {
       windmove('down'),
     ),
 
-    // double-ESC in a tool window focuses the editor (ToolWindowEscape):
-    // the manifest binds escape on the terminal, lists,
-    // and the other side-bar/panel/secondary-side-bar views. A lone press
-    // keeps its native meaning — the terminal gets its escape byte back
-    // (that binding only fires when codemeow.toolWindowEscape is listed in
-    // terminal.integrated.commandsToSkipShell), lists get their own ESC
-    // command (list.clear, verified in microsoft/vscode listCommands.ts)
     vscode.commands.registerCommand(
       'codemeow.toolWindowEscape',
       (surface: unknown) => {
@@ -673,7 +587,7 @@ export function activate(context: vscode.ExtensionContext): void {
           return vscode.commands.executeCommand(
             'workbench.action.terminal.sendSequence',
             {
-              text: String.fromCharCode(27), // the ESC byte the shell was owed
+              text: ESC_SEQUENCE,
             },
           );
         }
@@ -684,11 +598,6 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand('codemeow.reloadRc', async () => {
-      // the rc is usually edited right here (SPC c m) and may sit in a dirty
-      // editor — reloading straight from disk would re-read stale content and
-      // look dead until something saves it. IdeaVim's ReloadVimRc saves the
-      // document as-is before re-executing for the same reason
-      // (ui/ReloadVimRc.kt).
       const rc = path.resolve(userRcPath());
       const dirty = vscode.workspace.textDocuments.find(
         (d) => d.isDirty && path.resolve(d.uri.fsPath) === rc,
@@ -698,7 +607,7 @@ export function activate(context: vscode.ExtensionContext): void {
       }
       const c = loadUserRc();
       syncTreeKeys();
-      syncRcChanged(); // the title button drops back to hidden
+      syncRcChanged();
       const problems =
         c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
@@ -710,14 +619,10 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.editRc', async () => {
       const p = userRcPath();
       if (!fs.existsSync(p)) {
-        // a first ~/.codemeowrc starts as a full copy of the bundled
-        // defaults — the complete layout and keypad table, ready to edit
         const bundled = path.join(context.extensionPath, Rc.FILE_NAME);
         if (fs.existsSync(bundled)) {
           fs.copyFileSync(bundled, p);
         } else {
-          // a missing bundled rc is an extension bug (loadDefaults reports
-          // it); leave a minimal self-describing file so SPC c m still works
           fs.writeFileSync(
             p,
             [
@@ -742,7 +647,6 @@ export function activate(context: vscode.ExtensionContext): void {
       const st = stateFor(editor);
       if (!st) return;
       const ctx = makeCtx(editor, st);
-      // same path as SPC ?
       void import('../core/keypad').then((k) =>
         ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET),
       );
@@ -780,7 +684,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.workspace.onDidCloseTextDocument((doc) => {
       const st = states.get(doc.uri.toString());
-      if (st) dropAvySession(st); // the pending timer must not fire on a dead editor
+      if (st) dropAvySession(st);
       states.delete(doc.uri.toString());
     }),
   );
@@ -792,15 +696,6 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 }
 
-/** The IdeaVim Track Action IDs analog (keypad: SPC i d). VS Code's
- *  stable API has no "command executed" listener (vscode.d.ts, checked),
- *  so instead of live tracking this lists every command id the editor
- *  knows — the ids <action>(...) rc lines take — and Enter copies one.
- *  The title buttons cover tracking's "what does this key run?" half
- *  with the platform's own tools (ids source-verified 2026-07): the
- *  Keyboard Shortcuts editor in record-keys mode, and the keystroke
- *  log (Toggle Keyboard Shortcuts Troubleshooting — logging on also
- *  opens the Window log, where each keypress shows its command). */
 async function showCommandIds(): Promise<void> {
   const ids = (await vscode.commands.getCommands(true)).sort();
   const recordButton: vscode.QuickInputButton = {
@@ -837,17 +732,16 @@ async function showCommandIds(): Promise<void> {
     qp.hide();
     if (picked !== undefined) {
       await vscode.env.clipboard.writeText(picked);
-      void vscode.window.setStatusBarMessage(`meow: copied ${picked}`, 3000);
+      void vscode.window.setStatusBarMessage(
+        `meow: copied ${picked}`,
+        STATUS_MESSAGE_MS,
+      );
     }
   });
   qp.onDidHide(() => qp.dispose());
   qp.show();
 }
 
-/** Drop a state's armed avy session and its pending input timer WITHOUT
- *  painting — for editors that are gone (the TextEditor object is disposed;
- *  its decorations died with it, and the timer's finishInput must not fire
- *  against it). */
 function dropAvySession(st: MeowState): void {
   const session = st.avy;
   if (session) {
@@ -856,9 +750,6 @@ function dropAvySession(st: MeowState): void {
   }
 }
 
-/** An armed avy session dies with its surface: when its document is no
- *  longer visible, the captured TextEditor is disposed — sweep the session
- *  before its timer paints on it. */
 function dropHiddenAvySessions(): void {
   const visible = new Set(
     vscode.window.visibleTextEditors.map((e) => e.document.uri.toString()),

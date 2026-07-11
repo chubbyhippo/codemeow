@@ -17,9 +17,4 @@
 
 import { Ctx } from './port';
 
-/**
- * A named, bindable meow command — the unit every rc binding resolves to.
- * Each command family (motions, selections, search, structures, grab, edits)
- * contributes its commands to the registry under their meow names.
- */
 export type MeowCommand = (ctx: Ctx) => void | Promise<void>;

@@ -23,26 +23,10 @@ import { MeowCommand } from './command';
 import * as Sel from './selections';
 import * as Grab from './grab';
 
-/**
- * Text-mutating commands: entering INSERT (insert/append/open above/below),
- * change, delete, kill with meow's kill-line and join fallbacks, save / yank /
- * replace against the clipboard kill-ring, and undo. Multi-cursor edits are
- * computed against the cursors in descending offset order so beacon editing
- * never invalidates the offsets still to come.
- */
-
-/**
- * meow--allow-modify-p (meow-util.el): read-only buffers keep the full
- * NORMAL layout, but the text-changing commands are inert. meow gates
- * kill/change/backspace/replace into SILENT no-ops; delete/yank/open (and
- * swap-grab) instead fail with Emacs' "Buffer is read-only" error —
- * surfaced here as a hint.
- */
 function allowModify(ctx: Ctx): boolean {
   return ctx.port.isWritable();
 }
 
-/** @return true when the edit must be blocked — telling the user why. */
 export function blockedReadOnly(ctx: Ctx): boolean {
   if (allowModify(ctx)) return false;
   ctx.ui.hint('Buffer is read-only');
@@ -65,13 +49,6 @@ export const commands: Map<string, MeowCommand> = new Map([
   ['meow-undo-in-selection', (ctx: Ctx) => undoInSelection(ctx)],
 ]);
 
-/** One undo step over every cursor, highest offset first: [compute] receives
- *  a selection and returns its edit (or null) plus the cursor's new range.
- *  Descending order keeps every not-yet-processed offset valid. compute
- *  answers in PRE-edit coordinates; applying the batch shifts everything
- *  above an edit, so each cursor is re-based by the length delta of the
- *  edits below it (its own edit excluded — its sel already sits where
- *  compute put it, e.g. after a yank's insertion). */
 async function editCarets(
   ctx: Ctx,
   compute: (
@@ -97,7 +74,6 @@ async function editCarets(
   const newSels = new Array<SelRange>(sels.length);
   let delta = 0;
   for (const item of [...order].reverse()) {
-    // ascending offsets
     const r = results[item.index];
     newSels[item.index] = {
       anchor: r.sel.anchor + delta,
@@ -118,7 +94,7 @@ function insert(ctx: Ctx): void {
     }),
   );
   ctx.st.selType = SelType.NONE;
-  Sel.resetSelectionMemory(ctx.st); // meow-insert runs meow--cancel-selection
+  Sel.resetSelectionMemory(ctx.st);
   setMode(ctx, MeowMode.INSERT);
 }
 
@@ -130,14 +106,13 @@ function append(ctx: Ctx): void {
     }),
   );
   ctx.st.selType = SelType.NONE;
-  Sel.resetSelectionMemory(ctx.st); // meow-append runs meow--cancel-selection
+  Sel.resetSelectionMemory(ctx.st);
   setMode(ctx, MeowMode.INSERT);
 }
 
-/** Open a line below the caret's line and enter INSERT there. */
 async function openBelow(ctx: Ctx): Promise<void> {
   if (blockedReadOnly(ctx)) return;
-  Sel.collapse(ctx); // meow-open-below never cancels, the RET just deactivates
+  Sel.collapse(ctx);
   const text = ctx.port.getText();
   const eol = lineEnd(text, lineOfOffset(text, Sel.primary(ctx).active));
   const edits = [{ start: eol, end: eol, text: '\n' }];
@@ -147,10 +122,9 @@ async function openBelow(ctx: Ctx): Promise<void> {
   setMode(ctx, MeowMode.INSERT);
 }
 
-/** Open a line above the caret's line and enter INSERT there. */
 async function openAbove(ctx: Ctx): Promise<void> {
   if (blockedReadOnly(ctx)) return;
-  Sel.collapse(ctx); // as in openBelow: no history clearing
+  Sel.collapse(ctx);
   const text = ctx.port.getText();
   const bol = lineStart(text, lineOfOffset(text, Sel.primary(ctx).active));
   const edits = [{ start: bol, end: bol, text: '\n' }];
@@ -161,10 +135,9 @@ async function openAbove(ctx: Ctx): Promise<void> {
 }
 
 async function change(ctx: Ctx): Promise<void> {
-  if (!allowModify(ctx)) return; // meow gates change silently
+  if (!allowModify(ctx)) return;
   const text = ctx.port.getText();
   const prim = Sel.primary(ctx);
-  // fallback meow-change-char at point-max: nothing happens, not even INSERT
   if (!Sel.hasSelection(prim) && prim.active >= text.length) return;
   await editCarets(ctx, (_sel, lo, hi) => {
     if (lo !== hi)
@@ -172,7 +145,6 @@ async function change(ctx: Ctx): Promise<void> {
         edit: { start: lo, end: hi, text: '' },
         sel: { anchor: lo, active: lo },
       };
-    // fallback meow-change-char: delete-char takes ANY char, newlines included
     if (lo < text.length) {
       return {
         edit: { start: lo, end: lo + 1, text: '' },
@@ -205,7 +177,7 @@ async function del(ctx: Ctx): Promise<void> {
 }
 
 async function backwardDelete(ctx: Ctx): Promise<void> {
-  if (!allowModify(ctx)) return; // meow gates backspace silently
+  if (!allowModify(ctx)) return;
   await editCarets(ctx, (_sel, lo, hi) => {
     if (lo !== hi)
       return {
@@ -222,12 +194,6 @@ async function backwardDelete(ctx: Ctx): Promise<void> {
   ctx.st.selType = SelType.NONE;
 }
 
-/**
- * meow--prepare-region-for-kill (meow-util.el): the range one selection
- * contributes to a kill or save — a FORWARD line-type selection includes its
- * trailing newline. Backward selections and the last line kill as-is.
- * Probed against meow 1.5.0 itself (batch Emacs, 2026-07-06).
- */
 function killRange(
   ctx: Ctx,
   sel: SelRange,
@@ -244,8 +210,6 @@ function killRange(
   return { lo, hi };
 }
 
-/** The region-bearing selections in buffer order — the cursors a kill or
- *  save reads. */
 function regionsInOrder(sels: SelRange[]): SelRange[] {
   return sels
     .filter((s) => s.anchor !== s.active)
@@ -254,9 +218,6 @@ function regionsInOrder(sels: SelRange[]): SelRange[] {
     );
 }
 
-/** The \n-joined kill-ring text those regions contribute, each through
- *  [killRange] — one rule for kill AND save, so the hand-probed newline
- *  behavior cannot drift between them. */
 function joinedKillText(ctx: Ctx, text: string, regions: SelRange[]): string {
   return regions
     .map((s) => {
@@ -267,7 +228,7 @@ function joinedKillText(ctx: Ctx, text: string, regions: SelRange[]): string {
 }
 
 async function kill(ctx: Ctx): Promise<void> {
-  if (!allowModify(ctx)) return; // meow gates kill silently
+  if (!allowModify(ctx)) return;
   const st = ctx.st;
   const text = ctx.port.getText();
   const prim = Sel.primary(ctx);
@@ -276,7 +237,6 @@ async function kill(ctx: Ctx): Promise<void> {
     return;
   }
   if (Sel.hasSelection(prim)) {
-    // cut: the kill-ring is the clipboard; multi-cursor kills join with \n
     await ctx.clipboard.write(
       joinedKillText(ctx, text, regionsInOrder(ctx.port.getSelections())),
     );
@@ -291,7 +251,6 @@ async function kill(ctx: Ctx): Promise<void> {
     st.selType = SelType.NONE;
     return;
   }
-  // fallback meow-C-k: kill to end of line, or the newline when at eol
   if (text.length === 0) return;
   const caret = prim.active;
   const eol = lineEnd(text, lineOfOffset(text, caret));
@@ -305,8 +264,6 @@ async function kill(ctx: Ctx): Promise<void> {
   }
 }
 
-/** Killing a join selection = delete-indentation: single space, none at
- *  line edges or against brackets (Emacs' fixup-whitespace). */
 async function joinKill(ctx: Ctx): Promise<void> {
   const text = ctx.port.getText();
   const prim = Sel.primary(ctx);
@@ -329,9 +286,6 @@ async function joinKill(ctx: Ctx): Promise<void> {
   ctx.st.selExpand = false;
 }
 
-/** meow-save: copy — with kill-ring-save's mark deactivation: the selection
- *  is cancelled afterwards and every cursor stays at its point (past the
- *  newline for a forward line selection). */
 async function save(ctx: Ctx): Promise<void> {
   const text = ctx.port.getText();
   const sels = ctx.port.getSelections();
@@ -350,7 +304,6 @@ async function save(ctx: Ctx): Promise<void> {
   ctx.st.selExpand = false;
 }
 
-/** meow-yank: insert the clipboard at every cursor, cursor lands after it. */
 async function yank(ctx: Ctx): Promise<void> {
   if (blockedReadOnly(ctx)) return;
   const clip = await ctx.clipboard.read();
@@ -361,9 +314,8 @@ async function yank(ctx: Ctx): Promise<void> {
   }));
 }
 
-/** meow-replace: selection := clipboard; the clipboard stays intact. */
 async function replace(ctx: Ctx): Promise<void> {
-  if (!allowModify(ctx)) return; // meow gates replace silently
+  if (!allowModify(ctx)) return;
   if (!Sel.hasSelection(Sel.primary(ctx))) return;
   const raw = await ctx.clipboard.read();
   if (raw === undefined) return;
@@ -379,15 +331,11 @@ async function replace(ctx: Ctx): Promise<void> {
   ctx.st.selType = SelType.NONE;
 }
 
-/** meow-undo cancels the selection (with its history) BEFORE undoing —
- *  but only when a region is active. */
 async function undo(ctx: Ctx): Promise<void> {
   if (Sel.hasSelection(Sel.primary(ctx))) Sel.cancel(ctx);
   await ctx.port.undo();
 }
 
-/** meow-undo-in-selection only acts with an active region; the region-scoped
- *  undo itself has no host analog, so it is a plain undo (see README). */
 async function undoInSelection(ctx: Ctx): Promise<void> {
   if (Sel.hasSelection(Sel.primary(ctx))) await ctx.port.undo();
 }

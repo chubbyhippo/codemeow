@@ -45,20 +45,13 @@ done
 info() { printf '\033[1;32m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33mwarn:\033[0m %s\n' "$*" >&2; }
 
-# targets are handled as one path per line (paths may contain spaces,
-# but never newlines)
 nl='
 '
 
-# ---------------------------------------------------------------- detection
-
 detect_ext_dirs() {
-    # Linux/macOS editors + the WSL remote server: an existing parent
-    # directory means that editor is actually installed
     for d in "$HOME/.vscode" "$HOME/.vscode-oss" "$HOME/.vscode-server"; do
         [ -d "$d" ] && printf '%s\n' "$d/extensions"
     done
-    # WSL -> Windows editors
     if grep -qi microsoft /proc/version 2>/dev/null; then
         for d in /mnt/c/Users/*/.vscode /mnt/c/Users/*/.vscode-oss; do
             [ -d "$d" ] && printf '%s\n' "$d/extensions"
@@ -67,7 +60,6 @@ detect_ext_dirs() {
     return 0
 }
 
-# Windows user profiles that own a detected editor (for the Windows-side rc)
 detect_windows_homes() {
     grep -qi microsoft /proc/version 2>/dev/null || return 0
     for d in /mnt/c/Users/*/.vscode /mnt/c/Users/*/.vscode-oss; do
@@ -92,10 +84,6 @@ if [ "$list_only" -eq 1 ]; then
     exit 0
 fi
 
-# ------------------------------------------------------------------- build
-
-# The build needs the node major pinned in mise.toml; a different PATH node
-# probably works, but the pin is what the extension is tested against.
 req_node=$(sed -n 's/^node *= *"\([0-9][0-9]*\).*/\1/p' mise.toml 2>/dev/null || true)
 req_node=${req_node:-24}
 
@@ -131,8 +119,6 @@ if [ "$do_ext" -eq 1 ] && [ ! -d out ]; then
     exit 1
 fi
 
-# ----------------------------------------------------------------- install
-
 installed=0
 if [ "$do_ext" -eq 1 ]; then
     if [ -z "$targets" ]; then
@@ -145,7 +131,6 @@ if [ "$do_ext" -eq 1 ]; then
     for dir in $targets; do
         dest="$dir/$ext_id"
         mkdir -p "$dest"
-        # $dest/media is a leftover of the which-key panel era — keep purging
         rm -rf "$dest/out" "$dest/media"
         cp -R out "$dest/out"
         cp package.json .codemeowrc README.md LICENSE "$dest/"
@@ -155,8 +140,6 @@ if [ "$do_ext" -eq 1 ]; then
     set +f
     IFS=$old_ifs
 fi
-
-# --------------------------------------------------------------------- rc
 
 install_rc() {
     if [ -f "$1" ] && [ "$force_rc" -eq 0 ]; then
@@ -175,8 +158,6 @@ if [ "$do_rc" -eq 1 ]; then
         fi
     done
 fi
-
-# ------------------------------------------------------------------- done
 
 echo
 info "done."

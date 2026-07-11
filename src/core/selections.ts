@@ -31,15 +31,8 @@ import { MeowCommand } from './command';
 import * as Grab from './grab';
 import { expandHintPositions } from './hints';
 
-/**
- * The selection primitive, and the commands that act on the selection itself
- * (reverse, cancel, pop, digit expand). Every selecting command funnels
- * through [select], which mirrors meow's (expand|select . type) model and its
- * history: the previous selection (or a null placeholder recording where the
- * chain started) is pushed on every select, `z` pops entries back with their
- * type and direction, and meow--cancel-selection (movement, `g`, `i`, `a`,
- * grab…) clears the whole history. Verified against meow 1.5.0 by probe.
- */
+const SELECTION_HISTORY_LIMIT = 200;
+const EXPAND_ZERO_COUNT = 10;
 
 export const commands: Map<string, MeowCommand> = new Map();
 for (let n = 0; n <= 9; n++) {
@@ -49,7 +42,6 @@ commands.set('meow-reverse', (ctx) => reverse(ctx));
 commands.set('meow-cancel-selection', (ctx) => cancelAll(ctx));
 commands.set('meow-pop-selection', (ctx) => pop(ctx));
 
-/** The types digit expand can grow; anything else makes digits a count. */
 const EXPANDABLE = new Set([
   SelType.CHAR,
   SelType.WORD,
@@ -67,13 +59,11 @@ export function hasSelection(sel: SelRange): boolean {
   return sel.anchor !== sel.active;
 }
 
-/** Is the selection reversed (caret at its start), meow--direction-backward-p. */
 export function backwardP(ctx: Ctx): boolean {
   const sel = primary(ctx);
   return hasSelection(sel) && sel.active < sel.anchor;
 }
 
-/** The anchor a same-direction re-selection keeps, meow's mark. */
 export function mark(ctx: Ctx): number {
   const sel = primary(ctx);
   return hasSelection(sel) ? sel.anchor : sel.active;
@@ -88,9 +78,6 @@ function sameSaved(a: SavedSelection, b: SavedSelection): boolean {
   );
 }
 
-/** meow--select's history bookkeeping: push the previous meow--selection —
- *  or a null placeholder at [posBefore] when there was none — then remember
- *  the new one. */
 export function recordSelect(
   ctx: Ctx,
   type: SelType,
@@ -108,7 +95,8 @@ export function recordSelect(
   };
   const head = st.selectionHistory[st.selectionHistory.length - 1];
   if (!head || !sameSaved(head, prev)) st.selectionHistory.push(prev);
-  while (st.selectionHistory.length > 200) st.selectionHistory.shift();
+  while (st.selectionHistory.length > SELECTION_HISTORY_LIMIT)
+    st.selectionHistory.shift();
   st.lastSelection = { type, expand, anchor, active };
 }
 
@@ -136,15 +124,11 @@ export function select(
   ctx.ui.showExpandHints(expandHintPositions(ctx));
 }
 
-/** Forget the selection chain — the history-clearing half of
- *  meow--cancel-selection. */
 export function resetSelectionMemory(st: MeowState): void {
   st.selectionHistory = [];
   st.lastSelection = null;
 }
 
-/** Collapse the primary selection WITHOUT touching the history — for edits
- *  that kill the region as a side effect (meow never cancels there). */
 export function collapse(ctx: Ctx): void {
   const sels = ctx.port.getSelections().slice();
   sels[0] = { anchor: sels[0].active, active: sels[0].active };
@@ -153,7 +137,6 @@ export function collapse(ctx: Ctx): void {
   ctx.st.selExpand = false;
 }
 
-/** meow--cancel-selection: collapse AND clear the selection history. */
 export function cancel(ctx: Ctx): void {
   collapse(ctx);
   resetSelectionMemory(ctx.st);
@@ -173,14 +156,11 @@ function reverse(ctx: Ctx): void {
   ctx.port.setSelections(sels);
 }
 
-/** meow-pop-selection: with an active region, pop the history (a typed entry
- *  restores type AND direction; the null placeholder returns the caret to
- *  where the chain started and cancels); without one, pop the grab. */
 function pop(ctx: Ctx): void {
   const st = ctx.st;
   if (hasSelection(primary(ctx))) {
     const entry = st.selectionHistory.pop();
-    if (!entry) return; // meow is silent here
+    if (!entry) return;
     if (entry.type === null) {
       const sels = ctx.port.getSelections().slice();
       sels[0] = { anchor: entry.active, active: entry.active };
@@ -195,12 +175,10 @@ function pop(ctx: Ctx): void {
   }
 }
 
-/** meow-expand-N (0 = 10); without an expandable selection it falls back
- *  to meow-digit-argument (meow-selection-command-fallback). */
 function expandOrCount(ctx: Ctx, n: number): void {
   const st = ctx.st;
   if (hasSelection(primary(ctx)) && EXPANDABLE.has(st.selType)) {
-    expand(ctx, n === 0 ? 10 : n);
+    expand(ctx, n === 0 ? EXPAND_ZERO_COUNT : n);
   } else {
     st.pendingCount = st.pendingCount * 10 + n;
   }
@@ -250,7 +228,5 @@ function expand(ctx: Ctx, n: number): void {
     default:
       return;
   }
-  // meow-expand-selection-type defaults to 'select: the expanded selection is
-  // demoted, so follow-up word motions re-mark and `x` re-selects its line
   select(ctx, st.selType, mark(ctx), target, false);
 }

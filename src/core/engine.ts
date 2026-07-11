@@ -24,31 +24,14 @@ import * as Structures from './structures';
 import * as Keypad from './keypad';
 import * as Avy from './avy';
 
-/**
- * The key dispatcher. Like meow in Emacs, the engine binds no keys of its
- * own: every command is registered by its meow name in the registry, and
- * keys resolve through rc bindings only — ~/.codemeowrc over the bundled
- * default .codemeowrc (see Rc). Besides dispatch, this module owns the
- * pieces of behavior that need the whole-keystroke view: the repeat unit
- * (`'`), rc-binding replay with its noremap/recursion bookkeeping, and the
- * repeat transient (Emacs repeat-mode: rc `repeat` groups arm a one-shot map
- * whose member keys re-dispatch — tap `.`/`,` to keep walking errors after
- * SPC . e).
- */
-
 const KEYPAD_BINDING: Binding = { command: 'meow-keypad', recursive: true };
 
-/** meow-keypad (meow-keypad.el): record meow--keypad-previous-state, then
- *  switch — Keypad.exit restores it, so SPC round-trips to NORMAL and the
- *  Alt+; chord returns to INSERT. Shared by the rc-dispatched 'meow-keypad'
- *  registry command and the adapter's codemeow.keypad command. */
 export function enterKeypad(ctx: Ctx): void {
   ctx.st.keypadPreviousState = ctx.st.mode;
   setMode(ctx, MeowMode.KEYPAD);
   ctx.ui.scheduleWhichKey('keypad', '');
 }
 
-/** @return true when the key was consumed (the type handler skips insertion). */
 export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   const st = ctx.st;
   if (st.mode === MeowMode.INSERT) return false;
@@ -69,23 +52,13 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   ctx.ui.clearExpandHints();
 
   const pend = st.pending;
-  // the repeat transient: a member key of the armed group re-dispatches
-  // its binding, shadowing the normal map for exactly that keypress
-  // (runBinding re-arms it); any other key ends the run and falls through
-  // to the resolve below — Emacs set-transient-map semantics, never
-  // swallowed. ESC ends the run too (escapeKey).
   const repeatBinding = pend === null ? (st.repeatMap?.get(c) ?? null) : null;
   if (pend === null && repeatBinding === null) st.repeatMap = null;
-  // like Emacs: read-only buffers stay in NORMAL with every motion working
-  // (the modify commands gate themselves via allow-modify in edits); the
-  // motion map applies only to the MOTION state proper
   const motionish = st.mode === MeowMode.MOTION;
   const binding =
     pend === null ? (repeatBinding ?? resolve(ctx, c, motionish)) : null;
   const cmd = binding?.command;
 
-  // the repeat unit: everything since the last complete command, so `'`
-  // can replay counts and pending args (2fa) as one stroke
   if (!st.replaying && cmd !== 'repeat') {
     if (pend === null && st.pendingCount === 0 && !st.negative) st.unit = [];
     st.unit.push(c);
@@ -97,13 +70,10 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
     st.lastCommand = 'pending';
   } else if (binding) {
     await runBinding(ctx, binding);
-    // the this-command/last-command handoff: vertical-motion chains keep
-    // their goal column only while uninterrupted (see motions.goalColumn);
-    // a keys-replay binding keeps the innermost replayed command's name
     st.lastCommand = cmd ?? binding.action ?? st.lastCommand;
   } else {
     st.lastCommand = null;
-  } // undefined key: swallow, never self-insert
+  }
 
   const prefixy =
     st.pending !== null ||
@@ -118,8 +88,6 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   return true;
 }
 
-/** SPC = keypad (reserved), then ~/.codemeowrc maps (skipped inside a
- *  noremap replay), then the bundled default rc; null = undefined key. */
 function resolve(ctx: Ctx, c: string, motion: boolean): Binding | null {
   if (c === ' ') return KEYPAD_BINDING;
   if (ctx.st.noremapDepth === 0) {
@@ -131,7 +99,6 @@ function resolve(ctx: Ctx, c: string, motion: boolean): Binding | null {
   return (motion ? d.motion.get(c) : d.normal.get(c)) ?? null;
 }
 
-/** Commands that read one more key: find/till chars and the thing table. */
 async function resolvePending(ctx: Ctx, p: Pending, c: string): Promise<void> {
   switch (p) {
     case Pending.FIND:
@@ -157,19 +124,11 @@ export async function repeatLast(ctx: Ctx): Promise<void> {
   }
 }
 
-/** Run a binding: a named meow command, a host command, or meow keys
- *  replayed through the engine (noremap bindings skip user maps while
- *  replaying). Afterwards, Emacs repeat-mode's post-command arming: a
- *  binding whose target sits in an rc repeat group arms that group's
- *  transient — membership by target identity (the repeat-map symbol
- *  property), no entered-with-key check (repeat-check-key 'no semantics —
- *  keypad keys are never group members). */
 export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
   await dispatch(ctx, b);
   const map = Rc.repeatMapFor(b);
   if (!map) return;
   if (ctx.st.repeatMap === null) {
-    // repeat-echo-message, once per run: "Repeat with ., ,"
     ctx.ui.hint(`Repeat with ${[...map.keys()].join(', ')}`);
   }
   ctx.st.repeatMap = map;
@@ -197,7 +156,7 @@ async function dispatch(ctx: Ctx, b: Binding): Promise<void> {
     return;
   }
   const savedReplaying = st.replaying;
-  st.replaying = true; // inner keys must not clobber the ' (repeat) unit
+  st.replaying = true;
   st.replayDepth++;
   if (!b.recursive) st.noremapDepth++;
   try {
@@ -209,12 +168,6 @@ async function dispatch(ctx: Ctx, b: Binding): Promise<void> {
   }
 }
 
-/**
- * The ESC key: INSERT -> NORMAL, KEYPAD -> the state it was entered from,
- * drops pending keys, collapses beacon cursors. @return false when there was
- * nothing meow-related to do (the host may fall through to its own escape
- * behavior).
- */
 export function escapeKey(ctx: Ctx): boolean {
   const st = ctx.st;
   if (st.avy) {
@@ -223,7 +176,7 @@ export function escapeKey(ctx: Ctx): boolean {
     return true;
   }
   st.pending = null;
-  st.repeatMap = null; // ESC always ends a repeat run (a non-member key)
+  st.repeatMap = null;
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();
   if (st.mode === MeowMode.INSERT) {
@@ -232,7 +185,6 @@ export function escapeKey(ctx: Ctx): boolean {
     return true;
   }
   if (st.mode === MeowMode.KEYPAD) {
-    // meow-keypad-quit: back to the state keypad was entered from
     Keypad.exit(ctx);
     ctx.ui.refresh(st);
     return true;

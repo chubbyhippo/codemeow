@@ -19,7 +19,6 @@ import * as vscode from 'vscode';
 import { ClipboardPort, EditorPort, SelRange, TextEdit } from '../core/port';
 import { isWritableScheme } from '../core/attachPolicy';
 
-/** EditorPort over a live vscode.TextEditor — offsets in, positions out. */
 export class VscEditorPort implements EditorPort {
   constructor(private readonly editor: vscode.TextEditor) {}
 
@@ -105,7 +104,7 @@ export class VscEditorPort implements EditorPort {
       const walk = (list: vscode.DocumentSymbol[]) => {
         for (const s of list) {
           if (s.range.contains(pos)) {
-            if (fnKinds.has(s.kind)) best = s; // deeper matches overwrite outer ones
+            if (fnKinds.has(s.kind)) best = s;
             walk(s.children);
           }
         }

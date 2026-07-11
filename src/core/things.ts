@@ -26,13 +26,6 @@ import {
   lineStart,
 } from './text';
 
-/**
- * meow-char-thing-table:
- *   r round  s square  c curly  g string  e symbol  w window  b buffer
- *   p paragraph  l line  v visual-line  d defun  . sentence
- * inner() excludes delimiters, bounds() includes them; both return
- * [startOffset, endOffset) or null when the thing doesn't exist at point.
- */
 interface Bounds {
   start: number;
   end: number;
@@ -84,7 +77,6 @@ async function compute(
   }
 }
 
-/** Innermost pair of open/close containing [offset], nesting-aware. */
 function pair(
   text: string,
   offset: number,
@@ -123,21 +115,6 @@ function pair(
   return inner ? { start: start + 1, end } : { start, end: end + 1 };
 }
 
-/**
- * String thing (meow `g`): the quoted run at point. meow delegates to the
- * major-mode syntax table (`bounds-of-thing-at-point 'string` plus skip-syntax
- * over the `"|` classes, which strips the WHOLE delimiter run); this port is a
- * text scan instead, so `,g`/`.g` still work in plain-text and
- * language-agnostic buffers — a deliberate divergence (see meow-semantics.md).
- * It recognizes single AND triple runs of the three quote chars ' " ` , so
- * Python/Kotlin triple quotes, Markdown/JS fences and template literals all
- * select. inner() drops the full delimiter run on each side, bounds() keeps it
- * (mirroring the skip-syntax intent). A single-char run stays on one line; a
- * triple run spans lines (docstrings/fences). A backslash escapes the next
- * char. Unterminated openers are skipped so a stray apostrophe can't swallow
- * the rest of the buffer — but, like meow, a text scan can still be fooled by
- * an odd quote elsewhere on the same line.
- */
 function stringThing(
   text: string,
   offset: number,
@@ -155,7 +132,7 @@ function stringThing(
       let closeEnd = -1;
       while (j < n) {
         const d = text[j];
-        if (!triple && d === '\n') break; // single-char runs stay on one line
+        if (!triple && d === '\n') break;
         if (d === '\\') {
           j += 2;
           continue;
@@ -170,7 +147,7 @@ function stringThing(
         j++;
       }
       if (closeEnd < 0) {
-        i = open + len; // unterminated opener: skip it, keep scanning
+        i = open + len;
         continue;
       }
       if (offset >= open && offset < closeEnd) {
@@ -223,7 +200,6 @@ function paragraph(
   while (last < count - 1 && !blank(last + 1)) last++;
   const start = lineStart(text, first);
   if (inner) return { start, end: lineEnd(text, last) };
-  // bounds include the trailing blank lines (emacs forward-paragraph)
   let stop = last;
   while (stop < count - 1 && blank(stop + 1)) stop++;
   const end =
@@ -239,15 +215,10 @@ function line(text: string, offset: number, inner: boolean): Bounds {
     : { start: lineStart(text, ln), end: Math.min(end + 1, text.length) };
 }
 
-/** Without soft-wrap information the visual line is the logical line. */
 function visualLine(text: string, offset: number): Bounds {
   return line(text, offset, true);
 }
 
-/**
- * defun: the host's symbol provider when it knows a function around point;
- * falls back to the outermost curly block for plain text.
- */
 async function defun(
   ctx: Ctx,
   text: string,

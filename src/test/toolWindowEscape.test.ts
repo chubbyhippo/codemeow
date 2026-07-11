@@ -19,13 +19,6 @@ import assert from 'node:assert/strict';
 import { beforeEach, describe, it } from 'node:test';
 import { onEscape, reset, TIMEOUT_MS } from '../core/toolWindowEscape';
 
-/**
- * Double-ESC in a tool window (ToolWindowEscape). Platform-specific — no
- * meow/Emacs source of truth: pinned is the pairing state machine the
- * manifest's escape bindings feed. The re-emission of a lone first press
- * (sendSequence to the terminal, list.clear to lists) is adapter wiring,
- * outside the core.
- */
 describe('ToolWindowEscapeSpec', () => {
   beforeEach(() => reset());
 

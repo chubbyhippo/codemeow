@@ -7,9 +7,6 @@ import { freshSpec } from './helpers';
 import { SelType } from '../core/state';
 
 describe('ThingsSpec', () => {
-  // meow-inner/bounds/beginning/end-of-thing with the char table, meow-block,
-  // meow-to-block, meow-join (the selection half; the kill half is in editing).
-
   it('given caret inside parens when comma r then inner round is selected forward', async () => {
     const s = freshSpec();
     s.given('round pair', 'foo (b<caret>ar baz) qux');
@@ -24,7 +21,6 @@ describe('ThingsSpec', () => {
     s.given('round pair', 'foo (b<caret>ar baz) qux');
     await s.whenKeys('.r');
     s.thenSelection('(bar baz)');
-    // meow-thing-selection-directions: bounds -> backward (probed on 1.5.0)
     s.thenCaretAtSelectionStart();
   });
 

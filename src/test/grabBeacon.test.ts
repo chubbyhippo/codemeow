@@ -8,8 +8,6 @@ import { freshSpec } from './helpers';
 import { MeowMode } from '../core/state';
 
 describe('GrabBeaconSpec', () => {
-  // meow-grab, swap-grab, sync-grab, and the multi-cursor BEACON approximation.
-
   it('given a selection when G then it becomes the grab and the selection is cancelled', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello world');
@@ -42,7 +40,7 @@ describe('GrabBeaconSpec', () => {
     s.given('word', '<caret>hello world');
     await s.whenKeys('wG');
     assert.ok(s.st.grab);
-    await s.whenKeys('G'); // no selection now: meow-grab cancels the secondary
+    await s.whenKeys('G');
     assert.equal(s.st.grab, null);
   });
 
@@ -57,9 +55,9 @@ describe('GrabBeaconSpec', () => {
   it('given a selection overlapping the grab when R then the swap is refused', async () => {
     const s = freshSpec();
     s.given('three words', '<caret>one two three');
-    await s.whenKeys('weG'); // grab "one two" [0,7)
+    await s.whenKeys('weG');
     s.givenCaretAt(4);
-    await s.whenKeys('fr'); // selection [4,12) overlaps the grab
+    await s.whenKeys('fr');
     await s.whenKeys('R');
     s.thenText('one two three');
   });
@@ -67,9 +65,9 @@ describe('GrabBeaconSpec', () => {
   it('given Y then the grab is re-synced to the current selection (meow-sync-grab)', async () => {
     const s = freshSpec();
     s.given('two words', '<caret>hello world');
-    await s.whenKeys('wG'); // grab "hello"
+    await s.whenKeys('wG');
     s.givenCaretAt(6);
-    await s.whenKeys('wY'); // sync to "world"
+    await s.whenKeys('wY');
     s.thenNoSelection();
     assert.equal(s.st.grab!.start, 6);
     assert.equal(s.st.grab!.end, 11);
@@ -78,7 +76,7 @@ describe('GrabBeaconSpec', () => {
   it('given a grab when marking a word inside it then a cursor lands on every occurrence (BEACON)', async () => {
     const s = freshSpec();
     s.given('repeats', '<caret>foo bar foo baz foo');
-    await s.whenKeys(',bG'); // grab the whole buffer
+    await s.whenKeys(',bG');
     s.givenCaretAt(0);
     await s.whenKeys('w');
     s.thenCaretCount(3);
@@ -96,8 +94,6 @@ describe('GrabBeaconSpec', () => {
   });
 
   it('given beacon cursors when c then every cursor lands at its own edit', async () => {
-    // editCarets re-bases each cursor by the edits below it: the cursors
-    // must sit at POST-edit offsets, not at the pre-edit match positions
     const s = freshSpec();
     s.given('repeats', '<caret>foo bar foo baz foo');
     await s.whenKeys(',bG');
@@ -135,9 +131,9 @@ describe('GrabBeaconSpec', () => {
   it('given a selection outside the grab then no beacon cursors appear', async () => {
     const s = freshSpec();
     s.given('repeats', '<caret>foo bar foo');
-    await s.whenKeys('wG'); // grab only the first foo
+    await s.whenKeys('wG');
     s.givenCaretAt(8);
-    await s.whenKeys('w'); // select the last foo — outside the grab
+    await s.whenKeys('w');
     s.thenCaretCount(1);
   });
 });

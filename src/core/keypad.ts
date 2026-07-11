@@ -19,15 +19,6 @@ import { Ctx, setMode } from './port';
 import { Rc } from './rc';
 import * as Engine from './engine';
 
-/**
- * KEYPAD state. In Emacs, SPC x/c/m reach the C-x / C-c / M- keymaps; here
- * the same key sequences dispatch editor commands. Like the NORMAL/MOTION
- * layout, the whole table lives in rc lines: the bundled default .codemeowrc
- * defines it and ~/.codemeowrc `map <leader>...` entries layer on top (see
- * Rc.keypad()). SPC 0-9 = digit argument, SPC ? = cheatsheet, SPC / =
- * describe key. A which-key hint lists continuations of a prefix.
- */
-
 export async function key(ctx: Ctx, c: string): Promise<void> {
   const st = ctx.st;
   ctx.ui.hideWhichKey();
@@ -79,11 +70,8 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
   }
 }
 
-/** Every keypad exit path — execute, quit/ESC, undefined sequence — lands
- *  here (the engine's escape handler calls it too). */
 export function exit(ctx: Ctx): void {
   ctx.ui.hideWhichKey();
-  // meow--exit-keypad-state: back to meow--keypad-previous-state
   setMode(ctx, ctx.st.keypadPreviousState);
 }
 

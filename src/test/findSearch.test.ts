@@ -8,8 +8,6 @@ import { freshSpec } from './helpers';
 import { SelType } from '../core/state';
 
 describe('FindSearchSpec', () => {
-  // meow-find, meow-till (+expand), meow-visit, meow-search.
-
   it('given f X then selects from point through the char inclusive', async () => {
     const s = freshSpec();
     s.given('marker text', '<caret>abcXdef');
@@ -33,8 +31,6 @@ describe('FindSearchSpec', () => {
     await s.whenKeys('w');
     s.thenSelection('word1');
     await s.whenKeys('f3');
-    // probed (meow 1.5.0): find REPLACES the word selection with
-    // (select . find) from the old point — region [6,19)
     s.thenSelection(', word2 word3');
     s.thenSelType(SelType.FIND);
     s.thenCaretAtSelectionEnd();
@@ -44,7 +40,7 @@ describe('FindSearchSpec', () => {
     const s = freshSpec();
     s.given('comma separated', 'w<caret>ord1, word2 word3');
     await s.whenKeys('wt3');
-    s.thenSelection(', word2 word'); // probed: region [6,18)
+    s.thenSelection(', word2 word');
     s.thenSelType(SelType.TILL);
   });
 
@@ -83,7 +79,7 @@ describe('FindSearchSpec', () => {
   it('given w then n repeats the pushed word search forward (meow-search)', async () => {
     const s = freshSpec();
     s.given('repeats', '<caret>foo bar foo baz foo');
-    await s.whenKeys('w'); // marks foo, pushes \bfoo\b
+    await s.whenKeys('w');
     await s.whenKeys('n');
     s.thenSelection('foo');
     assert.equal(Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active), 8);
@@ -92,7 +88,7 @@ describe('FindSearchSpec', () => {
   it('given repeated n then the search wraps at the end of the buffer', async () => {
     const s = freshSpec();
     s.given('repeats', '<caret>foo bar foo');
-    await s.whenKeys('wnn'); // second n has no match ahead -> wraps to the first foo
+    await s.whenKeys('wnn');
     assert.equal(Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active), 0);
     s.thenSelection('foo');
   });
@@ -100,8 +96,8 @@ describe('FindSearchSpec', () => {
   it('given a reversed selection when n then the search goes backward', async () => {
     const s = freshSpec();
     s.given('repeats', 'foo bar <caret>foo bar foo');
-    await s.whenKeys('w'); // marks middle foo
-    await s.whenKeys(';'); // reverse: direction now backward
+    await s.whenKeys('w');
+    await s.whenKeys(';');
     await s.whenKeys('n');
     assert.equal(Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active), 0);
     s.thenSelection('foo');
@@ -112,8 +108,8 @@ describe('FindSearchSpec', () => {
     const s = freshSpec();
     s.given('repeats', 'foo <caret>bar foo bar');
     s.st.searchHistory.push('zzz');
-    await s.whenKeys(',e'); // transient symbol selection "bar" — doesn't match zzz
-    await s.whenKeys('n'); // meow-search adopts the region as the new pattern
+    await s.whenKeys(',e');
+    await s.whenKeys('n');
     s.thenSelection('bar');
     assert.equal(
       Math.min(s.editor.sels[0].anchor, s.editor.sels[0].active),

@@ -15,33 +15,14 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-/**
- * windmove for VS Code — a port of Emacs'
- * windmove-left/right/up/down (windmove.el, Emacs 30.2): Shift+arrows and
- * SPC w h/j/k/l select the window in a direction. The
- * platform exposes NO window geometry to extensions, so this is a composed
- * approximation, not window.el's caret-band pick: the "windows" are the
- * editor groups (VS Code's own directional grid focus) plus the two panes
- * of a side-by-side diff, which group focus never crosses — left/right
- * step between original and modified first, then leave the group. What
- * survives of windmove exactly: the direction model, no wrap-around, and
- * Emacs' user-error when nothing is there ("No window left from selected
- * window", batch-verified — the adapter shows it when a move changed
- * nothing).
- */
-
 export type WindmoveDir = 'left' | 'right' | 'up' | 'down';
 
-/** What the adapter can see of the active diff editor: which pane has the
- *  caret, and whether the panes are side by side at all (an inline diff is
- *  a single window). Null when the active editor is not a text diff. */
 export interface DiffSideView {
   onOriginal: boolean;
   onModified: boolean;
   sideBySide: boolean;
 }
 
-/** VS Code's own directional group focus (grid geometry, no wrap). */
 const GROUP_FOCUS: Record<WindmoveDir, string> = {
   left: 'workbench.action.focusLeftGroup',
   right: 'workbench.action.focusRightGroup',
@@ -49,15 +30,10 @@ const GROUP_FOCUS: Record<WindmoveDir, string> = {
   down: 'workbench.action.focusBelowGroup',
 };
 
-/** windmove-do-window-select's user-error, verbatim. */
 export function noWindowMessage(dir: WindmoveDir): string {
   return `No window ${dir} from selected window`;
 }
 
-/** Decide one windmove step: in a side-by-side diff the panes are windows —
- *  original sits left of modified, so left from the modified pane and right
- *  from the original pane cross between them (diffEditor.switchSide);
- *  everything else is the editor group in that direction. */
 export function plan(dir: WindmoveDir, diff: DiffSideView | null): string {
   if (diff !== null && diff.sideBySide) {
     if (dir === 'left' && diff.onModified) return 'diffEditor.switchSide';
