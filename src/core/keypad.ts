@@ -80,7 +80,7 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
   }
 }
 
-export function exit(ctx: Ctx): void {
+function exit(ctx: Ctx): void {
   ctx.ui.hideWhichKey();
   setMode(ctx, MeowMode.NORMAL);
 }

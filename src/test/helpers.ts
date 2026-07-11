@@ -46,7 +46,7 @@ import { lineOfOffset } from '../core/text';
  * plugins stay behavior-identical.
  */
 
-export class FakeEditor implements EditorPort {
+class FakeEditor implements EditorPort {
   text = '';
   sels: SelRange[] = [{ anchor: 0, active: 0 }];
   writable = true;
@@ -91,7 +91,7 @@ export class FakeEditor implements EditorPort {
   }
 }
 
-export class FakeClipboard implements ClipboardPort {
+class FakeClipboard implements ClipboardPort {
   content: string | undefined;
 
   async read(): Promise<string | undefined> {
@@ -103,7 +103,7 @@ export class FakeClipboard implements ClipboardPort {
   }
 }
 
-export class FakeUi implements UiPort {
+class FakeUi implements UiPort {
   hints: string[] = [];
   infos: Array<[string, string]> = [];
   answers: string[] = [];

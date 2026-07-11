@@ -4,8 +4,8 @@
 
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
 import { freshSpec } from './helpers';
 import { Rc } from '../core/rc';
 import { RcState } from '../core/rcState';

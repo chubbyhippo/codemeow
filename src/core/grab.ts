@@ -35,7 +35,7 @@ export const commands: Map<string, MeowCommand> = new Map([
   ['meow-swap-grab', (ctx: Ctx) => swap(ctx)],
 ]);
 
-export function clear(ctx: Ctx): void {
+function clear(ctx: Ctx): void {
   ctx.st.grab = null;
   ctx.ui.setGrabHighlight(null);
 }

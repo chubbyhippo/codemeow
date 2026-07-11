@@ -17,7 +17,7 @@
 
 import { Ctx } from './port';
 import { MeowCommand } from './command';
-import * as Selections from './selections';
+import * as Sel from './selections';
 import { lineCount, lineEnd, lineStart } from './text';
 
 /**
@@ -55,15 +55,15 @@ export const commands: Map<string, MeowCommand> = new Map([
 
 // --------------------------------------------------------------- the tree
 
-export interface Leaf {
+interface Leaf {
   kind: 'leaf';
   offset: number;
 }
-export interface Branch {
+interface Branch {
   kind: 'branch';
   children: Array<[string, AvyNode]>;
 }
-export type AvyNode = Leaf | Branch;
+type AvyNode = Leaf | Branch;
 
 /** avy-subdiv: distribute N candidates over B keys in a balanced way. */
 export function subdiv(n: number, b: number): number[] {
@@ -83,7 +83,7 @@ export function subdiv(n: number, b: number): number[] {
 
 /** avy-tree: fewer candidates than keys pair up 1:1; otherwise the subdiv
  *  sizes decide which keys are leaves and which host subtrees. */
-export function tree(candidates: number[], keys: string = KEYS): Branch {
+function tree(candidates: number[], keys: string = KEYS): Branch {
   if (candidates.length < keys.length) {
     return {
       kind: 'branch',
@@ -107,7 +107,7 @@ export function tree(candidates: number[], keys: string = KEYS): Branch {
 }
 
 /** Every leaf with its remaining label path from [node]. */
-export function labels(node: Branch): Array<[number, string]> {
+function labels(node: Branch): Array<[number, string]> {
   const out: Array<[number, string]> = [];
   const walk = (n: AvyNode, path: string): void => {
     if (n.kind === 'leaf') out.push([n.offset, path]);
@@ -223,7 +223,7 @@ async function select(ctx: Ctx, session: AvySession, c: string): Promise<void> {
 function jump(ctx: Ctx, offset: number): void {
   const sel = ctx.port.getSelections()[0];
   if (sel.anchor !== sel.active) {
-    ctx.port.setSelections([{ anchor: Selections.mark(ctx), active: offset }]);
+    ctx.port.setSelections([{ anchor: Sel.mark(ctx), active: offset }]);
   } else {
     ctx.port.setSelections([{ anchor: offset, active: offset }]);
   }

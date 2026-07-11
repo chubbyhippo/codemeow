@@ -30,7 +30,7 @@ import {
 } from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
-import * as GrabMod from './grab';
+import * as Grab from './grab';
 import * as Search from './search';
 
 /**
@@ -190,7 +190,7 @@ function moveExpand(ctx: Ctx, dx: number, dy: number): void {
   );
   ctx.st.selType = SelType.CHAR;
   ctx.st.selExpand = true;
-  GrabMod.beacon(ctx);
+  Grab.beacon(ctx);
 }
 
 /**

@@ -15,9 +15,9 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+import * as fs from 'node:fs';
+import * as os from 'node:os';
+import * as path from 'node:path';
 import * as vscode from 'vscode';
 import { attachMode } from '../core/attachPolicy';
 import * as Engine from '../core/engine';

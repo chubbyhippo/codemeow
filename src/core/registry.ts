@@ -19,7 +19,7 @@ import { Ctx, setMode } from './port';
 import { MeowMode } from './state';
 import { MeowCommand } from './command';
 import * as Motions from './motions';
-import * as Selections from './selections';
+import * as Sel from './selections';
 import * as Search from './search';
 import * as Structures from './structures';
 import * as Grab from './grab';
@@ -36,7 +36,7 @@ import * as Engine from './engine'; // used lazily inside `repeat` — safe unde
  */
 export const COMMANDS: Map<string, MeowCommand> = new Map([
   ...Motions.commands,
-  ...Selections.commands,
+  ...Sel.commands,
   ...Search.commands,
   ...Structures.commands,
   ...Grab.commands,

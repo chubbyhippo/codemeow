@@ -28,7 +28,7 @@ import {
   Words,
 } from './text';
 import { MeowCommand } from './command';
-import * as GrabMod from './grab';
+import * as Grab from './grab';
 import { expandHintPositions } from './hints';
 
 /**
@@ -132,7 +132,7 @@ export function select(
   const next = sels.slice();
   next[0] = { anchor: m, active: p };
   port.setSelections(next);
-  GrabMod.beacon(ctx);
+  Grab.beacon(ctx);
   ctx.ui.showExpandHints(expandHintPositions(ctx));
 }
 
@@ -159,7 +159,7 @@ export function cancel(ctx: Ctx): void {
   resetSelectionMemory(ctx.st);
 }
 
-export function cancelAll(ctx: Ctx): void {
+function cancelAll(ctx: Ctx): void {
   const sels = ctx.port.getSelections();
   if (sels.length > 1) ctx.port.setSelections([sels[0]]);
   cancel(ctx);
@@ -190,7 +190,7 @@ function pop(ctx: Ctx): void {
     } else {
       select(ctx, entry.type, entry.anchor, entry.active, entry.expand, false);
     }
-  } else if (!GrabMod.pop(ctx)) {
+  } else if (!Grab.pop(ctx)) {
     ctx.ui.hint('No previous selection');
   }
 }

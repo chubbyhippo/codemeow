@@ -28,7 +28,7 @@
  * No vscode import: the spec suite reads this table headlessly.
  */
 
-export interface TreeKey {
+interface TreeKey {
   /** The char an rc mmap line binds. */
   ch: string;
   /** The keybinding producing that char on a US layout. */
@@ -47,7 +47,7 @@ export interface TreeKey {
  * wins — and notebooks are excluded because their cell list is not a tree
  * surface (cells keep native keys, like the attach policy's editor side).
  */
-export const TREE_WHEN =
+const TREE_WHEN =
   'listFocus && !inputFocus && !treestickyScrollFocused && !treeFindOpen && !notebookEditorFocused';
 
 const LETTERS = 'abcdefghijklmnopqrstuvwxyz';

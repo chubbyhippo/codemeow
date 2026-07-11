@@ -21,7 +21,7 @@ import { setMode } from './port';
 import { lineEnd, lineOfOffset, lineStart } from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
-import * as GrabMod from './grab';
+import * as Grab from './grab';
 
 /**
  * Text-mutating commands: entering INSERT (insert/append/open above/below),
@@ -38,7 +38,7 @@ import * as GrabMod from './grab';
  * swap-grab) instead fail with Emacs' "Buffer is read-only" error —
  * surfaced here as a hint.
  */
-export function allowModify(ctx: Ctx): boolean {
+function allowModify(ctx: Ctx): boolean {
   return ctx.port.isWritable();
 }
 
@@ -105,7 +105,7 @@ async function editCarets(
     };
     if (r.edit) delta += r.edit.text.length - (r.edit.end - r.edit.start);
   }
-  GrabMod.adjustForEdits(ctx.st, edits);
+  Grab.adjustForEdits(ctx.st, edits);
   if (edits.length > 0) await ctx.port.edit(edits);
   ctx.port.setSelections(newSels);
 }
@@ -141,7 +141,7 @@ async function openBelow(ctx: Ctx): Promise<void> {
   const text = ctx.port.getText();
   const eol = lineEnd(text, lineOfOffset(text, Sel.primary(ctx).active));
   const edits = [{ start: eol, end: eol, text: '\n' }];
-  GrabMod.adjustForEdits(ctx.st, edits);
+  Grab.adjustForEdits(ctx.st, edits);
   await ctx.port.edit(edits);
   ctx.port.setSelections([{ anchor: eol + 1, active: eol + 1 }]);
   setMode(ctx, MeowMode.INSERT);
@@ -154,7 +154,7 @@ async function openAbove(ctx: Ctx): Promise<void> {
   const text = ctx.port.getText();
   const bol = lineStart(text, lineOfOffset(text, Sel.primary(ctx).active));
   const edits = [{ start: bol, end: bol, text: '\n' }];
-  GrabMod.adjustForEdits(ctx.st, edits);
+  Grab.adjustForEdits(ctx.st, edits);
   await ctx.port.edit(edits);
   ctx.port.setSelections([{ anchor: bol, active: bol }]);
   setMode(ctx, MeowMode.INSERT);
@@ -299,7 +299,7 @@ async function kill(ctx: Ctx): Promise<void> {
   if (end > caret) {
     await ctx.clipboard.write(text.slice(caret, end));
     const edits = [{ start: caret, end, text: '' }];
-    GrabMod.adjustForEdits(st, edits);
+    Grab.adjustForEdits(st, edits);
     await ctx.port.edit(edits);
     ctx.port.setSelections([{ anchor: caret, active: caret }]);
   }
@@ -322,7 +322,7 @@ async function joinKill(ctx: Ctx): Promise<void> {
     !')]}.,;:'.includes(after) &&
     !'([{'.includes(before);
   const edits = [{ start: s, end: e, text: space ? ' ' : '' }];
-  GrabMod.adjustForEdits(ctx.st, edits);
+  Grab.adjustForEdits(ctx.st, edits);
   await ctx.port.edit(edits);
   ctx.port.setSelections([{ anchor: s, active: s }]);
   ctx.st.selType = SelType.NONE;

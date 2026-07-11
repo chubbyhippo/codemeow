@@ -64,7 +64,7 @@ export function isBlankLine(text: string, line: number): boolean {
 
 // ------------------------------------------------------------- char classes
 
-export function isWordChar(c: string): boolean {
+function isWordChar(c: string): boolean {
   return /[\p{L}\p{N}]/u.test(c);
 }
 
@@ -79,13 +79,13 @@ export function charPred(symbol: boolean): (c: string) => boolean {
 
 // ------------------------------------------------------------- char scans
 
-export function indexOfChar(text: string, c: string, from: number): number {
+function indexOfChar(text: string, c: string, from: number): number {
   for (let i = Math.max(from, 0); i < text.length; i++)
     if (text[i] === c) return i;
   return -1;
 }
 
-export function lastIndexOfChar(text: string, c: string, from: number): number {
+function lastIndexOfChar(text: string, c: string, from: number): number {
   for (let i = Math.min(from, text.length - 1); i >= 0; i--)
     if (text[i] === c) return i;
   return -1;

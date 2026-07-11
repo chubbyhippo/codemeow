@@ -33,7 +33,7 @@ import {
  * inner() excludes delimiters, bounds() includes them; both return
  * [startOffset, endOffset) or null when the thing doesn't exist at point.
  */
-export interface Bounds {
+interface Bounds {
   start: number;
   end: number;
 }
