@@ -67,6 +67,56 @@
         "command": "codemeow.windmoveDown",
         "title": "Windmove Down",
         "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsForwardChar",
+        "title": "Emacs Forward Char",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsBackwardChar",
+        "title": "Emacs Backward Char",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsNextLine",
+        "title": "Emacs Next Line",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsPreviousLine",
+        "title": "Emacs Previous Line",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsBeginningOfLine",
+        "title": "Emacs Beginning Of Line",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsEndOfLine",
+        "title": "Emacs End Of Line",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsForwardWord",
+        "title": "Emacs Forward Word",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsBackwardWord",
+        "title": "Emacs Backward Word",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsBackwardSentence",
+        "title": "Emacs Backward Sentence",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsForwardSentence",
+        "title": "Emacs Forward Sentence",
+        "category": "codemeow"
       }
     ],
     "menus": {
@@ -108,6 +158,56 @@
         "key": "shift+down",
         "command": "codemeow.windmoveDown",
         "when": "editorTextFocus && codemeow.active"
+      },
+      {
+        "key": "ctrl+f",
+        "command": "codemeow.emacsForwardChar",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "ctrl+b",
+        "command": "codemeow.emacsBackwardChar",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "ctrl+n",
+        "command": "codemeow.emacsNextLine",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "ctrl+p",
+        "command": "codemeow.emacsPreviousLine",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "ctrl+a",
+        "command": "codemeow.emacsBeginningOfLine",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "ctrl+e",
+        "command": "codemeow.emacsEndOfLine",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+f",
+        "command": "codemeow.emacsForwardWord",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+b",
+        "command": "codemeow.emacsBackwardWord",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+a",
+        "command": "codemeow.emacsBackwardSentence",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+e",
+        "command": "codemeow.emacsForwardSentence",
+        "when": "editorTextFocus && codemeow.normal"
       },
       {
         "key": "escape",

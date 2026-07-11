@@ -342,6 +342,16 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
             : `MEOW ${st.mode}`;
   statusBar.show();
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);
+  void vscode.commands.executeCommand(
+    'setContext',
+    'codemeow.normal',
+    st.mode === MeowMode.NORMAL,
+  );
+}
+
+function clearActiveContext(): void {
+  void vscode.commands.executeCommand('setContext', 'codemeow.active', false);
+  void vscode.commands.executeCommand('setContext', 'codemeow.normal', false);
 }
 
 function syncTreeKeys(): void {
@@ -401,6 +411,14 @@ async function windmove(dir: WindmoveDir): Promise<void> {
       STATUS_MESSAGE_MS,
     );
   }
+}
+
+async function emacsMotion(command: string): Promise<void> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return;
+  const st = stateFor(editor);
+  if (!st || st.mode !== MeowMode.NORMAL) return;
+  await Engine.runEmacsMotion(makeCtx(editor, st), command);
 }
 
 function userRcPath(): string {
@@ -574,6 +592,37 @@ export function activate(context: vscode.ExtensionContext): void {
       windmove('down'),
     ),
 
+    vscode.commands.registerCommand('codemeow.emacsForwardChar', () =>
+      emacsMotion('forward-char'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsBackwardChar', () =>
+      emacsMotion('backward-char'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsNextLine', () =>
+      emacsMotion('next-line'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsPreviousLine', () =>
+      emacsMotion('previous-line'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsBeginningOfLine', () =>
+      emacsMotion('move-beginning-of-line'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsEndOfLine', () =>
+      emacsMotion('move-end-of-line'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsForwardWord', () =>
+      emacsMotion('forward-word'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsBackwardWord', () =>
+      emacsMotion('backward-word'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsBackwardSentence', () =>
+      emacsMotion('backward-sentence'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsForwardSentence', () =>
+      emacsMotion('forward-sentence'),
+    ),
+
     vscode.commands.registerCommand(
       'codemeow.toolWindowEscape',
       (surface: unknown) => {
@@ -663,22 +712,14 @@ export function activate(context: vscode.ExtensionContext): void {
       dropHiddenAvySessions();
       if (!editor) {
         statusBar.hide();
-        void vscode.commands.executeCommand(
-          'setContext',
-          'codemeow.active',
-          false,
-        );
+        clearActiveContext();
         return;
       }
       const st = stateFor(editor);
       if (st) applyMode(editor, st);
       else {
         statusBar.hide();
-        void vscode.commands.executeCommand(
-          'setContext',
-          'codemeow.active',
-          false,
-        );
+        clearActiveContext();
       }
     }),
 

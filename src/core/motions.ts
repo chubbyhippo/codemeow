@@ -25,7 +25,9 @@ import {
   lineEnd,
   lineOfOffset,
   lineStart,
+  nextSentenceEnd,
   nthCharTarget,
+  prevSentenceStart,
   Words,
 } from './text';
 import { MeowCommand } from './command';
@@ -71,7 +73,37 @@ export const commands: Map<string, MeowCommand> = new Map([
       ctx.st.pending = Pending.TILL;
     },
   ],
+  ['forward-char', (ctx: Ctx) => charOrExpand(ctx, ctx.st.takeCount(1))],
+  ['backward-char', (ctx: Ctx) => charOrExpand(ctx, -ctx.st.takeCount(1))],
+  ['next-line', (ctx: Ctx) => lineOrExpand(ctx, ctx.st.takeCount(1))],
+  ['previous-line', (ctx: Ctx) => lineOrExpand(ctx, -ctx.st.takeCount(1))],
+  [
+    'move-beginning-of-line',
+    (ctx: Ctx) => moveToOrExpand(ctx, SelType.CHAR, lineStartTarget),
+  ],
+  [
+    'move-end-of-line',
+    (ctx: Ctx) => moveToOrExpand(ctx, SelType.CHAR, lineEndTarget),
+  ],
+  ['forward-word', (ctx: Ctx) => wordOrExpand(ctx, ctx.st.takeCount(1))],
+  ['backward-word', (ctx: Ctx) => wordOrExpand(ctx, -ctx.st.takeCount(1))],
+  [
+    'forward-sentence',
+    (ctx: Ctx) => sentenceOrExpand(ctx, ctx.st.takeCount(1)),
+  ],
+  [
+    'backward-sentence',
+    (ctx: Ctx) => sentenceOrExpand(ctx, -ctx.st.takeCount(1)),
+  ],
 ]);
+
+type OffsetTarget = (text: string, offset: number) => number;
+
+const lineStartTarget: OffsetTarget = (text, off) =>
+  lineStart(text, lineOfOffset(text, off));
+
+const lineEndTarget: OffsetTarget = (text, off) =>
+  lineEnd(text, lineOfOffset(text, off));
 
 const wordType = (symbol: boolean) => (symbol ? SelType.SYMBOL : SelType.WORD);
 
@@ -172,6 +204,48 @@ function moveExpand(ctx: Ctx, dx: number, dy: number): void {
   ctx.st.selType = SelType.CHAR;
   ctx.st.selExpand = true;
   Grab.beacon(ctx);
+}
+
+function charOrExpand(ctx: Ctx, dx: number): void {
+  if (Sel.hasSelection(Sel.primary(ctx))) moveExpand(ctx, dx, 0);
+  else moveChar(ctx, dx);
+}
+
+function lineOrExpand(ctx: Ctx, dy: number): void {
+  if (Sel.hasSelection(Sel.primary(ctx))) moveExpand(ctx, 0, dy);
+  else moveLine(ctx, dy);
+}
+
+function moveToOrExpand(ctx: Ctx, type: SelType, target: OffsetTarget): void {
+  const text = ctx.port.getText();
+  const extend = Sel.hasSelection(Sel.primary(ctx));
+  const before = Sel.primary(ctx).active;
+  const moved = ctx.port.getSelections().map((s) => {
+    const active = clamp(target(text, s.active), 0, text.length);
+    return { anchor: extend ? s.anchor : active, active };
+  });
+  ctx.port.setSelections(moved);
+  if (extend) {
+    Sel.recordSelect(ctx, type, moved[0].anchor, moved[0].active, true, before);
+    ctx.st.selType = type;
+    ctx.st.selExpand = true;
+    Grab.beacon(ctx);
+  }
+}
+
+function wordOrExpand(ctx: Ctx, n: number): void {
+  const pred = charPred(false);
+  moveToOrExpand(ctx, SelType.WORD, (text, off) =>
+    n >= 0
+      ? Words.nextEnd(text, off, n, pred)
+      : Words.prevStart(text, off, -n, pred),
+  );
+}
+
+function sentenceOrExpand(ctx: Ctx, n: number): void {
+  moveToOrExpand(ctx, SelType.CHAR, (text, off) =>
+    n >= 0 ? nextSentenceEnd(text, off, n) : prevSentenceStart(text, off, -n),
+  );
 }
 
 function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {

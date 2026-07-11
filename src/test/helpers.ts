@@ -19,6 +19,7 @@ import { strict as assert } from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as Engine from '../core/engine';
+import { COMMANDS } from '../core/registry';
 import {
   ClipboardPort,
   Ctx,
@@ -194,6 +195,12 @@ export class Spec {
 
   async whenKeys(keys: string): Promise<void> {
     for (const c of keys) await Engine.handleChar(this.ctx, c);
+  }
+
+  async whenCommand(name: string): Promise<void> {
+    const cmd = COMMANDS.get(name);
+    if (!cmd) throw new Error(`unknown command: ${name}`);
+    await cmd(this.ctx);
   }
 
   pressEsc(): boolean {

@@ -24,6 +24,7 @@ import {
   lineEnd,
   lineOfOffset,
   lineStart,
+  SENTENCE_ENDERS,
 } from './text';
 
 interface Bounds {
@@ -238,11 +239,13 @@ async function defun(
 
 function sentence(text: string, offset: number, inner: boolean): Bounds | null {
   if (text.length === 0) return null;
-  const enders = '.!?';
   let s = clamp(offset, 0, text.length - 1);
   while (s > 0) {
     const c = text[s - 1];
-    if (enders.includes(c) || (c === '\n' && s > 1 && text[s - 2] === '\n'))
+    if (
+      SENTENCE_ENDERS.includes(c) ||
+      (c === '\n' && s > 1 && text[s - 2] === '\n')
+    )
       break;
     s--;
   }
@@ -250,11 +253,11 @@ function sentence(text: string, offset: number, inner: boolean): Bounds | null {
   let e = clamp(offset, 0, text.length);
   while (
     e < text.length &&
-    !enders.includes(text[e]) &&
+    !SENTENCE_ENDERS.includes(text[e]) &&
     !(text[e] === '\n' && e + 1 < text.length && text[e + 1] === '\n')
   )
     e++;
-  if (e < text.length && enders.includes(text[e])) e++;
+  if (e < text.length && SENTENCE_ENDERS.includes(text[e])) e++;
   if (e <= s) return null;
   if (inner) return { start: s, end: e };
   let be = e;

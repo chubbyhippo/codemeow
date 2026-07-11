@@ -107,6 +107,32 @@ export function nthCharTarget(
   return till ? found : found + 1;
 }
 
+export const SENTENCE_ENDERS = '.!?';
+
+export function nextSentenceEnd(text: string, from: number, n: number): number {
+  let i = clamp(from, 0, text.length);
+  for (let k = 0; k < n; k++) {
+    while (i < text.length && !SENTENCE_ENDERS.includes(text[i])) i++;
+    while (i < text.length && SENTENCE_ENDERS.includes(text[i])) i++;
+    while (i < text.length && /\s/.test(text[i])) i++;
+  }
+  return i;
+}
+
+export function prevSentenceStart(
+  text: string,
+  from: number,
+  n: number,
+): number {
+  const isGap = (c: string) => /\s/.test(c) || SENTENCE_ENDERS.includes(c);
+  let i = clamp(from, 0, text.length);
+  for (let k = 0; k < n; k++) {
+    while (i > 0 && isGap(text[i - 1])) i--;
+    while (i > 0 && !isGap(text[i - 1])) i--;
+  }
+  return i;
+}
+
 export const Words = {
   nextEnd(
     text: string,

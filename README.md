@@ -83,6 +83,24 @@ Windmove_ — and inside meow buffers they shadow shift-selection, the exact
 tradeoff the Emacs binding makes (select with meow instead; anywhere meow
 doesn't attach keeps native shift-select).
 
+**Emacs motion chords** — `Ctrl+f/b/n/p/a/e` and `Alt+f/b/a/e` are the real
+Emacs point motions (`forward/backward-char`, `next/previous-line`,
+`move-beginning/end-of-line`, `forward/backward-word`,
+`backward/forward-sentence`), not meow commands: meow itself never rebinds
+these chords, so in real Emacs they simply move point — and, because a meow
+selection is an active Emacs mark, that same point motion stretches an
+already-active selection for free, with no special-casing. codemeow ports
+that: with no selection the chord just moves the cursor, and with one active
+it extends it, anchored exactly like meow's own `H J K L` char/line expand —
+so `w` then `Ctrl+f Ctrl+f` grows the marked word one character at a time,
+and `;` (reverse) flips which end subsequent chords grow from. `Alt+n` /
+`Alt+p` are deliberately left unbound: stock Emacs has no default binding for
+them either (only the unrelated `M-g n` / `M-g p` error-navigation prefix) —
+verified against the GNU Emacs manual, not guessed. Like Windmove's
+Shift+arrows above, these live in the manifest keybindings, gated to NORMAL
+meow buffers (so `Ctrl+F` stays Find while you type) — rebind them under
+_Preferences → Keyboard Shortcuts_.
+
 And one idea borrowed straight from meow itself: **the extension binds no
 keys in code.** The entire keymap — the NORMAL/MOTION layout _and_ the whole
 `SPC` keypad table — lives in a `.codemeowrc` file bundled inside the
@@ -218,7 +236,8 @@ mention keeps its bundled binding.
 - Reserved: keypad `0-9` (digit argument), `?` (cheatsheet), `/` (describe
   key); `SPC` is always the keypad key. Only printable keys reach the modal
   engine — `<CR>`, `<Esc>`, and modifier chords belong in VS Code's
-  keybindings.json.
+  keybindings.json (that's where the bundled Emacs motion chords live too —
+  see above).
 - Unknown `set` options and `let` lines are ignored, so pasting a whole
   `.ideavimrc` or `.ideameowrc` won't error; only the lines codemeow
   understands take effect.
@@ -300,7 +319,7 @@ run headless in milliseconds.
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
 | `src/core/engine.ts`             | the dispatcher: key → binding → command; repeat (`'`) and rc-replay bookkeeping                                                |
 | `src/core/registry.ts`           | the command registry every rc binding resolves against                                                                         |
-| `src/core/motions.ts`            | movement and the selections it creates: hjkl, words, lines, find/till                                                          |
+| `src/core/motions.ts`            | movement and the selections it creates: hjkl, words, lines, find/till, plus the Ctrl/Alt Emacs motion chords (region-expanding) |
 | `src/core/selections.ts`         | the selection primitive (meow's expand/select model), reverse/cancel/pop, digit expand                                         |
 | `src/core/search.ts`             | meow-search / meow-visit and the shared regexp ring                                                                            |
 | `src/core/structures.ts`         | the char-thing table dispatch, blocks, join                                                                                    |

@@ -120,6 +120,12 @@ NORMAL — selection first, then act
   BEACON   grab a region (G), then select w/x/f... inside it:
            a cursor lands on every match — edit them all, ESC to finish
 
+EMACS CHORDS (VS Code keybindings, not rc-configurable — Preferences)
+  C-f/b/n/p  char/line move            C-a/e      beginning/end of line
+  M-f/b      word move                 M-a/e      backward/forward sentence
+             no selection: just moves; with one active: extends it
+             (point motion over an active Emacs mark) — same rule ; reverses
+
 KEYPAD (SPC — or Alt+; from ANY state, INSERT included; returns there)
   SPC b bookmarks/buffers   SPC x file/buffer/window   SPC c commands   SPC m meta
   SPC w windows   SPC 0-9 count   SPC ? this sheet   SPC / describe key

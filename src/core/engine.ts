@@ -32,6 +32,12 @@ export function enterKeypad(ctx: Ctx): void {
   ctx.ui.scheduleWhichKey('keypad', '');
 }
 
+export async function runEmacsMotion(ctx: Ctx, command: string): Promise<void> {
+  const cmd = COMMANDS.get(command);
+  if (cmd) await cmd(ctx);
+  ctx.ui.refresh(ctx.st);
+}
+
 export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   const st = ctx.st;
   if (st.mode === MeowMode.INSERT) return false;
