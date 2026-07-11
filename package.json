@@ -687,11 +687,15 @@
     "compile": "tsc -p ./",
     "watch": "tsc -w -p ./",
     "test": "npm run compile && node --test \"out/test/*.test.js\"",
+    "lint": "eslint .",
     "package": "npm run compile && npx --yes @vscode/vsce package --no-dependencies"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
-    "typescript": "^5.5.0"
+    "eslint": "^10.7.0",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.63.0"
   }
 }
