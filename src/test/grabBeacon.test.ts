@@ -16,8 +16,8 @@ describe('GrabBeaconSpec', () => {
     await s.whenKeys('wG');
     s.thenNoSelection();
     assert.ok(s.st.grab);
-    assert.equal(s.st.grab!.start, 0);
-    assert.equal(s.st.grab!.end, 5);
+    assert.equal(s.st.grab.start, 0);
+    assert.equal(s.st.grab.end, 5);
   });
 
   it('given a grab and a selection elsewhere when R then the two texts swap (meow-swap-grab)', async () => {

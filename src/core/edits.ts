@@ -85,7 +85,7 @@ async function editCarets(
     .map((sel, index) => ({ sel, index, lo: Math.min(sel.anchor, sel.active) }))
     .sort((a, b) => b.lo - a.lo);
   const edits: TextEdit[] = [];
-  const results: Array<{ edit: TextEdit | null; sel: SelRange }> = new Array(
+  const results = new Array<{ edit: TextEdit | null; sel: SelRange }>(
     sels.length,
   );
   for (const item of order) {
@@ -94,7 +94,7 @@ async function editCarets(
     if (r.edit) edits.push(r.edit);
     results[item.index] = r;
   }
-  const newSels: SelRange[] = new Array(sels.length);
+  const newSels = new Array<SelRange>(sels.length);
   let delta = 0;
   for (const item of [...order].reverse()) {
     // ascending offsets
@@ -166,7 +166,7 @@ async function change(ctx: Ctx): Promise<void> {
   const prim = Sel.primary(ctx);
   // fallback meow-change-char at point-max: nothing happens, not even INSERT
   if (!Sel.hasSelection(prim) && prim.active >= text.length) return;
-  await editCarets(ctx, (sel, lo, hi) => {
+  await editCarets(ctx, (_sel, lo, hi) => {
     if (lo !== hi)
       return {
         edit: { start: lo, end: hi, text: '' },
@@ -188,7 +188,7 @@ async function change(ctx: Ctx): Promise<void> {
 async function del(ctx: Ctx): Promise<void> {
   if (blockedReadOnly(ctx)) return;
   const text = ctx.port.getText();
-  await editCarets(ctx, (sel, lo, hi) => {
+  await editCarets(ctx, (_sel, lo, hi) => {
     if (lo !== hi)
       return {
         edit: { start: lo, end: hi, text: '' },
@@ -206,7 +206,7 @@ async function del(ctx: Ctx): Promise<void> {
 
 async function backwardDelete(ctx: Ctx): Promise<void> {
   if (!allowModify(ctx)) return; // meow gates backspace silently
-  await editCarets(ctx, (sel, lo, hi) => {
+  await editCarets(ctx, (_sel, lo, hi) => {
     if (lo !== hi)
       return {
         edit: { start: lo, end: hi, text: '' },

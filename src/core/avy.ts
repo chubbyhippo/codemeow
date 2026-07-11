@@ -89,7 +89,7 @@ export function tree(candidates: number[], keys: string = KEYS): Branch {
       kind: 'branch',
       children: candidates.map((offset, i) => [
         keys[i],
-        { kind: 'leaf', offset } as AvyNode,
+        { kind: 'leaf', offset },
       ]),
     };
   }
