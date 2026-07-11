@@ -42,8 +42,7 @@ import { lineOfOffset } from '../core/text';
  *
  * Every behavior asserted in these specs was cross-checked against
  * meow-edit/meow's source (docstrings and command bodies) — not against vim
- * intuition. The suite is a straight port of the ideameow specs, so the two
- * plugins stay behavior-identical.
+ * intuition.
  */
 
 class FakeEditor implements EditorPort {

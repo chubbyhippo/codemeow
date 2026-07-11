@@ -162,8 +162,8 @@ export async function repeatLast(ctx: Ctx): Promise<void> {
  *  replaying). Afterwards, Emacs repeat-mode's post-command arming: a
  *  binding whose target sits in an rc repeat group arms that group's
  *  transient — membership by target identity (the repeat-map symbol
- *  property), no entered-with-key check (init.el sets repeat-check-key
- *  'no for every keypad-entered map, and keypad keys are never members). */
+ *  property), no entered-with-key check (repeat-check-key 'no semantics —
+ *  keypad keys are never group members). */
 export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
   await dispatch(ctx, b);
   const map = Rc.repeatMapFor(b);

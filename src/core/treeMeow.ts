@@ -27,21 +27,20 @@ import { Rc } from './rc';
  * the map does NOT bind keeps its native meaning — Enter still opens,
  * unmapped letters still start the tree's type-to-find.
  *
- * Mechanism (ideameow's TreeMeow, itself ported from IdeaVim's NERDTree):
- * where ideameow registers its shortcut set on whichever JTree owns focus,
- * VS Code has no runtime keybinding registration — so the manifest
+ * Mechanism (the design follows IdeaVim's NERDTree emulation): VS Code has
+ * no runtime keybinding registration — so the manifest
  * contributes one keybinding per printable key (built from
  * src/vscode/treeKeys.ts), each gated on a `codemeow.tree.<key>` context
  * key, and the adapter turns exactly the mmap-bound set on (re-synced after
  * SPC c M reloads the rc). While the tree's find widget is open the shared
  * `when` clause disables the whole surface: typing into the find always
- * wins (ideameow's speed-search check).
+ * wins.
  */
 
 /**
  * The meow motion commands with a native tree meaning — the four arrows.
  * Values are the workbench list commands the real arrow keys invoke, the
- * exact JTree ActionMap semantics ideameow binds (listCommands.ts, read
+ * exact JTree ActionMap semantics (listCommands.ts, read
  * from microsoft/vscode main 2026-07): focusDown/Up move the focused row,
  * collapse folds — else goes to the parent, expand unfolds — else enters
  * the first child. Every other meow command needs a text buffer and is

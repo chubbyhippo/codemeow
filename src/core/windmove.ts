@@ -16,9 +16,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
- * windmove for VS Code — the ideameow port's sibling of Emacs'
+ * windmove for VS Code — a port of Emacs'
  * windmove-left/right/up/down (windmove.el, Emacs 30.2): Shift+arrows and
- * SPC w h/j/k/l select the window in a direction. Unlike ideameow, the
+ * SPC w h/j/k/l select the window in a direction. The
  * platform exposes NO window geometry to extensions, so this is a composed
  * approximation, not window.el's caret-band pick: the "windows" are the
  * editor groups (VS Code's own directional grid focus) plus the two panes

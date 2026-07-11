@@ -20,7 +20,7 @@ describe('TreeMeowSpec', () => {
   // four motion commands to the list widget's native arrow-key commands
   // (list.focusDown/Up move the focus, collapse folds else goes to the
   // parent, expand unfolds else enters the first child — listCommands.ts,
-  // the same contract ideameow pins on JTree's ActionMap). The FakeTree
+  // the exact JTree ActionMap semantics). The FakeTree
   // below implements exactly those four command semantics over a model
   // tree; the manifest spec pins the static keybinding table so
   // package.json and treeKeys.ts cannot drift.

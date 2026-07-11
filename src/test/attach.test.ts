@@ -8,8 +8,8 @@ import { attachMode, isWritableScheme } from '../core/attachPolicy';
 import { MeowMode } from '../core/state';
 
 describe('AttachSpec', () => {
-  // Which documents get meow, by scheme — the VS Code analog of ideameow's
-  // editor-kind checks. Read-only schemes attach in NORMAL like Emacs
+  // Which documents get meow, by scheme. Read-only schemes attach in NORMAL
+  // like Emacs
   // read-only buffers (the modify commands gate themselves; see
   // ModesKeypadSpec) — they just report non-writable through the port.
 

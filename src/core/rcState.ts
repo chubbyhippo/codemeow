@@ -20,8 +20,8 @@ import type { Config } from './rc';
 /**
  * Snapshot of the last-LOADED ~/.codemeowrc, as a stable serialization of the
  * PARSED config — so comment and formatting edits never demand a reload. The
- * adapter's editor-title Reload button gates on this (ideameow's RcFileState;
- * IdeaVim's VimRcFileState hashes the parsed Script for the same reason).
+ * adapter's editor-title Reload button gates on this (IdeaVim's
+ * VimRcFileState hashes the parsed Script for the same reason).
  * Type-only import keeps this cycle-free: rc.ts calls in, nothing calls back.
  */
 
@@ -46,8 +46,8 @@ export const RcState = {
   },
 
   /** Does this PARSED config match the user layer the engine is running?
-   *  False before any load — the not-yet-loaded guard the ideameow sibling
-   *  keeps as a separate loaded() (its floating action needs both). */
+   *  False before any load — a never-loaded rc must always count as
+   *  changed. */
   equalTo(c: Config): boolean {
     return state !== null && serialize(c) === state;
   },

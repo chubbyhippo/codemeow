@@ -258,8 +258,8 @@ function closeWhichKeyMenu(): void {
 
 /**
  * which-key as a native QuickPick — the established VS Code which-key UX.
- * There is no non-focusable floating widget in the API, so unlike ideameow's
- * bottom JBPopup the menu takes the keyboard while it is up; its input box is
+ * There is no non-focusable floating widget in the API, so the menu takes
+ * the keyboard while it is up; its input box is
  * a key sink: every typed char is swallowed and dispatched through the engine
  * exactly like an editor key (it does NOT filter — filtering would break
  * typing sequences through the menu), so chains behave identically with or
@@ -373,8 +373,7 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
 
 // ----------------------------------------------------------- tree surface
 
-/** Turn on the context gates for exactly the mmap-bound keys — the analog
- *  of ideameow registering its shortcut set on the focused tree. Re-run
+/** Turn on the context gates for exactly the mmap-bound keys. Re-run
  *  after a rc reload (SPC c M) so new mmap lines apply without a restart. */
 function syncTreeKeys(): void {
   const bound = TreeMeow.boundChars();
@@ -462,7 +461,7 @@ function isRcDocument(d: vscode.TextDocument): boolean {
 /** Keep the codemeow.rcChanged context key (the editor-title Reload button's
  *  when-clause) in step with a parse-level comparison: comment/formatting
  *  edits never light the button up (RcState — IdeaVim's VimRcFileState
- *  design, same as ideameow's RcFileState). */
+ *  design). */
 function syncRcChanged(): void {
   const doc = vscode.workspace.textDocuments.find(isRcDocument);
   const changed =
@@ -557,7 +556,7 @@ export function activate(context: vscode.ExtensionContext): void {
   loadUserRc();
   syncTreeKeys();
   syncRcChanged();
-  // the editor-title Reload button (the ideameow/IdeaVim floating-toolbar
+  // the editor-title Reload button (the IdeaVim floating-toolbar
   // analog): its when-clause gates on codemeow.rcChanged, kept in sync with
   // a parse-hash comparison against the loaded config — comment edits don't
   // light it up
@@ -614,8 +613,8 @@ export function activate(context: vscode.ExtensionContext): void {
       if (st) Engine.escapeKey(makeCtx(editor, st));
     }),
 
-    // meow-keypad from ANY state, INSERT included — init.el's global M-SPC
-    // (`keymap-global-set "M-SPC" #'meow-keypad`), = ideameow's Alt+;. The
+    // meow-keypad from ANY state, INSERT included — meow's global M-SPC
+    // binding (`keymap-global-set "M-SPC" #'meow-keypad`). The
     // manifest binds alt+; on meow editors; a modifier chord never reaches
     // the modal engine, so this is a command, not an rc line. Entry records
     // the state and every keypad exit returns there (meow-keypad.el /
@@ -654,8 +653,8 @@ export function activate(context: vscode.ExtensionContext): void {
       windmove('down'),
     ),
 
-    // double-ESC in a tool window focuses the editor (ideameow's
-    // ToolWindowEscape): the manifest binds escape on the terminal, lists,
+    // double-ESC in a tool window focuses the editor (ToolWindowEscape):
+    // the manifest binds escape on the terminal, lists,
     // and the other side-bar/panel/secondary-side-bar views. A lone press
     // keeps its native meaning — the terminal gets its escape byte back
     // (that binding only fires when codemeow.toolWindowEscape is listed in
@@ -687,9 +686,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.reloadRc', async () => {
       // the rc is usually edited right here (SPC c m) and may sit in a dirty
       // editor — reloading straight from disk would re-read stale content and
-      // look dead until something saves it. Same guard as ideameow's
-      // ReloadRcAction; IdeaVim's ReloadVimRc saves the document as-is before
-      // re-executing for the same reason (ui/ReloadVimRc.kt).
+      // look dead until something saves it. IdeaVim's ReloadVimRc saves the
+      // document as-is before re-executing for the same reason
+      // (ui/ReloadVimRc.kt).
       const rc = path.resolve(userRcPath());
       const dirty = vscode.workspace.textDocuments.find(
         (d) => d.isDirty && path.resolve(d.uri.fsPath) === rc,
@@ -793,7 +792,7 @@ export function activate(context: vscode.ExtensionContext): void {
   }
 }
 
-/** The ideameow Track Action IDs analog (keypad: SPC i d). VS Code's
+/** The IdeaVim Track Action IDs analog (keypad: SPC i d). VS Code's
  *  stable API has no "command executed" listener (vscode.d.ts, checked),
  *  so instead of live tracking this lists every command id the editor
  *  knows — the ids <action>(...) rc lines take — and Enter copies one.

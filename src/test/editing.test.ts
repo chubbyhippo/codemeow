@@ -267,8 +267,8 @@ describe('EditingSpec', () => {
   });
 
   it('given x x then repeated u past the undo stack then nothing blows up', async () => {
-    // ideameow's crash (performing IntelliJ's UndoAction while disabled
-    // fails a platform assertion) has no analog here: VS Code's `undo`
+    // performing IntelliJ's UndoAction while disabled fails a platform
+    // assertion; that crash has no analog here: VS Code's `undo`
     // command is a plain function and an exhausted stack is a silent no-op,
     // so every press just dispatches it safely
     const s = freshSpec();

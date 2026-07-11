@@ -11,9 +11,9 @@ import { noWindowMessage, plan } from '../core/windmove';
 import { freshSpec } from './helpers';
 
 describe('WindmoveSpec', () => {
-  // The window surface: windmove, the ideameow port's sibling. VS Code
+  // The window surface: windmove. VS Code
   // exposes no window geometry to extensions, so window.el's caret-band
-  // pick (pinned in ideameow's WindmoveSpec) has no analog here — what IS
+  // pick has no analog here — what IS
   // pinned is the composed step decision (diff panes are windows: crossing
   // them before leaving the group), Emacs' user-error message verbatim
   // (batch-verified against Emacs 30.2), the manifest's Shift+arrow
@@ -114,8 +114,8 @@ describe('WindmoveSpec', () => {
   });
 
   it('given the bundled rc then SPC w b balances the splits', () => {
-    // init.el C-c w b = balance-windows; the HJKL swaps are ideameow-only
-    // (VS Code has no command to exchange two groups' contents)
+    // Emacs' balance-windows; HJKL window swaps are not bound (VS Code has
+    // no command to exchange two groups' contents)
     freshSpec();
     assert.equal(
       Rc.defaults().keypad.get('wb')?.action,

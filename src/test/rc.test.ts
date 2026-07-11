@@ -90,10 +90,9 @@ describe('RcSpec', () => {
 
   it('given a parameterized action then the whole serialized command is kept', () => {
     // VS Code ids are always bare (args travel as JSON, never inside the id) —
-    // the commandId(param=value,...) form exists in the shared rc dialect
-    // because some sibling ports' hosts serialize command parameters into the
-    // id. An rc written for one meow port must keep parsing in the others:
-    // the line binds as an action, never as a keys-replay.
+    // but some editors' command ids carry serialized parameters, and pasted
+    // rc content must keep parsing: the line binds as an action, never as a
+    // keys-replay.
     const id =
       'com.example.showView(com.example.viewId=com.example.SomeView,com.example.focus=true)';
     const c = Rc.parse([`map <leader>bj <action>(${id})`]);
@@ -134,7 +133,7 @@ describe('RcSpec', () => {
     const c = Rc.parse([
       'set nowhich-key',
       'set timeoutlen=400',
-      'set clipboard+=unnamedplus', // pasted from .ideavimrc: ignored
+      'set clipboard+=unnamedplus', // a pasted vim option: ignored
       'let mapleader=" "',
     ]);
     assert.equal(c.whichKey, false);
@@ -347,8 +346,7 @@ describe('RcSpec', () => {
   /**
    * meow's suggested QWERTY layout (KEYBINDING_QWERTY in meow's README;
    * `<` and `>` are aliases for `[` and `]`) — the contract the bundled
-   * .codemeowrc layout block must satisfy. Identical to ideameow's contract,
-   * so the two plugins can never drift apart silently.
+   * .codemeowrc layout block must satisfy.
    */
   const QWERTY: Map<string, string> = new Map([
     ...Array.from(

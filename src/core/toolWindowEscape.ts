@@ -16,18 +16,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 /**
- * Double-ESC in a tool window returns focus to the editor — ideameow's
- * ToolWindowEscape, ported. The terminal and chat-style views swallow every
+ * Double-ESC in a tool window returns focus to the editor. The terminal
+ * and chat-style views swallow every
  * single ESC (a shell or a TUI needs the key), so plain escape never leaves
  * them; pressing it twice quickly should.
  *
- * The pairing state machine lives here, pure and identical to ideameow's:
+ * The pairing state machine lives here, pure:
  * a plain ESC press reports which surface owns focus (null = not a tool
  * window surface) and its time; the second press on the SAME surface within
  * [TIMEOUT_MS] is the jump. A miss (different surface, too slow, null)
  * re-arms with the current press.
  *
- * The platform half differs from IntelliJ by necessity: VS Code has no
+ * The platform half: VS Code has no
  * pre-dispatch hook to observe keys without consuming them, so the manifest
  * binds `escape` on the tool-window surfaces (terminal / lists / other
  * side-bar, panel and secondary-side-bar views) and the adapter re-emits a

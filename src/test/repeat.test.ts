@@ -10,8 +10,8 @@ import { RcState } from '../core/rcState';
 import { MeowMode, Pending } from '../core/state';
 
 describe('RepeatSpec', () => {
-  // The repeat transient — Emacs repeat-mode, ported (init.el's transient
-  // repeat maps, repeat.el read from Emacs 30.2 source). Rc `repeat` groups
+  // The repeat transient — Emacs repeat-mode, ported (repeat.el read from
+  // Emacs 30.2 source). Rc `repeat` groups
   // make multi-key entries tap-to-continue: dispatching any binding whose
   // TARGET is a group member arms the group (target identity, like the
   // repeat-map symbol property; the entering key needn't be a member —
@@ -83,7 +83,7 @@ describe('RepeatSpec', () => {
   });
 
   it('the bundled default codemeowrc declares the init el repeat groups', () => {
-    // ported 1:1 from init.el's transient maps: flymake -> error,
+    // the bundled groups mirror the Emacs transients: flymake -> error,
     // diff-hl -> change, text-scale -> zoom, expreg -> expand
     freshSpec();
     const d = Rc.defaults().repeat;

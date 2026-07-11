@@ -181,7 +181,7 @@ describe('SelectionSpec', () => {
   });
 
   it('given a selection then expand hints overlay the text without inserting inline content', async () => {
-    // parity with ideameow's overlay regression: the core hands the adapter
+    // hints must never insert inline content: the core hands the adapter
     // positions to paint OVER the text (absolute-positioned decorations, the
     // meow-visual.el 'display equivalent) — nothing enters the layout flow
     const s = freshSpec();

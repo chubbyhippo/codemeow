@@ -19,7 +19,7 @@ import { Binding, Config } from './rc';
 import { COMMANDS } from './registry';
 
 /**
- * The .codemeowrc syntax — an .ideavimrc-flavored line format:
+ * The .codemeowrc syntax — an IdeaVim-flavored line format:
  *
  *   " comments start with a double quote (or #)
  *   nmap F <action>(actions.find)       NORMAL key -> editor command
@@ -29,7 +29,7 @@ import { COMMANDS } from './registry';
  *   mmap j meow-next                    the same, for MOTION (read-only) mode
  *   map <leader>gd <action>(editor.action.revealDefinition)
  *   desc <leader>g goto things
- *   let g:WhichKeyDesc_g = "<leader>g goto things"   (ideavimrc-compatible)
+ *   let g:WhichKeyDesc_g = "<leader>g goto things"   (IdeaVim WhichKey-compatible)
  *   set nowhich-key / set timeoutlen=300
  *   repeat error . <action>(editor.action.marker.nextInFiles)
  *                                       repeat group (Emacs repeat-mode):
@@ -42,14 +42,13 @@ import { COMMANDS } from './registry';
  * A RHS that names a command in the registry binds the command; a misspelled
  * `meow-*` name is an error; any other RHS is replayed as keys. Keypad keys
  * 0-9, ? and / are reserved; SPC itself cannot be remapped. Unknown `set`
- * options and `let` lines are ignored so an .ideavimrc/.ideameowrc can be
+ * options and `let` lines are ignored so IdeaVim-style rc content can be
  * pasted without errors.
  */
 
-// the id is either a bare command id or the shared rc dialect's serialized
-// *parameterized* form commandId(paramId=value,...) — some sibling ports'
-// hosts serialize parameters into the id, and rc lines must keep pasting
-// between the ports; an id VS Code doesn't know just hints at dispatch
+// the id is either a bare command id or the rc dialect's serialized
+// *parameterized* form commandId(paramId=value,...) — accepted so pasted
+// rc content keeps parsing; an id VS Code doesn't know just hints at dispatch
 const ACTION_RE = /^<action>\(([\w.\-$(),=]+)\)$/i;
 const WHICHKEY_LET_RE = /^let\s+g:WhichKeyDesc\w*\s*=\s*"(.+)"$/;
 
@@ -114,7 +113,7 @@ function parseSet(c: Config, rest: string): void {
       eq !== '' ? parseInt(eq, 10) : parseInt(rest.split(/\s+/)[1] ?? '', 10);
     if (!Number.isNaN(n) && n >= 0) c.whichKeyDelayMs = n;
   }
-  // ignore unknown options so .ideavimrc content pastes cleanly
+  // ignore unknown options so IdeaVim-style rc content pastes cleanly
 }
 
 function parseDescBody(
@@ -214,7 +213,7 @@ function parseTarget(
  *  rc lines. Dispatching any binding whose target is listed in a group arms
  *  it: the member keys re-dispatch their targets (shadowing the normal map)
  *  until a non-member key falls through and ends the run. The entering key
- *  needn't be a member — init.el's repeat-check-key 'no. */
+ *  needn't be a member — repeat.el's repeat-check-key 'no. */
 function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
   const m = /^(\S+)\s+(\S+)\s+(.*)$/.exec(rest);
   if (!m) {

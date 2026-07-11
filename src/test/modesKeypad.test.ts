@@ -79,11 +79,11 @@ describe('ModesKeypadSpec', () => {
   const fireKeypadAction = (s: Spec): void => Engine.enterKeypad(s.ctx);
 
   it('given INSERT when the keypad action fires then a keypad command returns to INSERT', async () => {
-    // init.el: M-SPC reaches the leader even from INSERT; meow records
-    // meow--keypad-previous-state and every exit path restores it
+    // meow's global M-SPC binding reaches the leader even from INSERT;
+    // meow records meow--keypad-previous-state and every exit path restores it
     const s = freshSpec();
     s.given('word', 'ab<caret>cd');
-    s.givenRc('map <leader>zz meow-left'); // = ideameow's <action>(EditorLeft)
+    s.givenRc('map <leader>zz meow-left');
     await s.whenKeys('i');
     s.thenMode(MeowMode.INSERT);
     fireKeypadAction(s);
@@ -176,7 +176,7 @@ describe('ModesKeypadSpec', () => {
   });
 
   it('given INSERT then the adapter is told to swap the cursor, and back on escape', async () => {
-    // the ideameow block/bar-cursor spec, at the port seam: the adapter maps
+    // the block/bar-cursor contract at the port seam: the adapter maps
     // these notifications to TextEditorCursorStyle.Line / Block
     const s = freshSpec();
     s.given('word', '<caret>hello');

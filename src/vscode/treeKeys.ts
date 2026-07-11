@@ -18,8 +18,7 @@
 /**
  * The tree-surface key universe: every printable US-layout char an rc `mmap`
  * line can bind, as one static keybinding contribution each. VS Code has no
- * runtime keybinding registration (ideameow's TreeMeow registers its
- * shortcut set on the focused JTree instead), so each keybinding is gated
+ * runtime keybinding registration, so each keybinding is gated
  * on a `codemeow.tree.<name>` context key and the adapter turns exactly the
  * mmap-bound set on (extension.ts syncTreeKeys, re-run on rc reload). The
  * package.json keybindings block is generated from this table and pinned by
@@ -42,8 +41,8 @@ interface TreeKey {
  * VS Code's own arrow-key rules for lists (WorkbenchListFocusContextKey,
  * listService.ts — the odd `treestickyScrollFocused` casing is the
  * platform's): a focused workbench list/tree outside input boxes (the
- * Explorer's inline rename included). `!treeFindOpen` is ideameow's
- * speed-search check — while the find widget is open, typing into it always
+ * Explorer's inline rename included). `!treeFindOpen` gives the find widget
+ * priority — while it is open, typing into it always
  * wins — and notebooks are excluded because their cell list is not a tree
  * surface (cells keep native keys, like the attach policy's editor side).
  */

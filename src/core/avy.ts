@@ -26,7 +26,7 @@ import { lineCount, lineEnd, lineStart } from './text';
  * guessed:
  *
  * - `avy-goto-char-timer`: the first char waits indefinitely; each further
- *   char must arrive within the timeout (init.el sets 0.25 s) and restarts
+ *   char must arrive within the timeout (0.25 s) and restarts
  *   it; matches highlight live while typing; matching is literal and
  *   case-insensitive (avy-case-fold-search t); zero candidates ends with a
  *   message; exactly one jumps immediately (avy-single-candidate-jump t).
@@ -45,7 +45,7 @@ import { lineCount, lineEnd, lineStart } from './text';
 /** avy-keys default. */
 const KEYS = 'asdfghjkl';
 
-/** init.el: (avy-timeout-seconds 0.25). */
+/** avy-timeout-seconds: 0.25 s. */
 const TIMEOUT_MS = 250;
 
 export const commands: Map<string, MeowCommand> = new Map([

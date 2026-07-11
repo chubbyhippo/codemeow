@@ -24,8 +24,8 @@
 "   set timeoutlen=300                  which-key hint delay in ms
 "   set nowhich-key                     turn the which-key hint off
 "
-" Ported from the companion ideameow .ideameowrc (itself a port of the
-" .ideavimrc leader scheme). Not portable (and why) is listed at the bottom.
+" The keypad table follows an IdeaVim-style leader scheme. What is
+" deliberately not here (and why) is listed at the bottom.
 " The meow layout itself needs NO porting — the extension implements it
 " natively; the layout section right below IS the keymap (like
 " meow-normal-define-key in Emacs), so any key can be rebound. Within this
@@ -138,12 +138,11 @@ mmap q <action>(workbench.action.toggleSidebarVisibility)
 " The keypad (SPC) table — every entry an rc line, like the layout above
 " ----------------------------------------------------------------------------
 " In Emacs, SPC x / c / m reach the C-x / C-c / M- keymaps; here the same
-" sequences dispatch VS Code commands, mirroring the companion .ideavimrc /
-" .ideameowrc leader scheme. SPC 0-9 (digit argument), SPC ? (cheatsheet) and
-" SPC / (describe key) are reserved by the keypad itself and cannot be
-" remapped. Finding a command's id for <action>(...): SPC i d lists every
-" command id (type to filter, Enter copies it to the clipboard), or
-" Preferences > Keyboard Shortcuts, right-click an entry, "Copy Command ID".
+" sequences dispatch VS Code commands. SPC 0-9 (digit argument), SPC ?
+" (cheatsheet) and SPC / (describe key) are reserved by the keypad itself
+" and cannot be remapped. Finding a command's id for <action>(...): SPC i d
+" lists every command id (type to filter, Enter copies it to the clipboard),
+" or Preferences > Keyboard Shortcuts, right-click an entry, "Copy Command ID".
 " ============================================================================
 
 " SPC b — bookmarks via the alefragnani.numbered-bookmarks extension (0-9
@@ -186,7 +185,7 @@ map <leader>xpg <action>(workbench.action.findInFiles)
 map <leader>xpr <action>(workbench.action.replaceInFiles)
 map <leader>xpc <action>(workbench.action.tasks.build)
 
-" SPC x r = C-x r: bookmarks (init.el: C-x r b = consult-bookmark)
+" SPC x r = C-x r: bookmarks (Emacs: C-x r b = bookmark-jump)
 map <leader>xrb <action>(numberedBookmarks.listFromAllFiles)
 
 " SPC c = C-c: personal commands
@@ -232,7 +231,7 @@ map <leader>wD <action>(workbench.action.editorLayoutSingle)
 map <leader>wm <action>(workbench.action.editorLayoutSingle)
 map <leader>ww <action>(workbench.action.focusNextGroup)
 map <leader>wW <action>(workbench.action.moveEditorToNextGroup)
-" h/j/k/l: windmove, ported from init.el — directional focus over editor
+" h/j/k/l: windmove (Emacs' windmove.el) — directional focus over editor
 " groups AND the two panes of a side-by-side diff (which plain group focus
 " never crosses). The extension also binds plain Shift+arrows to these,
 " i.e. (windmove-default-keybindings) — that lives in the manifest
@@ -242,8 +241,8 @@ map <leader>wh <action>(codemeow.windmoveLeft)
 map <leader>wj <action>(codemeow.windmoveDown)
 map <leader>wk <action>(codemeow.windmoveUp)
 map <leader>wl <action>(codemeow.windmoveRight)
-" b: balance the split sizes (init.el C-c w b = balance-windows). The
-" H/J/K/L window swaps live in ideameow only — VS Code has no command to
+" b: balance the split sizes (Emacs' balance-windows). H/J/K/L window
+" swaps are not bound — VS Code has no command to
 " exchange two groups' contents.
 map <leader>wb <action>(workbench.action.evenEditorWidths)
 map <leader>wi <action>(editor.action.fontZoomIn)
@@ -253,15 +252,15 @@ map <leader>w- <action>(editor.action.fontZoomOut)
 map <leader>wu <action>(editor.action.fontZoomReset)
 map <leader>w0 <action>(editor.action.fontZoomReset)
 
-" --- avy jumps, mirroring init.el (a native port — nothing to install) ------
-" init.el: S = avy-goto-char-timer, Q = avy-goto-line. X still goes-to-line,
+" --- avy jumps (a native port of avy.el — nothing to install) ----------------
+" S = avy-goto-char-timer, Q = avy-goto-line. X still goes-to-line,
 " so overriding Q costs nothing.
 nmap S avy-goto-char-timer
 nmap Q avy-goto-line
 
-" --- split resizing (ideavimrc: - = _ +) ------------------------------------
-" '-' stays meow's negative-argument (the reason ideavimrc used '-' here was
-" that vim lacks negative counts — this extension doesn't). The other three
+" --- split resizing (= _ +) --------------------------------------------------
+" '-' stays meow's negative-argument (vim resize maps sit on '-' only because
+" vim lacks negative counts — this extension doesn't). The other three
 " keys are free in the meow layout:
 nmap = <action>(workbench.action.increaseViewSize)
 nmap _ <action>(workbench.action.decreaseViewSize)
@@ -279,9 +278,8 @@ desc <leader>ms M-s · search
 desc <leader>w window map (Emacs C-c w)
 
 " ============================================================================
-" Feature groups, ported 1:1 from the .ideavimrc leader where VS Code has an
-" analog (b / c / m / w / x live in the keypad table above; digits and ? /
-" are reserved by the keypad)
+" Feature groups, one leader key per topic (b / c / m / w / x live in the
+" keypad table above; digits and ? / are reserved by the keypad)
 " ============================================================================
 
 " --- SPC . — settings / UI ---------------------------------------------------
@@ -484,7 +482,7 @@ map <leader>sp <action>(workbench.action.findInFiles)
 map <leader>st <action>(workbench.action.findInFiles)
 map <leader>sr <action>(workbench.action.replaceInFiles)
 map <leader>su <action>(editor.action.referenceSearch.trigger)
-" ideavimrc: SPC s v sourced ~/.ideavimrc — here it reloads ~/.codemeowrc
+" SPC s v reloads ~/.codemeowrc (vim's :source ~/.vimrc tradition)
 map <leader>sv <action>(codemeow.reloadRc)
 map <leader>sw <action>(editor.action.surroundWithSnippet)
 
@@ -510,9 +508,9 @@ map <leader>vp <action>(git.pull)
 map <leader>vP <action>(git.push)
 
 " --- SPC ] / SPC [ — next / prev navigation ------------------------------------------------------
-" ideavimrc used ]c [c ]d [d ]e [e in NORMAL; multi-key NORMAL sequences don't
-" exist here ([ ] are meow's beginning/end-of-thing), so they live on the
-" keypad instead.
+" vim's ]c [c ]d [d ]e [e pairs need multi-key NORMAL sequences, which don't
+" exist here ([ ] are meow's beginning/end-of-thing), so next/prev live on
+" the keypad instead.
 desc <leader>. next (change / diff / error)
 map <leader>.c <action>(workbench.action.editor.nextChange)
 map <leader>.d <action>(workbench.action.compareEditor.nextChange)
@@ -523,7 +521,7 @@ map <leader>,d <action>(workbench.action.compareEditor.previousChange)
 map <leader>,e <action>(editor.action.marker.prevInFiles)
 
 " ============================================================================
-" Repeat groups — Emacs repeat-mode, ported (init.el's transient repeat maps)
+" Repeat groups — Emacs repeat-mode (repeat.el), ported
 " ----------------------------------------------------------------------------
 " After any binding whose TARGET is listed in a group below — membership is
 " the target, not the key, like the repeat-map property on an Emacs command —
@@ -531,12 +529,13 @@ map <leader>,e <action>(editor.action.marker.prevInFiles)
 " re-dispatches its target and keeps the run alive; any other key (or ESC)
 " ends the run and keeps its normal meaning (Emacs transient-keymap
 " fall-through — nothing is swallowed, and there is no timeout). The entering
-" keypad key needn't be a member: init.el sets repeat-check-key 'no for the
-" same reason. Syntax:
+" keypad key needn't be a member — repeat.el's repeat-check-key 'no
+" behavior. Syntax:
 "   repeat <group> <key> <target>     target grammar = the map-line RHS
 "   repeat <group> <key> ignore       give a bundled group's key back
-" Ported 1:1 from init.el: flymake -> error, diff-hl -> change, text-scale ->
-" zoom, expreg -> expand (winner-mode has no analog — no layout history).
+" The bundled groups mirror Emacs transient repeat maps: flymake -> error,
+" diff-hl -> change, text-scale -> zoom, expreg -> expand (winner-mode has
+" no analog — no layout history).
 " So: SPC . e then . . , walks errors; SPC w i then i i i keeps zooming.
 repeat error . <action>(editor.action.marker.nextInFiles)
 repeat error , <action>(editor.action.marker.prevInFiles)
@@ -550,18 +549,18 @@ repeat zoom u <action>(editor.action.fontZoomReset)
 repeat zoom 0 <action>(editor.action.fontZoomReset)
 repeat expand . <action>(editor.action.smartSelect.expand)
 repeat expand , <action>(editor.action.smartSelect.shrink)
-" not a default group (init.el has none for diffs) — add your own like:
+" not a default group — add your own like:
 "   repeat diff . <action>(workbench.action.compareEditor.nextChange)
 "   repeat diff , <action>(workbench.action.compareEditor.previousChange)
 
 " ============================================================================
-" NOT ported from .ideavimrc / .ideameowrc, and why
+" Deliberately NOT here, and why
 " ----------------------------------------------------------------------------
-" * the whole meow-emulation section — the extension implements real meow;
+" * meow-emulation mappings — the extension implements real meow;
 "   the layout block at the top of this file is the native keymap itself.
 " * set clipboard/ideajoin/number/relativenumber — IdeaVim/vim options; the
 "   editor and the extension handle these themselves. Any such lines are
-"   ignored if pasted, so copying an .ideavimrc or .ideameowrc wholesale is
+"   ignored if pasted, so bringing an IdeaVim-style rc over wholesale is
 "   safe.
 " * <A-m> leader alias, C-key routing — only printable keys reach the meow
 "   engine; use VS Code's keybindings.json for modifier chords.
