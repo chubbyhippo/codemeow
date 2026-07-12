@@ -174,6 +174,7 @@ describe('RcSpec', () => {
     assert.equal(d.keypad.get('cm')?.action, 'codemeow.editRc');
     assert.equal(d.keypad.get('cM')?.action, 'codemeow.reloadRc');
     assert.equal(d.keypad.get('id')?.action, 'codemeow.commandIds');
+    assert.equal(d.keypad.get('m,')?.action, 'workbench.action.navigateBack');
     assert.ok(
       d.keypad.size > 150,
       `keypad table + ported leader groups (got ${d.keypad.size})`,

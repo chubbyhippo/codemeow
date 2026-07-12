@@ -216,6 +216,7 @@ map <leader>mr <action>(editor.action.smartSelect.expand)
 map <leader>mR <action>(editor.action.smartSelect.shrink)
 map <leader>my <action>(editor.action.clipboardPasteAction)
 map <leader>m. <action>(editor.action.revealDefinition)
+map <leader>m, <action>(workbench.action.navigateBack)
 map <leader>mg avy-goto-line
 map <leader>msr <action>(workbench.action.findInFiles)
 map <leader>msl <action>(actions.find)
