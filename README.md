@@ -83,11 +83,13 @@ Windmove_ — and inside meow buffers they shadow shift-selection, the exact
 tradeoff the Emacs binding makes (select with meow instead; anywhere meow
 doesn't attach keeps native shift-select).
 
-**Emacs motion chords** — `Ctrl+f/b/n/p/a/e` and `Alt+f/b/a/e` are the real
+**Emacs chords** — `Ctrl+f/b/n/p/a/e` and `Alt+f/b/a/e` are the real
 Emacs point motions (`forward/backward-char`, `next/previous-line`,
 `move-beginning/end-of-line`, `forward/backward-word`,
 `backward/forward-sentence`), not meow commands: meow itself never rebinds
-these chords, so in real Emacs they simply move point — and, because a meow
+these chords — its state keymaps hold only single printable keys, so every
+chord falls through to the vanilla Emacs keymap ("Compatible with the
+vanilla Emacs keymap", meow's own README) — and, because a meow
 selection is an active Emacs mark, that same point motion stretches an
 already-active selection for free, with no special-casing. codemeow ports
 that: with no selection the chord just moves the cursor, and with one active
@@ -96,9 +98,18 @@ so `w` then `Ctrl+f Ctrl+f` grows the marked word one character at a time,
 and `;` (reverse) flips which end subsequent chords grow from. `Alt+n` /
 `Alt+p` are deliberately left unbound: stock Emacs has no default binding for
 them either (only the unrelated `M-g n` / `M-g p` error-navigation prefix) —
-verified against the GNU Emacs manual, not guessed. Like Windmove's
-Shift+arrows above, these live in the manifest keybindings, gated to NORMAL
-meow buffers (so `Ctrl+F` stays Find while you type) — rebind them under
+verified against the GNU Emacs manual, not guessed.
+
+The same treatment covers the rest of the portable Emacs chord layer:
+`Alt+Shift+,` / `Alt+Shift+.` are `beginning/end-of-buffer` (Emacs `M-<` /
+`M->` — a count lands N/10 of the way in, snapping to the next line start,
+exactly the stock behavior), `Alt+u` / `Alt+l` / `Alt+c` are
+`upcase/downcase/capitalize-word` (from the cursor through the word's end; a
+negative count — `-` then the chord — reaches back without moving the
+cursor), and `Alt+d` is `kill-word` (into the clipboard; a negative count
+kills backward). Like Windmove's Shift+arrows above, all of these live in
+the manifest keybindings, gated to NORMAL meow buffers (so `Ctrl+F` stays
+Find while you type) — rebind them under
 _Preferences → Keyboard Shortcuts_.
 
 And one idea borrowed straight from meow itself: **the extension binds no

@@ -207,4 +207,64 @@ describe('EmacsMotionSpec', () => {
       [4, 9, 14],
     );
   });
+
+  it('given no selection when beginning-of-buffer then the caret goes to point-min', async () => {
+    const s = freshSpec();
+    s.given('two lines', 'one\nt<caret>wo');
+    await s.whenCommand('beginning-of-buffer');
+    s.thenCaretAt(0);
+    s.thenNoSelection();
+  });
+
+  it('given no selection when end-of-buffer then the caret goes to point-max', async () => {
+    const s = freshSpec();
+    s.given('two lines', 'on<caret>e\ntwo');
+    await s.whenCommand('end-of-buffer');
+    s.thenCaretAt(7);
+    s.thenNoSelection();
+  });
+
+  it('given w then end-of-buffer extends the selection to point-max', async () => {
+    const s = freshSpec();
+    s.given('two words', '<caret>hello world');
+    await s.whenKeys('w');
+    s.thenSelection('hello');
+    await s.whenCommand('end-of-buffer');
+    s.thenSelection('hello world');
+    s.thenCaretAtSelectionEnd();
+  });
+
+  it('given w then beginning-of-buffer extends the selection back to point-min', async () => {
+    const s = freshSpec();
+    s.given('prefixed word', 'ab <caret>hello');
+    await s.whenKeys('w');
+    s.thenSelection('hello');
+    await s.whenCommand('beginning-of-buffer');
+    s.thenSelection('ab ');
+    s.thenCaretAtSelectionStart();
+  });
+
+  it('given a count when beginning-of-buffer then the caret lands at the next line start past that tenth', async () => {
+    const s = freshSpec();
+    s.given(
+      'five ten-char lines',
+      '<caret>0123456789\n0123456789\n0123456789\n0123456789\n0123456789',
+    );
+    await s.whenKeys('3');
+    await s.whenCommand('beginning-of-buffer');
+    s.thenCaretAt(22);
+    s.thenNoSelection();
+  });
+
+  it('given a count when end-of-buffer then the caret lands a tenth back at the next line start', async () => {
+    const s = freshSpec();
+    s.given(
+      'five ten-char lines',
+      '<caret>0123456789\n0123456789\n0123456789\n0123456789\n0123456789',
+    );
+    await s.whenKeys('3');
+    await s.whenCommand('end-of-buffer');
+    s.thenCaretAt(44);
+    s.thenNoSelection();
+  });
 });

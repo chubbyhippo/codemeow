@@ -95,6 +95,8 @@ export const commands: Map<string, MeowCommand> = new Map([
     'backward-sentence',
     (ctx: Ctx) => sentenceOrExpand(ctx, -ctx.st.takeCount(1)),
   ],
+  ['beginning-of-buffer', (ctx: Ctx) => bufferBoundary(ctx, true)],
+  ['end-of-buffer', (ctx: Ctx) => bufferBoundary(ctx, false)],
 ]);
 
 type OffsetTarget = (text: string, offset: number) => number;
@@ -246,6 +248,24 @@ function sentenceOrExpand(ctx: Ctx, n: number): void {
   moveToOrExpand(ctx, SelType.CHAR, (text, off) =>
     n >= 0 ? nextSentenceEnd(text, off, n) : prevSentenceStart(text, off, -n),
   );
+}
+
+function bufferBoundary(ctx: Ctx, top: boolean): void {
+  const counted = ctx.st.pendingCount !== 0 || ctx.st.negative;
+  const n = ctx.st.takeCount(1);
+  moveToOrExpand(ctx, SelType.CHAR, (text) => {
+    const len = text.length;
+    if (!counted) return top ? 0 : len;
+    const tenth = Math.trunc((len * n) / 10);
+    const raw = clamp(top ? 1 + tenth : len - tenth, 0, len);
+    return nextLineStart(text, raw);
+  });
+}
+
+function nextLineStart(text: string, offset: number): number {
+  if (text.length === 0) return 0;
+  const ln = lineOfOffset(text, clamp(offset, 0, text.length));
+  return ln >= lineCount(text) - 1 ? text.length : lineStart(text, ln + 1);
 }
 
 function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {

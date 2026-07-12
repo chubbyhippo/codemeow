@@ -117,6 +117,36 @@
         "command": "codemeow.emacsForwardSentence",
         "title": "Emacs Forward Sentence",
         "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsBeginningOfBuffer",
+        "title": "Emacs Beginning Of Buffer",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsEndOfBuffer",
+        "title": "Emacs End Of Buffer",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsUpcaseWord",
+        "title": "Emacs Upcase Word",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsDowncaseWord",
+        "title": "Emacs Downcase Word",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsCapitalizeWord",
+        "title": "Emacs Capitalize Word",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsKillWord",
+        "title": "Emacs Kill Word",
+        "category": "codemeow"
       }
     ],
     "menus": {
@@ -207,6 +237,36 @@
       {
         "key": "alt+e",
         "command": "codemeow.emacsForwardSentence",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+shift+,",
+        "command": "codemeow.emacsBeginningOfBuffer",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+shift+.",
+        "command": "codemeow.emacsEndOfBuffer",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+u",
+        "command": "codemeow.emacsUpcaseWord",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+l",
+        "command": "codemeow.emacsDowncaseWord",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+c",
+        "command": "codemeow.emacsCapitalizeWord",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+d",
+        "command": "codemeow.emacsKillWord",
         "when": "editorTextFocus && codemeow.normal"
       },
       {

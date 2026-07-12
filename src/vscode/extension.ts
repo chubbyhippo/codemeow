@@ -413,7 +413,7 @@ async function windmove(dir: WindmoveDir): Promise<void> {
   }
 }
 
-async function emacsMotion(command: string): Promise<void> {
+async function emacsChord(command: string): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
   const st = stateFor(editor);
@@ -593,34 +593,52 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand('codemeow.emacsForwardChar', () =>
-      emacsMotion('forward-char'),
+      emacsChord('forward-char'),
     ),
     vscode.commands.registerCommand('codemeow.emacsBackwardChar', () =>
-      emacsMotion('backward-char'),
+      emacsChord('backward-char'),
     ),
     vscode.commands.registerCommand('codemeow.emacsNextLine', () =>
-      emacsMotion('next-line'),
+      emacsChord('next-line'),
     ),
     vscode.commands.registerCommand('codemeow.emacsPreviousLine', () =>
-      emacsMotion('previous-line'),
+      emacsChord('previous-line'),
     ),
     vscode.commands.registerCommand('codemeow.emacsBeginningOfLine', () =>
-      emacsMotion('move-beginning-of-line'),
+      emacsChord('move-beginning-of-line'),
     ),
     vscode.commands.registerCommand('codemeow.emacsEndOfLine', () =>
-      emacsMotion('move-end-of-line'),
+      emacsChord('move-end-of-line'),
     ),
     vscode.commands.registerCommand('codemeow.emacsForwardWord', () =>
-      emacsMotion('forward-word'),
+      emacsChord('forward-word'),
     ),
     vscode.commands.registerCommand('codemeow.emacsBackwardWord', () =>
-      emacsMotion('backward-word'),
+      emacsChord('backward-word'),
     ),
     vscode.commands.registerCommand('codemeow.emacsBackwardSentence', () =>
-      emacsMotion('backward-sentence'),
+      emacsChord('backward-sentence'),
     ),
     vscode.commands.registerCommand('codemeow.emacsForwardSentence', () =>
-      emacsMotion('forward-sentence'),
+      emacsChord('forward-sentence'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsBeginningOfBuffer', () =>
+      emacsChord('beginning-of-buffer'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsEndOfBuffer', () =>
+      emacsChord('end-of-buffer'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsUpcaseWord', () =>
+      emacsChord('upcase-word'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsDowncaseWord', () =>
+      emacsChord('downcase-word'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsCapitalizeWord', () =>
+      emacsChord('capitalize-word'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsKillWord', () =>
+      emacsChord('kill-word'),
     ),
 
     vscode.commands.registerCommand(

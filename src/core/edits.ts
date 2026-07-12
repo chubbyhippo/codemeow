@@ -18,7 +18,7 @@
 import { Ctx, SelRange, TextEdit } from './port';
 import { MeowMode, SelType } from './state';
 import { setMode } from './port';
-import { lineEnd, lineOfOffset, lineStart } from './text';
+import { charPred, lineEnd, lineOfOffset, lineStart, Words } from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
 import * as Grab from './grab';
@@ -47,7 +47,13 @@ export const commands: Map<string, MeowCommand> = new Map([
   ['meow-replace', (ctx: Ctx) => replace(ctx)],
   ['meow-undo', (ctx: Ctx) => undo(ctx)],
   ['meow-undo-in-selection', (ctx: Ctx) => undoInSelection(ctx)],
+  ['upcase-word', (ctx: Ctx) => caseWord(ctx, 'upcase')],
+  ['downcase-word', (ctx: Ctx) => caseWord(ctx, 'downcase')],
+  ['capitalize-word', (ctx: Ctx) => caseWord(ctx, 'capitalize')],
+  ['kill-word', (ctx: Ctx) => killWord(ctx)],
 ]);
+
+type CaseOp = 'upcase' | 'downcase' | 'capitalize';
 
 async function editCarets(
   ctx: Ctx,
@@ -329,6 +335,88 @@ async function replace(ctx: Ctx): Promise<void> {
         },
   );
   ctx.st.selType = SelType.NONE;
+}
+
+function casified(slice: string, op: CaseOp): string {
+  if (op === 'upcase') return slice.toUpperCase();
+  if (op === 'downcase') return slice.toLowerCase();
+  return capitalizedWords(slice);
+}
+
+function capitalizedWords(slice: string): string {
+  const pred = charPred(false);
+  let out = '';
+  let inWord = false;
+  for (const c of slice) {
+    if (pred(c)) {
+      out += inWord ? c.toLowerCase() : c.toUpperCase();
+      inWord = true;
+    } else {
+      out += c;
+      inWord = false;
+    }
+  }
+  return out;
+}
+
+async function caseWord(ctx: Ctx, op: CaseOp): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
+  const n = ctx.st.takeCount(1);
+  if (n === 0) return;
+  const hadSelection = Sel.hasSelection(Sel.primary(ctx));
+  const text = ctx.port.getText();
+  const pred = charPred(false);
+  await editCarets(ctx, (sel) => {
+    const from = sel.active;
+    const target =
+      n > 0
+        ? Words.nextEnd(text, from, n, pred)
+        : Words.prevStart(text, from, -n, pred);
+    const s = Math.min(from, target);
+    const e = Math.max(from, target);
+    if (s === e) return { edit: null, sel };
+    const caret = n > 0 ? e : from;
+    return {
+      edit: { start: s, end: e, text: casified(text.slice(s, e), op) },
+      sel: { anchor: caret, active: caret },
+    };
+  });
+  if (hadSelection) Sel.collapse(ctx);
+}
+
+async function killWord(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
+  const n = ctx.st.takeCount(1);
+  if (n === 0) return;
+  const text = ctx.port.getText();
+  const pred = charPred(false);
+  const rangeAt = (from: number): { lo: number; hi: number } => {
+    const target =
+      n > 0
+        ? Words.nextEnd(text, from, n, pred)
+        : Words.prevStart(text, from, -n, pred);
+    return { lo: Math.min(from, target), hi: Math.max(from, target) };
+  };
+  const killed = ctx.port
+    .getSelections()
+    .map((sel) => rangeAt(sel.active))
+    .filter((r) => r.lo !== r.hi)
+    .sort((a, b) => a.lo - b.lo);
+  if (killed.length === 0) return;
+  await ctx.clipboard.write(
+    killed.map((r) => text.slice(r.lo, r.hi)).join('\n'),
+  );
+  await editCarets(ctx, (sel) => {
+    const r = rangeAt(sel.active);
+    if (r.lo === r.hi)
+      return { edit: null, sel: { anchor: sel.active, active: sel.active } };
+    return {
+      edit: { start: r.lo, end: r.hi, text: '' },
+      sel: { anchor: r.lo, active: r.lo },
+    };
+  });
+  ctx.st.selType = SelType.NONE;
+  ctx.st.selExpand = false;
 }
 
 async function undo(ctx: Ctx): Promise<void> {

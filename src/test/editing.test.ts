@@ -298,4 +298,85 @@ describe('EditingSpec', () => {
     await s.whenKeys("'");
     s.thenSelection("b'");
   });
+
+  it('given a caret mid-word when upcase-word then the rest upcases and the caret moves to word end', async () => {
+    const s = freshSpec();
+    s.given('mixed-case word', 'he<caret>LLo world');
+    await s.whenCommand('upcase-word');
+    s.thenText('heLLO world');
+    s.thenCaretAt(5);
+  });
+
+  it('given a count when upcase-word then that many words upcase', async () => {
+    const s = freshSpec();
+    s.given('three words', '<caret>hello world foo');
+    await s.whenKeys('2');
+    await s.whenCommand('upcase-word');
+    s.thenText('HELLO WORLD foo');
+    s.thenCaretAt(11);
+  });
+
+  it('given a negative count when upcase-word then the previous word upcases and the caret stays', async () => {
+    const s = freshSpec();
+    s.given('two words', 'hello <caret>world');
+    await s.whenKeys('-');
+    await s.whenCommand('upcase-word');
+    s.thenText('HELLO world');
+    s.thenCaretAt(6);
+  });
+
+  it('given a caret when downcase-word then the word downcases', async () => {
+    const s = freshSpec();
+    s.given('upper words', '<caret>HELLO WORLD');
+    await s.whenCommand('downcase-word');
+    s.thenText('hello WORLD');
+    s.thenCaretAt(5);
+  });
+
+  it('given a caret mid-word when capitalize-word then the slice capitalizes as a fresh word', async () => {
+    const s = freshSpec();
+    s.given('mixed-case word', 'he<caret>LLo world');
+    await s.whenCommand('capitalize-word');
+    s.thenText('heLlo world');
+    s.thenCaretAt(5);
+  });
+
+  it('given a count when capitalize-word then each word capitalizes', async () => {
+    const s = freshSpec();
+    s.given('mixed words', '<caret>heLLO WOrld');
+    await s.whenKeys('2');
+    await s.whenCommand('capitalize-word');
+    s.thenText('Hello World');
+    s.thenCaretAt(11);
+  });
+
+  it('given a selection when upcase-word then it upcases from the caret and deactivates it', async () => {
+    const s = freshSpec();
+    s.given('two words', '<caret>hello world');
+    await s.whenKeys('w');
+    s.thenSelection('hello');
+    await s.whenCommand('upcase-word');
+    s.thenText('hello WORLD');
+    s.thenNoSelection();
+    s.thenCaretAt(11);
+  });
+
+  it('given a caret when kill-word then the word kills to the clipboard', async () => {
+    const s = freshSpec();
+    s.given('two words', '<caret>hello world');
+    await s.whenCommand('kill-word');
+    s.thenText(' world');
+    s.thenCaretAt(0);
+    s.thenClipboard('hello');
+  });
+
+  it('given a negative count when kill-word then the previous word kills backward', async () => {
+    const s = freshSpec();
+    s.given('two words', 'hello world<caret>');
+    await s.whenKeys('-');
+    await s.whenCommand('kill-word');
+    s.thenText('hello ');
+    s.thenCaretAt(6);
+    s.thenClipboard('world');
+  });
 });
