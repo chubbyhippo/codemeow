@@ -221,10 +221,12 @@ map <leader>wD <action>(workbench.action.editorLayoutSingle)
 map <leader>wm <action>(workbench.action.editorLayoutSingle)
 map <leader>ww <action>(workbench.action.focusNextGroup)
 map <leader>wW <action>(workbench.action.moveEditorToNextGroup)
-" n/p: cycle editor tabs (C-x <right>/<left>); the tab repeat group below
-" keeps a bare n/p walking afterwards
+" n/p (aliases . and ,): cycle editor tabs (C-x <right>/<left>); the tab
+" repeat group below keeps a bare n/p/./, walking afterwards
 map <leader>wn <action>(workbench.action.nextEditor)
 map <leader>wp <action>(workbench.action.previousEditor)
+map <leader>w. <action>(workbench.action.nextEditor)
+map <leader>w, <action>(workbench.action.previousEditor)
 " h/j/k/l: directional window focus — editor groups AND the two panes of a
 " side-by-side diff (which plain group focus never crosses). Plain
 " Shift+arrows are bound to the same moves in the manifest keybindings
@@ -496,14 +498,16 @@ map <leader>vp <action>(git.pull)
 map <leader>vP <action>(git.push)
 
 " --- SPC . / SPC , — next / previous (change / diff / error) --------------------------------------
-desc <leader>. next (change / diff / error)
+desc <leader>. next (change / diff / error / tab)
 map <leader>.c <action>(workbench.action.editor.nextChange)
 map <leader>.d <action>(workbench.action.compareEditor.nextChange)
 map <leader>.e <action>(editor.action.marker.nextInFiles)
-desc <leader>, previous (change / diff / error)
+map <leader>.t <action>(workbench.action.nextEditor)
+desc <leader>, previous (change / diff / error / tab)
 map <leader>,c <action>(workbench.action.editor.previousChange)
 map <leader>,d <action>(workbench.action.compareEditor.previousChange)
 map <leader>,e <action>(editor.action.marker.prevInFiles)
+map <leader>,t <action>(workbench.action.previousEditor)
 
 " ============================================================================
 " Repeat groups — tap-to-continue transient maps
@@ -530,6 +534,8 @@ repeat zoom u <action>(editor.action.fontZoomReset)
 repeat zoom 0 <action>(editor.action.fontZoomReset)
 repeat tab n <action>(workbench.action.nextEditor)
 repeat tab p <action>(workbench.action.previousEditor)
+repeat tab . <action>(workbench.action.nextEditor)
+repeat tab , <action>(workbench.action.previousEditor)
 repeat expand . <action>(editor.action.smartSelect.expand)
 repeat expand , <action>(editor.action.smartSelect.shrink)
 " not a default group — add your own like:

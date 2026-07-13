@@ -16,7 +16,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import type { AvySession } from './avy';
-import type { Binding } from './rc';
 
 export enum MeowMode {
   NORMAL = 'NORMAL',
@@ -79,8 +78,6 @@ export class MeowState {
   grab: { start: number; end: number } | null = null;
 
   avy: AvySession | null = null;
-
-  repeatMap: Map<string, Binding> | null = null;
 
   keypad = '';
 

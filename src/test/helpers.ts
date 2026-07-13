@@ -279,5 +279,6 @@ Rc.initDefaults(fs.readFileSync(rcPath, 'utf8').split(/\r?\n/));
 
 export function freshSpec(): Spec {
   Rc.setForTest(new Config());
+  Engine.clearRepeat();
   return new Spec();
 }

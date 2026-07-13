@@ -337,8 +337,8 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
         ? 'MEOW BEACON-INSERT'
         : beacon
           ? 'MEOW BEACON'
-          : st.repeatMap
-            ? `MEOW ${st.mode} [repeat ${[...st.repeatMap.keys()].join(' ')}]`
+          : Engine.repeatMap
+            ? `MEOW ${st.mode} [repeat ${[...Engine.repeatMap.keys()].join(' ')}]`
             : `MEOW ${st.mode}`;
   statusBar.show();
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);

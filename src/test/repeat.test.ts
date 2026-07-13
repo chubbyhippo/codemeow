@@ -5,9 +5,10 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { freshSpec } from './helpers';
+import * as Engine from '../core/engine';
 import { Rc } from '../core/rc';
 import { RcState } from '../core/rcState';
-import { MeowMode, Pending } from '../core/state';
+import { MeowMode, MeowState, Pending } from '../core/state';
 
 describe('RepeatSpec', () => {
   const navRc = [
@@ -105,7 +106,15 @@ describe('RepeatSpec', () => {
       d.get('tab')!.get('p')!.action,
       'workbench.action.previousEditor',
     );
-    assert.deepEqual(new Set(d.get('tab')!.keys()), new Set(['n', 'p']));
+    assert.equal(d.get('tab')!.get('.')!.action, 'workbench.action.nextEditor');
+    assert.equal(
+      d.get('tab')!.get(',')!.action,
+      'workbench.action.previousEditor',
+    );
+    assert.deepEqual(
+      new Set(d.get('tab')!.keys()),
+      new Set(['n', 'p', '.', ',']),
+    );
   });
 
   it('given a repeat line edit then the reload button sees a change', () => {
@@ -141,15 +150,26 @@ describe('RepeatSpec', () => {
     assert.equal(s.caretLine(), 2);
   });
 
+  it('given a run then a member tap continues after an editor switch', async () => {
+    const s = freshSpec();
+    s.given('four lines', '<caret>one\ntwo\nthree\nfour');
+    s.givenRc(navRc);
+    await s.whenKeys(' tn');
+    assert.equal(s.caretLine(), 1);
+    s.st = new MeowState();
+    await s.whenKeys('.');
+    assert.equal(s.caretLine(), 2);
+  });
+
   it('given a non-member key then the run ends and the key keeps its normal meaning', async () => {
     const s = freshSpec();
     s.given('four lines', '<caret>one\ntwo\nthree\nfour');
     s.givenRc(navRc);
     await s.whenKeys(' tn');
-    assert.notEqual(s.st.repeatMap, null);
+    assert.notEqual(Engine.repeatMap, null);
     await s.whenKeys('w');
     s.thenSelection('two');
-    assert.equal(s.st.repeatMap, null);
+    assert.equal(Engine.repeatMap, null);
   });
 
   it('given the run over then the member keys mean their normal commands again', async () => {
@@ -169,9 +189,9 @@ describe('RepeatSpec', () => {
     s.given('four lines', '<caret>one\ntwo\nthree\nfour');
     s.givenRc(navRc);
     await s.whenKeys(' tn');
-    assert.notEqual(s.st.repeatMap, null);
+    assert.notEqual(Engine.repeatMap, null);
     s.pressEsc();
-    assert.equal(s.st.repeatMap, null);
+    assert.equal(Engine.repeatMap, null);
     await s.whenKeys('.');
     assert.equal(s.st.pending, Pending.BOUNDS);
     assert.equal(s.caretLine(), 1);
@@ -202,8 +222,8 @@ describe('RepeatSpec', () => {
     s.given('four lines', '<caret>one\ntwo\nthree\nfour');
     s.givenRc(navRc);
     await s.whenKeys(' tn');
-    assert.deepEqual(new Set(s.st.repeatMap?.keys()), new Set(['.', ',']));
+    assert.deepEqual(new Set(Engine.repeatMap?.keys()), new Set(['.', ',']));
     await s.whenKeys('w');
-    assert.equal(s.st.repeatMap, null);
+    assert.equal(Engine.repeatMap, null);
   });
 });

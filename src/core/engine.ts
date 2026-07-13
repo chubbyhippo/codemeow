@@ -26,6 +26,12 @@ import * as Avy from './avy';
 
 const KEYPAD_BINDING: Binding = { command: 'meow-keypad', recursive: true };
 
+export let repeatMap: Map<string, Binding> | null = null;
+
+export function clearRepeat(): void {
+  repeatMap = null;
+}
+
 export function enterKeypad(ctx: Ctx): void {
   ctx.st.keypadPreviousState = ctx.st.mode;
   setMode(ctx, MeowMode.KEYPAD);
@@ -58,8 +64,8 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   ctx.ui.clearExpandHints();
 
   const pend = st.pending;
-  const repeatBinding = pend === null ? (st.repeatMap?.get(c) ?? null) : null;
-  if (pend === null && repeatBinding === null) st.repeatMap = null;
+  const repeatBinding = pend === null ? (repeatMap?.get(c) ?? null) : null;
+  if (pend === null && repeatBinding === null) repeatMap = null;
   const motionish = st.mode === MeowMode.MOTION;
   const binding =
     pend === null ? (repeatBinding ?? resolve(ctx, c, motionish)) : null;
@@ -134,10 +140,10 @@ export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
   await dispatch(ctx, b);
   const map = Rc.repeatMapFor(b);
   if (!map) return;
-  if (ctx.st.repeatMap === null) {
+  if (repeatMap === null) {
     ctx.ui.hint(`Repeat with ${[...map.keys()].join(', ')}`);
   }
-  ctx.st.repeatMap = map;
+  repeatMap = map;
 }
 
 async function dispatch(ctx: Ctx, b: Binding): Promise<void> {
@@ -182,7 +188,7 @@ export function escapeKey(ctx: Ctx): boolean {
     return true;
   }
   st.pending = null;
-  st.repeatMap = null;
+  repeatMap = null;
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();
   if (st.mode === MeowMode.INSERT) {
