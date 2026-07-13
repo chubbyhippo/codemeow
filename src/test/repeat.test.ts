@@ -97,6 +97,17 @@ describe('RepeatSpec', () => {
     );
   });
 
+  it('given the bundled rc then the tab repeat group cycles editor tabs', () => {
+    freshSpec();
+    const d = Rc.defaults().repeat;
+    assert.equal(d.get('tab')!.get('n')!.action, 'workbench.action.nextEditor');
+    assert.equal(
+      d.get('tab')!.get('p')!.action,
+      'workbench.action.previousEditor',
+    );
+    assert.deepEqual(new Set(d.get('tab')!.keys()), new Set(['n', 'p']));
+  });
+
   it('given a repeat line edit then the reload button sees a change', () => {
     freshSpec();
     Rc.setUserLines(['nmap Z ,b']);
