@@ -484,9 +484,10 @@ map <leader>tf <action>(workbench.action.toggleFullScreen)
 map <leader>tk <action>(workbench.action.toggleScreencastMode)
 map <leader>tz <action>(workbench.action.toggleZenMode)
 
-" --- SPC u — pin tab -----------------------------------------------------------------------
-desc <leader>u pin
+" --- SPC u — unwrap / pin tab ----------------------------------------------------------------
+desc <leader>u unwrap / pin
 map <leader>up <action>(workbench.action.pinEditor)
+map <leader>uw <action>(editor.action.removeBrackets)
 
 " --- SPC v — VCS -------------------------------------------------------------------------------
 desc <leader>v VCS

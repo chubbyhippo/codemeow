@@ -100,6 +100,18 @@ describe('AvySpec', () => {
     s.thenCaretAt(0);
   });
 
+  it('given S then the input timeout is awaited only once a char is typed (avy-timeout-seconds)', async () => {
+    const s = freshSpec();
+    s.given('words', '<caret>foo foo foo');
+    await s.whenKeys('S');
+    assert.equal(s.st.avy?.timer, null);
+    await s.whenKeys('f');
+    assert.notEqual(s.st.avy?.timer, null);
+    timeout(s);
+    assert.equal(s.st.avy?.phase, 'selecting');
+    assert.notEqual(s.st.avy, null);
+  });
+
   it('given Q then visible lines are labeled and a key jumps to that line', async () => {
     const s = freshSpec();
     s.given('four lines', 'one\ntwo\nthr<caret>ee\nfour');
