@@ -267,4 +267,22 @@ describe('EmacsMotionSpec', () => {
     s.thenCaretAt(44);
     s.thenNoSelection();
   });
+
+  it('given a count landing on a line boundary when beginning-of-buffer then the caret lands one line past that tenth', async () => {
+    const s = freshSpec();
+    s.given('three two-char lines', '<caret>aa\naa\naa\n');
+    await s.whenKeys('3');
+    await s.whenCommand('beginning-of-buffer');
+    s.thenCaretAt(3);
+    s.thenNoSelection();
+  });
+
+  it('given a long-short-long buffer then repeated next-line keeps the goal column across the short line', async () => {
+    const s = freshSpec();
+    s.given('long short long', '01234567<caret>89\nab\n0123456789');
+    await s.whenCommand('next-line');
+    await s.whenCommand('next-line');
+    s.thenCaretAt(22);
+    s.thenNoSelection();
+  });
 });

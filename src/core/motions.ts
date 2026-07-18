@@ -75,8 +75,20 @@ export const commands: Map<string, MeowCommand> = new Map([
   ],
   ['forward-char', (ctx: Ctx) => charOrExpand(ctx, ctx.st.takeCount(1))],
   ['backward-char', (ctx: Ctx) => charOrExpand(ctx, -ctx.st.takeCount(1))],
-  ['next-line', (ctx: Ctx) => lineOrExpand(ctx, ctx.st.takeCount(1))],
-  ['previous-line', (ctx: Ctx) => lineOrExpand(ctx, -ctx.st.takeCount(1))],
+  [
+    'next-line',
+    (ctx: Ctx) => {
+      lineOrExpand(ctx, ctx.st.takeCount(1));
+      ctx.st.lastCommand = 'next-line';
+    },
+  ],
+  [
+    'previous-line',
+    (ctx: Ctx) => {
+      lineOrExpand(ctx, -ctx.st.takeCount(1));
+      ctx.st.lastCommand = 'previous-line';
+    },
+  ],
   [
     'move-beginning-of-line',
     (ctx: Ctx) => moveToOrExpand(ctx, SelType.CHAR, lineStartTarget),
@@ -114,6 +126,8 @@ const VERTICAL = new Set([
   'meow-prev',
   'meow-next-expand',
   'meow-prev-expand',
+  'next-line',
+  'previous-line',
 ]);
 
 const charSelActive = (ctx: Ctx) =>
@@ -257,7 +271,7 @@ function bufferBoundary(ctx: Ctx, top: boolean): void {
     const len = text.length;
     if (!counted) return top ? 0 : len;
     const tenth = Math.trunc((len * n) / 10);
-    const raw = clamp(top ? 1 + tenth : len - tenth, 0, len);
+    const raw = clamp(top ? tenth : len - tenth, 0, len);
     return nextLineStart(text, raw);
   });
 }
