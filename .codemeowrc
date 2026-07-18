@@ -167,6 +167,9 @@ map <leader>x1 <action>(workbench.action.editorLayoutSingle)
 map <leader>x2 <action>(workbench.action.splitEditorDown)
 map <leader>x3 <action>(workbench.action.splitEditor)
 
+" SPC x z = C-x z: repeat the last command (then bare z keeps repeating)
+map <leader>xz repeat
+
 " SPC x p = C-x p: project
 map <leader>xpf <action>(workbench.action.quickOpen)
 map <leader>xpb <action>(workbench.action.showAllEditorsByMostRecentlyUsed)
@@ -538,6 +541,9 @@ repeat tab . <action>(workbench.action.nextEditor)
 repeat tab , <action>(workbench.action.previousEditor)
 repeat expand . <action>(editor.action.smartSelect.expand)
 repeat expand , <action>(editor.action.smartSelect.shrink)
+
+" Emacs C-x z: after repeat (SPC x z or '), bare z keeps repeating
+repeat replay z repeat
 " not a default group — add your own like:
 "   repeat diff . <action>(workbench.action.compareEditor.nextChange)
 "   repeat diff , <action>(workbench.action.compareEditor.previousChange)

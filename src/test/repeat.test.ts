@@ -226,4 +226,18 @@ describe('RepeatSpec', () => {
     await s.whenKeys('w');
     assert.equal(Engine.repeatMap, null);
   });
+
+  it('given the bundled rc then SPC x z repeats the last command and bare z keeps repeating like Emacs C-x z', async () => {
+    const s = freshSpec();
+    s.given('delete run', '<caret>aaaaa');
+    await s.whenKeys('d');
+    s.thenText('aaaa');
+    await s.whenKeys(' xz');
+    s.thenText('aaa');
+    await s.whenKeys('z');
+    s.thenText('aa');
+    await s.whenKeys('z');
+    s.thenText('a');
+    s.thenMode(MeowMode.NORMAL);
+  });
 });
