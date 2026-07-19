@@ -25,8 +25,10 @@ import {
   lineEnd,
   lineOfOffset,
   lineStart,
+  nextParagraphEnd,
   nextSentenceEnd,
   nthCharTarget,
+  prevParagraphStart,
   prevSentenceStart,
   Words,
 } from './text';
@@ -109,6 +111,14 @@ export const commands: Map<string, MeowCommand> = new Map([
   ],
   ['beginning-of-buffer', (ctx: Ctx) => bufferBoundary(ctx, true)],
   ['end-of-buffer', (ctx: Ctx) => bufferBoundary(ctx, false)],
+  [
+    'forward-paragraph',
+    (ctx: Ctx) => paragraphOrExpand(ctx, ctx.st.takeCount(1)),
+  ],
+  [
+    'backward-paragraph',
+    (ctx: Ctx) => paragraphOrExpand(ctx, -ctx.st.takeCount(1)),
+  ],
 ]);
 
 type OffsetTarget = (text: string, offset: number) => number;
@@ -261,6 +271,12 @@ function wordOrExpand(ctx: Ctx, n: number): void {
 function sentenceOrExpand(ctx: Ctx, n: number): void {
   moveToOrExpand(ctx, SelType.CHAR, (text, off) =>
     n >= 0 ? nextSentenceEnd(text, off, n) : prevSentenceStart(text, off, -n),
+  );
+}
+
+function paragraphOrExpand(ctx: Ctx, n: number): void {
+  moveToOrExpand(ctx, SelType.CHAR, (text, off) =>
+    n >= 0 ? nextParagraphEnd(text, off, n) : prevParagraphStart(text, off, -n),
   );
 }
 

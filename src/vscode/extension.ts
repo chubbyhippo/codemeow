@@ -628,6 +628,12 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.emacsEndOfBuffer', () =>
       emacsChord('end-of-buffer'),
     ),
+    vscode.commands.registerCommand('codemeow.emacsBackwardParagraph', () =>
+      emacsChord('backward-paragraph'),
+    ),
+    vscode.commands.registerCommand('codemeow.emacsForwardParagraph', () =>
+      emacsChord('forward-paragraph'),
+    ),
     vscode.commands.registerCommand('codemeow.emacsUpcaseWord', () =>
       emacsChord('upcase-word'),
     ),

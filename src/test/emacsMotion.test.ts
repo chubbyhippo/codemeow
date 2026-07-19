@@ -285,4 +285,90 @@ describe('EmacsMotionSpec', () => {
     s.thenCaretAt(22);
     s.thenNoSelection();
   });
+
+  it('given no selection when forward-paragraph then the caret lands on the separator blank line', async () => {
+    const s = freshSpec();
+    s.given('two paragraphs', 'a<caret>aa\nbbb\n\nccc');
+    await s.whenCommand('forward-paragraph');
+    s.thenCaretAt(8);
+    s.thenNoSelection();
+  });
+
+  it('given no selection when backward-paragraph then the caret lands on the empty line joining the paragraph start', async () => {
+    const s = freshSpec();
+    s.given('two paragraphs', 'aaa\n\nbb<caret>b');
+    await s.whenCommand('backward-paragraph');
+    s.thenCaretAt(4);
+    s.thenNoSelection();
+  });
+
+  it('given a caret on a blank line when forward-paragraph then it crosses to the next paragraph end', async () => {
+    const s = freshSpec();
+    s.given('blank line between paragraphs', 'aaa\n<caret>\nbbb\n\nccc');
+    await s.whenCommand('forward-paragraph');
+    s.thenCaretAt(9);
+    s.thenNoSelection();
+  });
+
+  it('given a caret on a blank line when backward-paragraph then it lands at the previous paragraph start', async () => {
+    const s = freshSpec();
+    s.given('blank line after two-line paragraph', 'aaa\nbbb\n<caret>\nccc');
+    await s.whenCommand('backward-paragraph');
+    s.thenCaretAt(0);
+    s.thenNoSelection();
+  });
+
+  it('given a whitespace-only separator when backward-paragraph then the caret stops at the paragraph text start', async () => {
+    const s = freshSpec();
+    s.given('space-only separator line', 'aaa\n \nbb<caret>b');
+    await s.whenCommand('backward-paragraph');
+    s.thenCaretAt(6);
+    s.thenNoSelection();
+  });
+
+  it('given consecutive empty lines when backward-paragraph then only the adjacent one joins the paragraph start', async () => {
+    const s = freshSpec();
+    s.given('two empty separator lines', 'aaa\n\n\nbb<caret>b');
+    await s.whenCommand('backward-paragraph');
+    s.thenCaretAt(5);
+    s.thenNoSelection();
+  });
+
+  it('given a count when forward-paragraph then the caret walks that many paragraph ends', async () => {
+    const s = freshSpec();
+    s.given('three paragraphs', 'a<caret>aa\n\nbbb\n\nccc');
+    await s.whenKeys('2');
+    await s.whenCommand('forward-paragraph');
+    s.thenCaretAt(9);
+    s.thenNoSelection();
+  });
+
+  it('given the last paragraph when forward-paragraph then the caret goes to point-max', async () => {
+    const s = freshSpec();
+    s.given('two paragraphs', 'aaa\n\nbb<caret>b');
+    await s.whenCommand('forward-paragraph');
+    s.thenCaretAt(8);
+    s.thenNoSelection();
+  });
+
+  it('given w then forward-paragraph extends the selection through the paragraph end', async () => {
+    const s = freshSpec();
+    s.given('paragraph then another', '<caret>hello world\n\nnext');
+    await s.whenKeys('w');
+    s.thenSelection('hello');
+    await s.whenCommand('forward-paragraph');
+    s.thenSelection('hello world\n');
+    s.thenSelType(SelType.CHAR);
+    s.thenCaretAtSelectionEnd();
+  });
+
+  it('given w then backward-paragraph extends the selection back past the paragraph start', async () => {
+    const s = freshSpec();
+    s.given('paragraph after a blank line', 'aaa\n\nhello wo<caret>rld');
+    await s.whenKeys('w');
+    s.thenSelection('world');
+    await s.whenCommand('backward-paragraph');
+    s.thenSelection('\nhello ');
+    s.thenCaretAtSelectionStart();
+  });
 });

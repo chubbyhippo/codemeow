@@ -133,6 +133,69 @@ export function prevSentenceStart(
   return i;
 }
 
+function lineStartAt(text: string, offset: number): number {
+  let i = offset;
+  while (i > 0 && text[i - 1] !== '\n') i--;
+  return i;
+}
+
+function followingLineStart(text: string, bol: number): number {
+  let i = bol;
+  while (i < text.length && text[i] !== '\n') i++;
+  return i < text.length ? i + 1 : i;
+}
+
+function blankLineAt(text: string, bol: number): boolean {
+  let i = bol;
+  while (i < text.length && text[i] !== '\n') {
+    if (!/\s/.test(text[i])) return false;
+    i++;
+  }
+  return true;
+}
+
+export function nextParagraphEnd(
+  text: string,
+  from: number,
+  n: number,
+): number {
+  let pos = clamp(from, 0, text.length);
+  for (let k = 0; k < n; k++) {
+    let i = lineStartAt(text, pos);
+    while (i < text.length && blankLineAt(text, i))
+      i = followingLineStart(text, i);
+    while (i < text.length && !blankLineAt(text, i))
+      i = followingLineStart(text, i);
+    pos = i;
+  }
+  return pos;
+}
+
+export function prevParagraphStart(
+  text: string,
+  from: number,
+  n: number,
+): number {
+  let pos = clamp(from, 0, text.length);
+  for (let k = 0; k < n; k++) {
+    if (pos > 0) {
+      const start = paragraphStartBefore(text, pos);
+      pos = start < pos ? start : paragraphStartBefore(text, start - 1);
+    }
+  }
+  return pos;
+}
+
+function paragraphStartBefore(text: string, offset: number): number {
+  let i = lineStartAt(text, offset);
+  while (i > 0 && blankLineAt(text, i)) i = lineStartAt(text, i - 1);
+  while (i > 0 && !blankLineAt(text, lineStartAt(text, i - 1)))
+    i = lineStartAt(text, i - 1);
+  const prevLineEmpty =
+    i > 0 && text[i - 1] === '\n' && (i === 1 || text[i - 2] === '\n');
+  return prevLineEmpty ? i - 1 : i;
+}
+
 export const Words = {
   nextEnd(
     text: string,

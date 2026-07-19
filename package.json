@@ -129,6 +129,16 @@
         "category": "codemeow"
       },
       {
+        "command": "codemeow.emacsBackwardParagraph",
+        "title": "Emacs Backward Paragraph",
+        "category": "codemeow"
+      },
+      {
+        "command": "codemeow.emacsForwardParagraph",
+        "title": "Emacs Forward Paragraph",
+        "category": "codemeow"
+      },
+      {
         "command": "codemeow.emacsUpcaseWord",
         "title": "Emacs Upcase Word",
         "category": "codemeow"
@@ -247,6 +257,16 @@
       {
         "key": "alt+shift+.",
         "command": "codemeow.emacsEndOfBuffer",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+shift+[",
+        "command": "codemeow.emacsBackwardParagraph",
+        "when": "editorTextFocus && codemeow.normal"
+      },
+      {
+        "key": "alt+shift+]",
+        "command": "codemeow.emacsForwardParagraph",
         "when": "editorTextFocus && codemeow.normal"
       },
       {
