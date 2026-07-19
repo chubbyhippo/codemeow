@@ -213,7 +213,7 @@ function line(text: string, offset: number, inner: boolean): Bounds {
   const end = lineEnd(text, ln);
   return inner
     ? { start: lineStart(text, ln), end }
-    : { start: lineStart(text, ln), end: Math.min(end + 1, text.length) };
+    : { start: lineStart(text, ln), end: lineStart(text, ln + 1) };
 }
 
 function visualLine(text: string, offset: number): Bounds {

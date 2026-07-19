@@ -48,7 +48,8 @@ export function lineStart(text: string, line: number): number {
 export function lineEnd(text: string, line: number): number {
   const s = lineStart(text, line);
   const nl = text.indexOf('\n', s);
-  return nl < 0 ? text.length : nl;
+  if (nl < 0) return text.length;
+  return nl > s && text[nl - 1] === '\r' ? nl - 1 : nl;
 }
 
 export function isBlankLine(text: string, line: number): boolean {

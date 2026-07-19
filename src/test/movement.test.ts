@@ -132,4 +132,13 @@ describe('MovementSpec', () => {
     await s.whenKeys('k');
     s.thenCaretAt(0);
   });
+
+  it('given a CRLF document then the goal column clamps before the carriage return', async () => {
+    const s = freshSpec();
+    s.given('crlf long short long', 'abc<caret>d\r\nx\r\nefgh');
+    await s.whenKeys('j');
+    s.thenCaretAt(7);
+    await s.whenKeys('j');
+    s.thenCaretAt(12);
+  });
 });

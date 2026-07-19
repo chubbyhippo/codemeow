@@ -203,16 +203,18 @@ async function backwardDelete(ctx: Ctx): Promise<void> {
 function killRange(
   ctx: Ctx,
   sel: SelRange,
-  textLen: number,
+  text: string,
 ): { lo: number; hi: number } {
   const lo = Math.min(sel.anchor, sel.active);
   let hi = Math.max(sel.anchor, sel.active);
   if (
     ctx.st.selType === SelType.LINE &&
     sel.active >= sel.anchor &&
-    hi < textLen
-  )
-    hi++;
+    hi < text.length
+  ) {
+    if (text[hi] === '\r') hi++;
+    if (hi < text.length && text[hi] === '\n') hi++;
+  }
   return { lo, hi };
 }
 
@@ -227,7 +229,7 @@ function regionsInOrder(sels: SelRange[]): SelRange[] {
 function joinedKillText(ctx: Ctx, text: string, regions: SelRange[]): string {
   return regions
     .map((s) => {
-      const r = killRange(ctx, s, text.length);
+      const r = killRange(ctx, s, text);
       return text.slice(r.lo, r.hi);
     })
     .join('\n');
@@ -248,7 +250,7 @@ async function kill(ctx: Ctx): Promise<void> {
     );
     await editCarets(ctx, (sel, lo, hi) => {
       if (lo === hi) return { edit: null, sel };
-      const r = killRange(ctx, sel, text.length);
+      const r = killRange(ctx, sel, text);
       return {
         edit: { start: r.lo, end: r.hi, text: '' },
         sel: { anchor: r.lo, active: r.lo },
@@ -259,8 +261,9 @@ async function kill(ctx: Ctx): Promise<void> {
   }
   if (text.length === 0) return;
   const caret = prim.active;
-  const eol = lineEnd(text, lineOfOffset(text, caret));
-  const end = caret === eol ? Math.min(eol + 1, text.length) : eol;
+  const ln = lineOfOffset(text, caret);
+  const eol = lineEnd(text, ln);
+  const end = caret === eol ? lineStart(text, ln + 1) : eol;
   if (end > caret) {
     await ctx.clipboard.write(text.slice(caret, end));
     const edits = [{ start: caret, end, text: '' }];
@@ -301,7 +304,7 @@ async function save(ctx: Ctx): Promise<void> {
   ctx.port.setSelections(
     sels.map((s) => {
       if (s.anchor === s.active) return s;
-      const r = killRange(ctx, s, text.length);
+      const r = killRange(ctx, s, text);
       const caret = s.active >= s.anchor ? r.hi : r.lo;
       return { anchor: caret, active: caret };
     }),

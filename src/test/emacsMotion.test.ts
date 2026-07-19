@@ -371,4 +371,12 @@ describe('EmacsMotionSpec', () => {
     s.thenSelection('\nhello ');
     s.thenCaretAtSelectionStart();
   });
+
+  it('given a CRLF document when move-end-of-line then the caret stops before the carriage return', async () => {
+    const s = freshSpec();
+    s.given('two crlf lines', 'a<caret>b\r\ncd');
+    await s.whenCommand('move-end-of-line');
+    s.thenCaretAt(2);
+    s.thenNoSelection();
+  });
 });

@@ -256,4 +256,11 @@ describe('ThingsSpec', () => {
     s.thenSelType(SelType.JOIN);
     s.thenSelection('\n  ');
   });
+
+  it('given a CRLF document then the line thing bounds include the whole delimiter', async () => {
+    const s = freshSpec();
+    s.given('two crlf lines', 'a<caret>b\r\ncd');
+    await s.whenKeys('.l');
+    s.thenSelection('ab\r\n');
+  });
 });

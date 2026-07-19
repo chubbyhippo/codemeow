@@ -313,4 +313,11 @@ describe('SelectionSpec', () => {
     await s.whenKeys('g');
     s.thenNoSelection();
   });
+
+  it('given a CRLF document then x selects the line content without the delimiter', async () => {
+    const s = freshSpec();
+    s.given('two crlf lines', 'a<caret>b\r\ncd');
+    await s.whenKeys('x');
+    s.thenSelection('ab');
+  });
 });

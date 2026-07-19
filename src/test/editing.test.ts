@@ -379,4 +379,19 @@ describe('EditingSpec', () => {
     s.thenCaretAt(6);
     s.thenClipboard('world');
   });
+
+  it('given a CRLF document then killing a line selection takes the whole delimiter', async () => {
+    const s = freshSpec();
+    s.given('two crlf lines', 'a<caret>b\r\ncd');
+    await s.whenKeys('xs');
+    s.thenText('cd');
+    s.thenClipboard('ab\r\n');
+  });
+
+  it('given a CRLF document then kill-line at the content end removes the whole delimiter', async () => {
+    const s = freshSpec();
+    s.given('two crlf lines', 'ab<caret>\r\ncd');
+    await s.whenKeys('s');
+    s.thenText('abcd');
+  });
 });
