@@ -19,6 +19,7 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import * as Ace from '../core/aceWindow';
 import { attachMode } from '../core/attachPolicy';
 import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
@@ -413,6 +414,83 @@ async function windmove(dir: WindmoveDir): Promise<void> {
   }
 }
 
+const ACE_KEYS = 'asdfghjkl';
+const ACE_FOCUS_GROUP_COMMANDS = [
+  'workbench.action.focusFirstEditorGroup',
+  'workbench.action.focusSecondEditorGroup',
+  'workbench.action.focusThirdEditorGroup',
+  'workbench.action.focusFourthEditorGroup',
+  'workbench.action.focusFifthEditorGroup',
+  'workbench.action.focusSixthEditorGroup',
+  'workbench.action.focusSeventhEditorGroup',
+  'workbench.action.focusEighthEditorGroup',
+];
+
+async function aceWindow(): Promise<void> {
+  const groups = Ace.ordered(
+    vscode.window.tabGroups.all.map((g) => ({
+      item: g,
+      x: g.viewColumn,
+      y: 0,
+    })),
+  );
+  const decision = Ace.plan(groups.length);
+  if (decision === Ace.Plan.None) return;
+  if (decision === Ace.Plan.Other) {
+    await vscode.commands.executeCommand('workbench.action.focusNextGroup');
+    return;
+  }
+  const byKey = new Map<string, string>();
+  const labeled: [vscode.TextEditor, vscode.DecorationOptions][] = [];
+  groups.slice(0, ACE_FOCUS_GROUP_COMMANDS.length).forEach((group, i) => {
+    const editor = vscode.window.visibleTextEditors.find(
+      (e) => e.viewColumn === group.viewColumn,
+    );
+    if (!editor) return;
+    const key = ACE_KEYS[i];
+    byKey.set(key, ACE_FOCUS_GROUP_COMMANDS[i]);
+    const pos = editor.visibleRanges[0]?.start ?? new vscode.Position(0, 0);
+    labeled.push([
+      editor,
+      {
+        range: new vscode.Range(pos, pos),
+        renderOptions: { after: { contentText: ` ${key} ` } },
+      },
+    ]);
+  });
+  if (labeled.length === 0) return;
+  for (const [editor, opt] of labeled)
+    editor.setDecorations(avyLabelDecoration, [opt]);
+  const clear = () => {
+    for (const [editor] of labeled)
+      editor.setDecorations(avyLabelDecoration, []);
+  };
+  const picker = vscode.window.createQuickPick();
+  picker.title = 'Ace window';
+  picker.placeholder = 'window key';
+  let picked: string | undefined;
+  picker.onDidChangeValue((value) => {
+    const ch = value.slice(-1);
+    picker.value = '';
+    const command = byKey.get(ch);
+    if (!command) {
+      vscode.window.setStatusBarMessage(
+        `No such candidate: ${ch}`,
+        STATUS_MESSAGE_MS,
+      );
+      return;
+    }
+    picked = command;
+    picker.hide();
+  });
+  picker.onDidHide(() => {
+    clear();
+    picker.dispose();
+    if (picked) void vscode.commands.executeCommand(picked);
+  });
+  picker.show();
+}
+
 async function emacsChord(command: string): Promise<void> {
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
@@ -591,6 +669,8 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.windmoveDown', () =>
       windmove('down'),
     ),
+
+    vscode.commands.registerCommand('codemeow.aceWindow', () => aceWindow()),
 
     vscode.commands.registerCommand('codemeow.emacsForwardChar', () =>
       emacsChord('forward-char'),

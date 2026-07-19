@@ -69,6 +69,11 @@
         "category": "codemeow"
       },
       {
+        "command": "codemeow.aceWindow",
+        "title": "Ace Window",
+        "category": "codemeow"
+      },
+      {
         "command": "codemeow.emacsForwardChar",
         "title": "Emacs Forward Char",
         "category": "codemeow"

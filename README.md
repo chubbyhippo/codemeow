@@ -83,6 +83,16 @@ Windmove_ — and inside meow buffers they shadow shift-selection, the exact
 tradeoff the Emacs binding makes (select with meow instead; anywhere meow
 doesn't attach keeps native shift-select).
 
+**Ace-window** — `SPC w w` (and `SPC x o`, the `C-x o` slot) is an
+ace-window port over the editor groups: with three or more, every group
+showing a text editor gets a home-row label painted at its top
+(`a s d f g h j k l`, avy's colors) and the next key jumps to that group;
+with exactly two it hops straight to the other one, like `other-window`;
+`Esc` cancels. Groups whose active tab has no text editor (a webview, an
+image) can't take a label, and picks reach the first eight groups — the
+platform's own focus-group commands. The key prompt rides a quick-pick
+sink, the same trick the which-key menu uses.
+
 **Emacs chords** — `Ctrl+f/b/n/p/a/e` and `Alt+f/b/a/e` are the real
 Emacs point motions (`forward/backward-char`, `next/previous-line`,
 `move-beginning/end-of-line`, `forward/backward-word`,
