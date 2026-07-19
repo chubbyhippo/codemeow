@@ -144,4 +144,14 @@ describe('FindSearchSpec', () => {
       17,
     );
   });
+
+  it('given W on a dollar symbol then n finds the next symbol occurrence', async () => {
+    const s = freshSpec();
+    s.given('dollar symbols', '$<caret>foo bar $foo');
+    await s.whenKeys('W');
+    s.thenSelection('$foo');
+    await s.whenKeys('n');
+    s.thenSelection('$foo');
+    s.thenCaretAt(13);
+  });
 });

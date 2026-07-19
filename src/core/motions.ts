@@ -333,7 +333,11 @@ function markWord(ctx: Ctx, symbol: boolean): void {
   const [s, e] = b;
   if (neg) Sel.select(ctx, wordType(symbol), e, s, true);
   else Sel.select(ctx, wordType(symbol), s, e, true);
-  Search.push(ctx.st, `\\b${escapeRegExp(text.slice(s, e))}\\b`);
+  const quoted = escapeRegExp(text.slice(s, e));
+  Search.push(
+    ctx.st,
+    symbol ? `(?<![\\w$])${quoted}(?![\\w$])` : `\\b${quoted}\\b`,
+  );
 }
 
 function line(ctx: Ctx): void {
