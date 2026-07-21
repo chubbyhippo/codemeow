@@ -46,7 +46,6 @@ export async function runEmacsMotion(ctx: Ctx, command: string): Promise<void> {
 
 export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
   const st = ctx.st;
-  if (st.mode === MeowMode.INSERT) return false;
   if (st.mode === MeowMode.KEYPAD) {
     await Keypad.key(ctx, c);
     st.lastCommand = 'keypad';
@@ -59,6 +58,7 @@ export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
     ctx.ui.refresh(st);
     return true;
   }
+  if (st.mode === MeowMode.INSERT) return false;
 
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();

@@ -6,9 +6,29 @@ import { strict as assert } from 'node:assert';
 import { describe, it } from 'node:test';
 import { freshSpec, Spec } from './helpers';
 import * as Avy from '../core/avy';
+import { MeowMode } from '../core/state';
 
 describe('AvySpec', () => {
   const timeout = (s: Spec): void => Avy.finishInput(s.ctx);
+
+  it('given an INSERT editor with a live avy session then keys drive the jump', async () => {
+    const s = freshSpec();
+    s.given('repeats', '<caret>foo bar foo baz foo');
+    await s.whenKeys('i');
+    s.thenMode(MeowMode.INSERT);
+    await s.whenCommand('avy-goto-char-timer');
+    assert.notEqual(
+      s.st.avy,
+      null,
+      'avy armed while INSERT (e.g. SPC m o from a keypad opened in INSERT)',
+    );
+    await s.whenKeys('fo');
+    timeout(s);
+    await s.whenKeys('s');
+    s.thenCaretAt(8);
+    assert.equal(s.st.avy, null, 'session ends after the jump');
+    s.thenMode(MeowMode.INSERT);
+  });
 
   it('given S with input matching many places then labels select the jump target', async () => {
     const s = freshSpec();
