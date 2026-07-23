@@ -57,6 +57,17 @@ describe('RcSpec', () => {
     assert.ok(c.errors[0].includes('meow-frobnicate'));
   });
 
+  it('given a cmap or cnoremap line then the rc loads it without error', () => {
+    const c = Rc.parse([
+      'cmap control F forward-char',
+      'cnoremap alt D kill-word',
+      'nmap Z ,b',
+    ]);
+    assert.deepEqual(c.errors, []);
+    assert.equal(c.normal.get('Z')!.keys, ',b');
+    assert.equal(c.normal.size, 1, 'cmap and cnoremap add no bindings');
+  });
+
   it('given comment-only rc edits then the reload button reports no changes', () => {
     freshSpec();
     Rc.setUserLines(['nmap Z ,b']);

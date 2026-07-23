@@ -44,6 +44,8 @@ export function parse(lines: string[]): Config {
     const rest = (m[2] ?? '').trim();
     switch (cmd) {
       case 'let':
+      case 'cmap':
+      case 'cnoremap':
         break;
       case 'set':
         parseSet(c, rest);

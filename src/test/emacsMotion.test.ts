@@ -5,7 +5,8 @@
 import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { freshSpec } from './helpers';
-import { SelType } from '../core/state';
+import { Rc } from '../core/rc';
+import { MeowMode, SelType } from '../core/state';
 
 describe('EmacsMotionSpec', () => {
   it('given no selection when forward-char then the caret moves right without selecting', async () => {
@@ -378,5 +379,30 @@ describe('EmacsMotionSpec', () => {
     await s.whenCommand('move-end-of-line');
     s.thenCaretAt(2);
     s.thenNoSelection();
+  });
+
+  it('given the bundled defaults then SPC m exposes the M- motion and edit layer', () => {
+    freshSpec();
+    const k = Rc.keypad();
+    assert.equal(k.get('ma')?.command, 'backward-sentence');
+    assert.equal(k.get('mb')?.command, 'backward-word');
+    assert.equal(k.get('mc')?.command, 'capitalize-word');
+    assert.equal(k.get('md')?.command, 'kill-word');
+    assert.equal(k.get('me')?.command, 'forward-sentence');
+    assert.equal(k.get('mf')?.command, 'forward-word');
+    assert.equal(k.get('ml')?.command, 'downcase-word');
+    assert.equal(k.get('mu')?.command, 'upcase-word');
+    assert.equal(k.get('m<')?.command, 'beginning-of-buffer');
+    assert.equal(k.get('m>')?.command, 'end-of-buffer');
+    assert.equal(k.get('m{')?.command, 'backward-paragraph');
+    assert.equal(k.get('m}')?.command, 'forward-paragraph');
+  });
+
+  it('given the SPC m keypad then a meta word motion runs and returns to NORMAL', async () => {
+    const s = freshSpec();
+    s.given('meta word motion', '<caret>hello world');
+    await s.whenKeys(' mf');
+    s.thenCaretAt(5);
+    s.thenMode(MeowMode.NORMAL);
   });
 });
