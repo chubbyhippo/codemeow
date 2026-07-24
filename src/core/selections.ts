@@ -59,6 +59,14 @@ export function hasSelection(sel: SelRange): boolean {
   return sel.anchor !== sel.active;
 }
 
+export function lo(sel: SelRange): number {
+  return Math.min(sel.anchor, sel.active);
+}
+
+export function hi(sel: SelRange): number {
+  return Math.max(sel.anchor, sel.active);
+}
+
 export function backwardP(ctx: Ctx): boolean {
   const sel = primary(ctx);
   return hasSelection(sel) && sel.active < sel.anchor;

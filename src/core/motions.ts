@@ -303,8 +303,8 @@ function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
   const text = ctx.port.getText();
   const type = wordType(symbol);
   const sel = Sel.primary(ctx);
-  const lo = Math.min(sel.anchor, sel.active);
-  const hi = Math.max(sel.anchor, sel.active);
+  const lo = Sel.lo(sel);
+  const hi = Sel.hi(sel);
   if (!(Sel.hasSelection(sel) && ctx.st.selType === type)) Sel.cancel(ctx);
   const extend =
     ctx.st.selExpand && ctx.st.selType === type && Sel.hasSelection(sel);

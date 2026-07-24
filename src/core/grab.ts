@@ -61,11 +61,7 @@ function grab(ctx: Ctx): void {
   clear(ctx);
   const sel = Sel.primary(ctx);
   if (Sel.hasSelection(sel)) {
-    set(
-      ctx,
-      Math.min(sel.anchor, sel.active),
-      Math.max(sel.anchor, sel.active),
-    );
+    set(ctx, Sel.lo(sel), Sel.hi(sel));
   }
   Sel.cancel(ctx);
 }
@@ -77,7 +73,7 @@ function sync(ctx: Ctx): void {
     return;
   }
   clear(ctx);
-  set(ctx, Math.min(sel.anchor, sel.active), Math.max(sel.anchor, sel.active));
+  set(ctx, Sel.lo(sel), Sel.hi(sel));
   Sel.cancel(ctx);
 }
 
@@ -96,8 +92,8 @@ async function swap(ctx: Ctx): Promise<void> {
   }
   const gs = g.start;
   const ge = g.end;
-  const ss = Math.min(sel.anchor, sel.active);
-  const se = Math.max(sel.anchor, sel.active);
+  const ss = Sel.lo(sel);
+  const se = Sel.hi(sel);
   if (Math.max(gs, ss) < Math.min(ge, se) && !(gs === ss && ge === se)) {
     ctx.ui.hint('Selection overlaps the grab');
     return;
@@ -139,8 +135,8 @@ export function beacon(ctx: Ctx): void {
   if (!g || g.end <= g.start) return;
   const sel = Sel.primary(ctx);
   if (!Sel.hasSelection(sel)) return;
-  const ss = Math.min(sel.anchor, sel.active);
-  const se = Math.max(sel.anchor, sel.active);
+  const ss = Sel.lo(sel);
+  const se = Sel.hi(sel);
   if (ss < g.start || se > g.end || se === ss) return;
   const text = port.getText();
   const sels: SelRange[] = [];
