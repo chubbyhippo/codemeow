@@ -148,6 +148,42 @@ describe('RcSpec', () => {
     assert.equal(Rc.whichKeyDelayMs(), 150);
   });
 
+  it('given overlay color set lines then they parse into rgb colors', () => {
+    const c = Rc.parse([
+      'set overlay-color=#E52B50',
+      'set overlay-text-color=#ffffff',
+      'set expand-hint-color=#d05c0a',
+      'set grab-color=#CDE8CD',
+    ]);
+    assert.equal(c.overlayColor, '#e52b50');
+    assert.equal(c.overlayTextColor, '#ffffff');
+    assert.equal(c.expandHintColor, '#d05c0a');
+    assert.equal(c.grabColor, '#cde8cd');
+    assert.deepEqual(c.errors, []);
+  });
+
+  it('given a malformed overlay color then an error is collected and it stays unset', () => {
+    const c = Rc.parse(['set overlay-color=#12345', 'set grab-color=nope']);
+    assert.equal(c.overlayColor, null);
+    assert.equal(c.grabColor, null);
+    assert.equal(c.errors.length, 2);
+    assert.ok(c.errors[0].includes('overlay-color'));
+  });
+
+  it('given an unknown set color option then it is ignored without error', () => {
+    const c = Rc.parse(['set cursor-color=#123456']);
+    assert.equal(c.overlayColor, null);
+    assert.deepEqual(c.errors, []);
+  });
+
+  it('overlay colors layer user over the bundled default', () => {
+    const s = freshSpec();
+    assert.equal(Rc.overlayColor(), '#e52b50');
+    s.givenRc('set overlay-color=#010203\nset grab-color=#040506');
+    assert.equal(Rc.overlayColor(), '#010203');
+    assert.equal(Rc.grabColor(), '#040506');
+  });
+
   it('given a trailing comment then it is stripped from the line', () => {
     const c = Rc.parse([
       'nmap S <action>(extension.aceJump)   " jump anywhere',

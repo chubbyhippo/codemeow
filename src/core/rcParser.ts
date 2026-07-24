@@ -48,7 +48,7 @@ export function parse(lines: string[]): Config {
       case 'cnoremap':
         break;
       case 'set':
-        parseSet(c, rest);
+        parseSet(c, rest, err);
         break;
       case 'desc':
         parseDescBody(c, rest, err);
@@ -71,7 +71,7 @@ export function parse(lines: string[]): Config {
   return c;
 }
 
-function parseSet(c: Config, rest: string): void {
+function parseSet(c: Config, rest: string, err: (m: string) => void): void {
   if (rest === 'which-key') c.whichKey = true;
   else if (rest === 'nowhich-key') c.whichKey = false;
   else if (rest.startsWith('timeoutlen')) {
@@ -81,7 +81,52 @@ function parseSet(c: Config, rest: string): void {
     const n =
       eq !== '' ? parseInt(eq, 10) : parseInt(rest.split(/\s+/)[1] ?? '', 10);
     if (!Number.isNaN(n) && n >= 0) c.whichKeyDelayMs = n;
+  } else parseSetColor(c, rest, err);
+}
+
+const COLOR_SET_KEYS = new Set([
+  'overlay-color',
+  'overlay-text-color',
+  'expand-hint-color',
+  'grab-color',
+]);
+
+const HEX_COLOR_RE = /^[0-9a-fA-F]{6}$/;
+
+function parseSetColor(
+  c: Config,
+  rest: string,
+  err: (m: string) => void,
+): void {
+  const eq = rest.indexOf('=');
+  const key = (eq >= 0 ? rest.slice(0, eq) : rest).trim();
+  if (!COLOR_SET_KEYS.has(key)) return;
+  const raw = eq >= 0 ? rest.slice(eq + 1).trim() : '';
+  const color = parseHexColor(raw);
+  if (color === null) {
+    err(`set ${key}: invalid color '${raw}' (expected #RRGGBB)`);
+    return;
   }
+  switch (key) {
+    case 'overlay-color':
+      c.overlayColor = color;
+      break;
+    case 'overlay-text-color':
+      c.overlayTextColor = color;
+      break;
+    case 'expand-hint-color':
+      c.expandHintColor = color;
+      break;
+    case 'grab-color':
+      c.grabColor = color;
+      break;
+  }
+}
+
+function parseHexColor(text: string): string | null {
+  const hex = text.startsWith('#') ? text.slice(1) : text;
+  if (!HEX_COLOR_RE.test(hex)) return null;
+  return `#${hex.toLowerCase()}`;
 }
 
 function parseDescBody(

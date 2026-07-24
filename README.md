@@ -230,6 +230,10 @@ codemeow reads an `.ideavimrc`-style file from your home directory:
 | `let g:WhichKeyDesc_x = "<leader>x text"` | same as `desc` — paste `.ideavimrc` lines unchanged                                                               |
 | `set timeoutlen=300`                      | which-key hint delay in milliseconds (the bundled default sets 300)                                               |
 | `set which-key` / `set nowhich-key`       | hint on/off (default on)                                                                                          |
+| `set overlay-color=#E52B50`               | avy / ace-window label background — one `#RRGGBB` applied to both themes                                          |
+| `set overlay-text-color=#ffffff`          | that label's text color                                                                                          |
+| `set expand-hint-color=#d05c0a`           | the `0`–`9` expand-hint color (unset = a VS Code theme color)                                                    |
+| `set grab-color=#cde8cd`                  | the grab / beacon highlight (unset = a VS Code theme color)                                                      |
 
 Key notation: plain printable characters, plus `<Space>` and `<lt>`. To find
 a command's id, press `SPC i d` — a filterable list of every command id the

@@ -34,10 +34,16 @@ export class Config {
   repeat = new Map<string, Map<string, Binding>>();
   whichKey: boolean | null = null;
   whichKeyDelayMs: number | null = null;
+  overlayColor: string | null = null;
+  overlayTextColor: string | null = null;
+  expandHintColor: string | null = null;
+  grabColor: string | null = null;
   errors: string[] = [];
 }
 
 const DEFAULT_WHICH_KEY_DELAY_MS = 250;
+const DEFAULT_OVERLAY_COLOR = '#e52b50';
+const DEFAULT_OVERLAY_TEXT_COLOR = '#ffffff';
 
 let userConfig = new Config();
 let defaultConfig = new Config();
@@ -125,5 +131,29 @@ export const Rc = {
       defaultConfig.whichKeyDelayMs ??
       DEFAULT_WHICH_KEY_DELAY_MS
     );
+  },
+
+  overlayColor(): string {
+    return (
+      userConfig.overlayColor ??
+      defaultConfig.overlayColor ??
+      DEFAULT_OVERLAY_COLOR
+    );
+  },
+
+  overlayTextColor(): string {
+    return (
+      userConfig.overlayTextColor ??
+      defaultConfig.overlayTextColor ??
+      DEFAULT_OVERLAY_TEXT_COLOR
+    );
+  },
+
+  expandHintColor(): string | null {
+    return userConfig.expandHintColor ?? defaultConfig.expandHintColor ?? null;
+  },
+
+  grabColor(): string | null {
+    return userConfig.grabColor ?? defaultConfig.grabColor ?? null;
   },
 };

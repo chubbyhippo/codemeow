@@ -25,10 +25,23 @@
 "   desc <leader><seq> <text>           which-key label for an entry or a group
 "   set timeoutlen=300                  which-key hint delay in ms
 "   set nowhich-key                     turn the which-key hint off
+"   set overlay-color=#E52B50           avy/ace label background (#RRGGBB)
+"   set overlay-text-color=#ffffff      avy/ace label text
+"   set expand-hint-color=#d05c0a       0-9 expand-hint color
+"   set grab-color=#cde8cd              grab / beacon highlight
 " ============================================================================
 
 set which-key
 set timeoutlen=300
+
+" Overlay colors — #RRGGBB, applied to both the light and dark themes. The
+" two label colors below sit at their defaults; expand-hint and grab default
+" to VS Code theme colors that live in the extension, so uncomment them to
+" pin one fixed color across both themes.
+set overlay-color=#E52B50
+set overlay-text-color=#ffffff
+" set expand-hint-color=#d05c0a
+" set grab-color=#cde8cd
 
 " ============================================================================
 " The meow layout — QWERTY by default, every key rebindable

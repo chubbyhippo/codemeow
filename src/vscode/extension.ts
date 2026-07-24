@@ -52,6 +52,7 @@ let grabDecoration: vscode.TextEditorDecorationType;
 let hintDecoration: vscode.TextEditorDecorationType;
 let avyMatchDecoration: vscode.TextEditorDecorationType;
 let avyLabelDecoration: vscode.TextEditorDecorationType;
+let decorationsBuilt = false;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
 let whichKeyMenu:
   { qp: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
@@ -549,17 +550,25 @@ function loadDefaults(extensionPath: string): void {
   }
 }
 
-export function activate(context: vscode.ExtensionContext): void {
-  statusBar = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Left,
-    STATUS_BAR_PRIORITY,
-  );
+function disposeDecorations(): void {
+  if (!decorationsBuilt) return;
+  grabDecoration.dispose();
+  hintDecoration.dispose();
+  avyMatchDecoration.dispose();
+  avyLabelDecoration.dispose();
+}
+
+function buildDecorations(): void {
+  disposeDecorations();
+  const hintColor = Rc.expandHintColor();
+  const grabColor = Rc.grabColor();
   grabDecoration = vscode.window.createTextEditorDecorationType({
-    backgroundColor: new vscode.ThemeColor('diffEditor.insertedTextBackground'),
+    backgroundColor:
+      grabColor ?? new vscode.ThemeColor('diffEditor.insertedTextBackground'),
   });
   hintDecoration = vscode.window.createTextEditorDecorationType({
     after: {
-      color: new vscode.ThemeColor('editorWarning.foreground'),
+      color: hintColor ?? new vscode.ThemeColor('editorWarning.foreground'),
       backgroundColor: new vscode.ThemeColor('editor.background'),
       fontWeight: 'bold',
       textDecoration: 'none; position: absolute; z-index: 1',
@@ -572,23 +581,27 @@ export function activate(context: vscode.ExtensionContext): void {
   });
   avyLabelDecoration = vscode.window.createTextEditorDecorationType({
     after: {
-      color: '#ffffff',
-      backgroundColor: '#e52b50',
+      color: Rc.overlayTextColor(),
+      backgroundColor: Rc.overlayColor(),
       fontWeight: 'bold',
       textDecoration: 'none; position: absolute; z-index: 1',
     },
   });
-  context.subscriptions.push(
-    statusBar,
-    grabDecoration,
-    hintDecoration,
-    avyMatchDecoration,
-    avyLabelDecoration,
-    infoEmitter,
+  decorationsBuilt = true;
+}
+
+export function activate(context: vscode.ExtensionContext): void {
+  statusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    STATUS_BAR_PRIORITY,
   );
+  context.subscriptions.push(statusBar, infoEmitter, {
+    dispose: disposeDecorations,
+  });
 
   loadDefaults(context.extensionPath);
   loadUserRc();
+  buildDecorations();
   syncTreeKeys();
   syncRcChanged();
   context.subscriptions.push(
@@ -759,6 +772,7 @@ export function activate(context: vscode.ExtensionContext): void {
         await dirty.save();
       }
       const c = loadUserRc();
+      buildDecorations();
       syncTreeKeys();
       syncRcChanged();
       const problems =
