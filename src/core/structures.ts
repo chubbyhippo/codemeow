@@ -152,6 +152,13 @@ function toBlock(ctx: Ctx): void {
   Sel.select(ctx, SelType.BLOCK, caret, back ? p.open : p.close + 1, true);
 }
 
+function firstNonBlankOffset(text: string, line: number): number {
+  let p = lineStart(text, line);
+  const eol = lineEnd(text, line);
+  while (p < eol && /\s/.test(text[p])) p++;
+  return p;
+}
+
 function join(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;
@@ -162,20 +169,24 @@ function join(ctx: Ctx): void {
     let pl = ln - 1;
     while (pl >= 0 && blank(pl)) pl--;
     if (pl < 0) return;
-    const m = lineEnd(text, pl);
-    let p = lineStart(text, ln);
-    const eol = lineEnd(text, ln);
-    while (p < eol && /\s/.test(text[p])) p++;
-    Sel.select(ctx, SelType.JOIN, m, p, true);
+    Sel.select(
+      ctx,
+      SelType.JOIN,
+      lineEnd(text, pl),
+      firstNonBlankOffset(text, ln),
+      true,
+    );
   } else {
     const last = lineCount(text) - 1;
     let nl = ln + 1;
     while (nl <= last && blank(nl)) nl++;
     if (nl > last) return;
-    const m = lineEnd(text, ln);
-    let p = lineStart(text, nl);
-    const eol = lineEnd(text, nl);
-    while (p < eol && /\s/.test(text[p])) p++;
-    Sel.select(ctx, SelType.JOIN, m, p, true);
+    Sel.select(
+      ctx,
+      SelType.JOIN,
+      lineEnd(text, ln),
+      firstNonBlankOffset(text, nl),
+      true,
+    );
   }
 }

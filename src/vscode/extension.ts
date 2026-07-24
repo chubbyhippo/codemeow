@@ -330,18 +330,22 @@ function applyMode(editor: vscode.TextEditor, st: MeowState): void {
   refreshStatus(editor, st);
 }
 
+function statusText(st: MeowState, beacon: boolean): string {
+  if (st.mode === MeowMode.KEYPAD) {
+    return `MEOW KEYPAD  SPC ${st.keypad.split('').join(' ')}`;
+  }
+  if (beacon) {
+    return st.mode === MeowMode.INSERT ? 'MEOW BEACON-INSERT' : 'MEOW BEACON';
+  }
+  if (Engine.repeatMap) {
+    return `MEOW ${st.mode} [repeat ${[...Engine.repeatMap.keys()].join(' ')}]`;
+  }
+  return `MEOW ${st.mode}`;
+}
+
 function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
   const beacon = editor.selections.length > 1;
-  statusBar.text =
-    st.mode === MeowMode.KEYPAD
-      ? `MEOW KEYPAD  SPC ${st.keypad.split('').join(' ')}`
-      : beacon && st.mode === MeowMode.INSERT
-        ? 'MEOW BEACON-INSERT'
-        : beacon
-          ? 'MEOW BEACON'
-          : Engine.repeatMap
-            ? `MEOW ${st.mode} [repeat ${[...Engine.repeatMap.keys()].join(' ')}]`
-            : `MEOW ${st.mode}`;
+  statusBar.text = statusText(st, beacon);
   statusBar.show();
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);
   void vscode.commands.executeCommand(

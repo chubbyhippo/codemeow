@@ -32,7 +32,7 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
   }
   if (buf === '') {
     if (c >= '0' && c <= '9') {
-      st.pendingCount = st.pendingCount * 10 + (c.charCodeAt(0) - 48);
+      st.pendingCount = st.pendingCount * 10 + Number(c);
       exit(ctx);
       return;
     }

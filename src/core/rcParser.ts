@@ -84,11 +84,14 @@ function parseSet(c: Config, rest: string, err: (m: string) => void): void {
   } else parseSetColor(c, rest, err);
 }
 
-const COLOR_SET_KEYS = new Set([
-  'overlay-color',
-  'overlay-text-color',
-  'expand-hint-color',
-  'grab-color',
+type ColorField =
+  'overlayColor' | 'overlayTextColor' | 'expandHintColor' | 'grabColor';
+
+const COLOR_SET_FIELDS = new Map<string, ColorField>([
+  ['overlay-color', 'overlayColor'],
+  ['overlay-text-color', 'overlayTextColor'],
+  ['expand-hint-color', 'expandHintColor'],
+  ['grab-color', 'grabColor'],
 ]);
 
 const HEX_COLOR_RE = /^[0-9a-fA-F]{6}$/;
@@ -98,29 +101,21 @@ function parseSetColor(
   rest: string,
   err: (m: string) => void,
 ): void {
-  const eq = rest.indexOf('=');
-  const key = (eq >= 0 ? rest.slice(0, eq) : rest).trim();
-  if (!COLOR_SET_KEYS.has(key)) return;
-  const raw = eq >= 0 ? rest.slice(eq + 1).trim() : '';
-  const color = parseHexColor(raw);
+  const { key, value } = splitSetOption(rest);
+  const field = COLOR_SET_FIELDS.get(key);
+  if (field === undefined) return;
+  const color = parseHexColor(value);
   if (color === null) {
-    err(`set ${key}: invalid color '${raw}' (expected #RRGGBB)`);
+    err(`set ${key}: invalid color '${value}' (expected #RRGGBB)`);
     return;
   }
-  switch (key) {
-    case 'overlay-color':
-      c.overlayColor = color;
-      break;
-    case 'overlay-text-color':
-      c.overlayTextColor = color;
-      break;
-    case 'expand-hint-color':
-      c.expandHintColor = color;
-      break;
-    case 'grab-color':
-      c.grabColor = color;
-      break;
-  }
+  c[field] = color;
+}
+
+function splitSetOption(rest: string): { key: string; value: string } {
+  const eq = rest.indexOf('=');
+  if (eq < 0) return { key: rest.trim(), value: '' };
+  return { key: rest.slice(0, eq).trim(), value: rest.slice(eq + 1).trim() };
 }
 
 function parseHexColor(text: string): string | null {

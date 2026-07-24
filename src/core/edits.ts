@@ -55,22 +55,16 @@ export const commands: Map<string, MeowCommand> = new Map([
 
 type CaseOp = 'upcase' | 'downcase' | 'capitalize';
 
-async function editCarets(
-  ctx: Ctx,
-  compute: (
-    sel: SelRange,
-    lo: number,
-    hi: number,
-  ) => { edit: TextEdit | null; sel: SelRange },
-): Promise<void> {
+type CaretEdit = { edit: TextEdit | null; sel: SelRange };
+type CaretCompute = (sel: SelRange, lo: number, hi: number) => CaretEdit;
+
+async function editCarets(ctx: Ctx, compute: CaretCompute): Promise<void> {
   const sels = ctx.port.getSelections();
   const order = sels
     .map((sel, index) => ({ sel, index, lo: Math.min(sel.anchor, sel.active) }))
     .sort((a, b) => b.lo - a.lo);
   const edits: TextEdit[] = [];
-  const results = new Array<{ edit: TextEdit | null; sel: SelRange }>(
-    sels.length,
-  );
+  const results = new Array<CaretEdit>(sels.length);
   for (const item of order) {
     const hi = Math.max(item.sel.anchor, item.sel.active);
     const r = compute(item.sel, item.lo, hi);
@@ -140,33 +134,8 @@ async function openAbove(ctx: Ctx): Promise<void> {
   setMode(ctx, MeowMode.INSERT);
 }
 
-async function change(ctx: Ctx): Promise<void> {
-  if (!allowModify(ctx)) return;
-  const text = ctx.port.getText();
-  const prim = Sel.primary(ctx);
-  if (!Sel.hasSelection(prim) && prim.active >= text.length) return;
-  await editCarets(ctx, (_sel, lo, hi) => {
-    if (lo !== hi)
-      return {
-        edit: { start: lo, end: hi, text: '' },
-        sel: { anchor: lo, active: lo },
-      };
-    if (lo < text.length) {
-      return {
-        edit: { start: lo, end: lo + 1, text: '' },
-        sel: { anchor: lo, active: lo },
-      };
-    }
-    return { edit: null, sel: { anchor: lo, active: lo } };
-  });
-  ctx.st.selType = SelType.NONE;
-  setMode(ctx, MeowMode.INSERT);
-}
-
-async function del(ctx: Ctx): Promise<void> {
-  if (blockedReadOnly(ctx)) return;
-  const text = ctx.port.getText();
-  await editCarets(ctx, (_sel, lo, hi) => {
+function deleteForwardEdit(text: string): CaretCompute {
+  return (_sel, lo, hi) => {
     if (lo !== hi)
       return {
         edit: { start: lo, end: hi, text: '' },
@@ -178,7 +147,23 @@ async function del(ctx: Ctx): Promise<void> {
         sel: { anchor: lo, active: lo },
       };
     return { edit: null, sel: { anchor: lo, active: lo } };
-  });
+  };
+}
+
+async function change(ctx: Ctx): Promise<void> {
+  if (!allowModify(ctx)) return;
+  const text = ctx.port.getText();
+  const prim = Sel.primary(ctx);
+  if (!Sel.hasSelection(prim) && prim.active >= text.length) return;
+  await editCarets(ctx, deleteForwardEdit(text));
+  ctx.st.selType = SelType.NONE;
+  setMode(ctx, MeowMode.INSERT);
+}
+
+async function del(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
+  const text = ctx.port.getText();
+  await editCarets(ctx, deleteForwardEdit(text));
   ctx.st.selType = SelType.NONE;
 }
 
