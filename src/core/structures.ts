@@ -87,14 +87,18 @@ function enclosingPair(text: string, s: number, e: number): PairRange | null {
   let best: PairRange | null = null;
   let i = 0;
   while (i < text.length) {
-    const c = text[i];
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === '`') {
       let j = i + 1;
-      while (j < text.length && text[j] !== c && text[j] !== '\n') {
-        if (text[j] === '\\') j++;
+      while (
+        j < text.length &&
+        text.charAt(j) !== c &&
+        text.charAt(j) !== '\n'
+      ) {
+        if (text.charAt(j) === '\\') j++;
         j++;
       }
-      if (j < text.length && text[j] === c) {
+      if (j < text.length && text.charAt(j) === c) {
         i = j + 1;
         continue;
       }
@@ -103,9 +107,8 @@ function enclosingPair(text: string, s: number, e: number): PairRange | null {
       stack.push(i);
     } else if (closes.includes(c)) {
       const kind = closes.indexOf(c);
-      while (stack.length > 0) {
-        const o = stack.pop()!;
-        if (opens.indexOf(text[o]) === kind) {
+      for (let o = stack.pop(); o !== undefined; o = stack.pop()) {
+        if (opens.indexOf(text.charAt(o)) === kind) {
           if (
             o < s &&
             i + 1 >= e &&
@@ -155,7 +158,7 @@ function toBlock(ctx: Ctx): void {
 function firstNonBlankOffset(text: string, line: number): number {
   let p = lineStart(text, line);
   const eol = lineEnd(text, line);
-  while (p < eol && /\s/.test(text[p])) p++;
+  while (p < eol && /\s/.test(text.charAt(p))) p++;
   return p;
 }
 

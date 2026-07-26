@@ -15,7 +15,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { Ctx, SelRange } from './port';
+import { Ctx, SelRange, selections } from './port';
 import { Pending, SelType } from './state';
 import {
   charPred,
@@ -213,17 +213,20 @@ function moveExpand(ctx: Ctx, dx: number, dy: number): void {
   const goal = dy !== 0 ? goalColumn(ctx) : null;
   const sels = ctx.port.getSelections();
   const before = sels[0].active;
-  const moved = sels.map((s, i) =>
-    dy === 0
-      ? movedChar(text.length, s, dx, true)
-      : movedLine(text, s, dy, true, i === 0 ? goal : null),
+  const moved = selections(
+    sels.map((s, i) =>
+      dy === 0
+        ? movedChar(text.length, s, dx, true)
+        : movedLine(text, s, dy, true, i === 0 ? goal : null),
+    ),
   );
   ctx.port.setSelections(moved);
+  const [movedPrimary] = moved;
   Sel.recordSelect(
     ctx,
     SelType.CHAR,
-    moved[0].anchor,
-    moved[0].active,
+    movedPrimary.anchor,
+    movedPrimary.active,
     true,
     before,
   );
@@ -246,13 +249,23 @@ function moveToOrExpand(ctx: Ctx, type: SelType, target: OffsetTarget): void {
   const text = ctx.port.getText();
   const extend = Sel.hasSelection(Sel.primary(ctx));
   const before = Sel.primary(ctx).active;
-  const moved = ctx.port.getSelections().map((s) => {
-    const active = clamp(target(text, s.active), 0, text.length);
-    return { anchor: extend ? s.anchor : active, active };
-  });
+  const moved = selections(
+    ctx.port.getSelections().map((s) => {
+      const active = clamp(target(text, s.active), 0, text.length);
+      return { anchor: extend ? s.anchor : active, active };
+    }),
+  );
   ctx.port.setSelections(moved);
+  const [movedPrimary] = moved;
   if (extend) {
-    Sel.recordSelect(ctx, type, moved[0].anchor, moved[0].active, true, before);
+    Sel.recordSelect(
+      ctx,
+      type,
+      movedPrimary.anchor,
+      movedPrimary.active,
+      true,
+      before,
+    );
     ctx.st.selType = type;
     ctx.st.selExpand = true;
     Grab.beacon(ctx);

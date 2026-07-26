@@ -16,8 +16,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import assert from 'node:assert/strict';
-import { beforeEach, describe, it } from 'node:test';
+import { beforeEach } from 'node:test';
 import { onEscape, reset, TIMEOUT_MS } from '../core/toolWindowEscape';
+import { describe, it } from './helpers';
 
 describe('ToolWindowEscapeSpec', () => {
   beforeEach(() => reset());

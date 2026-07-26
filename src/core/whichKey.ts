@@ -37,7 +37,7 @@ export function keypadRows(buffer: string): Array<[string, string]> {
   const rows = new Map<string, string>();
   for (const [seq, b] of Rc.keypad()) {
     if (!seq.startsWith(buffer) || seq === buffer) continue;
-    const child = buffer + seq[buffer.length];
+    const child = buffer + seq.charAt(buffer.length);
     const label =
       seq === child
         ? (descs.get(seq) ?? b.action ?? b.command ?? b.keys ?? '')
@@ -47,7 +47,7 @@ export function keypadRows(buffer: string): Array<[string, string]> {
   return [...rows.entries()]
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([child, label]) => {
-      const key = child[child.length - 1];
+      const key = child.charAt(child.length - 1);
       return [key === ' ' ? 'SPC' : key, label];
     });
 }

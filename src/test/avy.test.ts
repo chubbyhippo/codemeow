@@ -3,8 +3,7 @@
 // (see LICENSE for the full GPL-3.0-or-later text)
 
 import { strict as assert } from 'node:assert';
-import { describe, it } from 'node:test';
-import { freshSpec, Spec } from './helpers';
+import { describe, freshSpec, it, Spec } from './helpers';
 import * as Avy from '../core/avy';
 import { MeowMode } from '../core/state';
 

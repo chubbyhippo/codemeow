@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // (see LICENSE for the full GPL-3.0-or-later text)
 
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { Rc } from '../core/rc';
 import * as TreeMeow from '../core/treeMeow';
 import { TREE_KEYS, treeKeybindings } from '../vscode/treeKeys';
-import { freshSpec } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 
 describe('TreeMeowSpec', () => {
   class TreeNode {
@@ -33,15 +32,15 @@ describe('TreeMeowSpec', () => {
     focus = this.root;
     ran: string[] = [];
 
-    run = async (id: string): Promise<void> => {
+    run = (id: string): void => {
       const rows = this.visibleRows();
       const at = rows.indexOf(this.focus);
       switch (id) {
         case 'list.focusDown':
-          this.focus = rows[Math.min(at + 1, rows.length - 1)];
+          this.focus = rows[Math.min(at + 1, rows.length - 1)] ?? this.focus;
           break;
         case 'list.focusUp':
-          this.focus = rows[Math.max(at - 1, 0)];
+          this.focus = rows[Math.max(at - 1, 0)] ?? this.focus;
           break;
         case 'list.collapse':
           if (this.focus.expanded) this.focus.expanded = false;
@@ -51,7 +50,7 @@ describe('TreeMeowSpec', () => {
           if (this.focus.children.length > 0 && !this.focus.expanded)
             this.focus.expanded = true;
           else if (this.focus.children.length > 0)
-            this.focus = this.focus.children[0];
+            this.focus = this.focus.children[0] ?? this.focus;
           break;
         default:
           this.ran.push(id);

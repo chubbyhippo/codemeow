@@ -2,11 +2,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // (see LICENSE for the full GPL-3.0-or-later text)
 
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
-import { freshSpec } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 import { Rc } from '../core/rc';
 import { RcState } from '../core/rcState';
 import { keypadRows } from '../core/whichKey';
@@ -54,7 +53,7 @@ describe('RcSpec', () => {
   it('given an unknown meow command then an error is collected', () => {
     const c = Rc.parse(['nmap Z meow-frobnicate']);
     assert.equal(c.errors.length, 1);
-    assert.ok(c.errors[0].includes('meow-frobnicate'));
+    assert.ok(c.errors[0]?.includes('meow-frobnicate'));
   });
 
   it('given a cmap or cnoremap line then the rc loads it without error', () => {
@@ -83,7 +82,7 @@ describe('RcSpec', () => {
         menus: Record<string, { command: string; when: string }[]>;
       };
     };
-    const item = manifest.contributes.menus['editor/title'].find(
+    const item = (manifest.contributes.menus['editor/title'] ?? []).find(
       (m) => m.command === 'codemeow.reloadRc',
     );
     assert.ok(item, 'editor/title must carry the reload button');
@@ -167,7 +166,7 @@ describe('RcSpec', () => {
     assert.equal(c.overlayColor, null);
     assert.equal(c.grabColor, null);
     assert.equal(c.errors.length, 2);
-    assert.ok(c.errors[0].includes('overlay-color'));
+    assert.ok(c.errors[0]?.includes('overlay-color'));
   });
 
   it('given an unknown set color option then it is ignored without error', () => {
@@ -237,7 +236,7 @@ describe('RcSpec', () => {
       'mmap <leader>x ,b',
     ]);
     assert.equal(c.errors.length, 5);
-    assert.ok(c.errors[0].startsWith('line 1'));
+    assert.ok(c.errors[0]?.startsWith('line 1'));
   });
 
   it('given an rc key-sequence override then the key replays through the engine', async () => {

@@ -18,15 +18,15 @@
 export const LABEL_THRESHOLD = 2;
 
 export enum Plan {
-  None = 'none',
-  Other = 'other',
-  Labels = 'labels',
+  NONE = 'none',
+  OTHER = 'other',
+  LABELS = 'labels',
 }
 
 export function plan(windowCount: number): Plan {
-  if (windowCount <= 1) return Plan.None;
-  if (windowCount <= LABEL_THRESHOLD) return Plan.Other;
-  return Plan.Labels;
+  if (windowCount <= 1) return Plan.NONE;
+  if (windowCount <= LABEL_THRESHOLD) return Plan.OTHER;
+  return Plan.LABELS;
 }
 
 export function ordered<T>(

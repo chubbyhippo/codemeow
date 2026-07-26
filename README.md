@@ -140,7 +140,7 @@ cd codemeow
                             # VSCodium (Linux, macOS, WSL server, and Windows
                             # editors from WSL) and install ~/.codemeowrc
 ./setup.sh --list           # just show which extension dirs it would target
-npm test                    # compile + run the meow behavior suite
+npm test                    # typecheck + lint + format check + behavior suite
 ```
 
 The toolchain is pinned in `mise.toml` (node 24); `setup.sh` falls back to

@@ -2,14 +2,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // (see LICENSE for the full GPL-3.0-or-later text)
 
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as Ace from '../core/aceWindow';
 import { Rc } from '../core/rc';
 import { noWindowMessage, plan } from '../core/windmove';
-import { freshSpec } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 
 describe('WindmoveSpec', () => {
   const sideBySide = { sideBySide: true };
@@ -26,10 +25,10 @@ describe('WindmoveSpec', () => {
   });
 
   it('given one two or many windows then ace-window plans self other or labels', () => {
-    assert.equal(Ace.plan(1), Ace.Plan.None);
-    assert.equal(Ace.plan(2), Ace.Plan.Other);
-    assert.equal(Ace.plan(3), Ace.Plan.Labels);
-    assert.equal(Ace.plan(9), Ace.Plan.Labels);
+    assert.equal(Ace.plan(1), Ace.Plan.NONE);
+    assert.equal(Ace.plan(2), Ace.Plan.OTHER);
+    assert.equal(Ace.plan(3), Ace.Plan.LABELS);
+    assert.equal(Ace.plan(9), Ace.Plan.LABELS);
   });
 
   it('given a side-by-side diff then left from the modified pane crosses to the original', () => {

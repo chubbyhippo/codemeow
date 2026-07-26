@@ -22,6 +22,13 @@ export interface SelRange {
   active: number;
 }
 
+export type Selections = [SelRange, ...SelRange[]];
+
+export function selections(sels: SelRange[]): Selections {
+  const [first, ...rest] = sels;
+  return first === undefined ? [{ anchor: 0, active: 0 }] : [first, ...rest];
+}
+
 export interface TextEdit {
   start: number;
   end: number;
@@ -30,7 +37,7 @@ export interface TextEdit {
 
 export interface EditorPort {
   getText(): string;
-  getSelections(): SelRange[];
+  getSelections(): Selections;
   setSelections(sels: SelRange[]): void;
   edit(edits: TextEdit[]): Promise<void>;
   isWritable(): boolean;

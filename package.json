@@ -879,10 +879,12 @@
     ]
   },
   "scripts": {
-    "compile": "tsc -p ./",
+    "compile": "tsc -p ./ && npm run --silent lint && npm run --silent format:check",
     "watch": "tsc -w -p ./",
     "test": "npm run compile && node --test \"out/test/*.test.js\"",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
     "package": "npm run compile && npx --yes @vscode/vsce package --no-dependencies"
   },
   "devDependencies": {
@@ -890,6 +892,7 @@
     "@types/node": "^20.14.0",
     "@types/vscode": "^1.90.0",
     "eslint": "^10.7.0",
+    "prettier": "3.9.4",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.63.0"
   }

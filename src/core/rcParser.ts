@@ -31,7 +31,8 @@ export function parse(lines: string[]): Config {
 
     const wk = WHICHKEY_LET_RE.exec(line);
     if (wk) {
-      parseDescBody(c, wk[1], err);
+      const [, descBody = ''] = wk;
+      parseDescBody(c, descBody, err);
       return;
     }
 
@@ -39,9 +40,7 @@ export function parse(lines: string[]): Config {
     if (cut >= 0) line = line.slice(0, cut).trimEnd();
     if (line === '') return;
 
-    const m = /^(\S+)(?:\s+(.*))?$/.exec(line)!;
-    const cmd = m[1];
-    const rest = (m[2] ?? '').trim();
+    const [cmd, rest] = splitFirstWord(line);
     switch (cmd) {
       case 'let':
       case 'cmap':
@@ -71,6 +70,12 @@ export function parse(lines: string[]): Config {
   return c;
 }
 
+function splitFirstWord(line: string): [string, string] {
+  const gap = line.search(/\s/);
+  if (gap < 0) return [line, ''];
+  return [line.slice(0, gap), line.slice(gap).trim()];
+}
+
 function parseSet(c: Config, rest: string, err: (m: string) => void): void {
   if (rest === 'which-key') c.whichKey = true;
   else if (rest === 'nowhich-key') c.whichKey = false;
@@ -79,7 +84,7 @@ function parseSet(c: Config, rest: string, err: (m: string) => void): void {
       ? rest.slice(rest.indexOf('=') + 1).trim()
       : '';
     const n =
-      eq !== '' ? parseInt(eq, 10) : parseInt(rest.split(/\s+/)[1] ?? '', 10);
+      eq !== '' ? parseInt(eq, 10) : parseInt(splitFirstWord(rest)[1], 10);
     if (!Number.isNaN(n) && n >= 0) c.whichKeyDelayMs = n;
   } else parseSetColor(c, rest, err);
 }
@@ -134,7 +139,7 @@ function parseDescBody(
     return;
   }
   const after = body.slice('<leader>'.length);
-  const seqToken = after.split(/\s/)[0];
+  const [seqToken] = splitFirstWord(after);
   const desc = after.slice(seqToken.length).trim();
   const seq = parseKeys(seqToken, err);
   if (seq === null) return;
@@ -156,8 +161,8 @@ function parseMap(
     err(`${cmd} needs a key and a target`);
     return;
   }
-  const lhs = m[1];
-  const rhs = m[2].trim();
+  const [, lhs = '', rhsRaw = ''] = m;
+  const rhs = rhsRaw.trim();
   const recursive = cmd === 'map' || cmd === 'nmap' || cmd === 'mmap';
   const motion = cmd === 'mmap' || cmd === 'mnoremap';
 
@@ -172,9 +177,9 @@ function parseMap(
     const seq = parseKeys(lhs.slice('<leader>'.length), err);
     if (seq === null) return;
     if (seq === '') err('<leader> alone cannot be mapped');
-    else if ('0123456789?/'.includes(seq[0])) {
+    else if ('0123456789?/'.includes(seq.charAt(0))) {
       err(
-        `keypad ${seq[0]} is reserved (digit argument / cheatsheet / describe)`,
+        `keypad ${seq.charAt(0)} is reserved (digit argument / cheatsheet / describe)`,
       );
     } else c.keypad.set(seq, binding);
     return;
@@ -221,8 +226,7 @@ function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
     err('repeat needs a group, a member key and a target');
     return;
   }
-  const group = m[1];
-  const keyToken = m[2];
+  const [, group = '', keyToken = '', targetToken = ''] = m;
   const key = parseKeys(keyToken, err);
   if (key === null) return;
   if (key.length !== 1) {
@@ -230,7 +234,12 @@ function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
   } else if (key === ' ') {
     err('SPC is the keypad key and cannot be a repeat member');
   } else {
-    const binding = parseTarget(m[3].trim(), true, `repeat ${rest}`, err);
+    const binding = parseTarget(
+      targetToken.trim(),
+      true,
+      `repeat ${rest}`,
+      err,
+    );
     if (binding === null) return;
     let members = c.repeat.get(group);
     if (!members) {
@@ -245,7 +254,7 @@ function parseKeys(s: string, err: (m: string) => void): string | null {
   let out = '';
   let i = 0;
   while (i < s.length) {
-    const ch = s[i];
+    const ch = s.charAt(i);
     if (ch === '<') {
       const close = s.indexOf('>', i);
       if (close < 0) {

@@ -138,8 +138,10 @@ export function resetSelectionMemory(st: MeowState): void {
 }
 
 export function collapse(ctx: Ctx): void {
-  const sels = ctx.port.getSelections().slice();
-  sels[0] = { anchor: sels[0].active, active: sels[0].active };
+  const current = ctx.port.getSelections();
+  const caret = current[0].active;
+  const sels: SelRange[] = [...current];
+  sels[0] = { anchor: caret, active: caret };
   ctx.port.setSelections(sels);
   ctx.st.selType = SelType.NONE;
   ctx.st.selExpand = false;

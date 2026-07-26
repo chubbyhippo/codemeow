@@ -2,10 +2,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // (see LICENSE for the full GPL-3.0-or-later text)
 
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
 import * as Engine from '../core/engine';
-import { freshSpec } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 import { MeowMode } from '../core/state';
 
 describe('EditingSpec', () => {

@@ -88,7 +88,7 @@ function pair(
   let depth = 0;
   let start = -1;
   for (let i = offset - 1; i >= 0; i--) {
-    const c = text[i];
+    const c = text.charAt(i);
     if (c === close) depth++;
     else if (c === open) {
       if (depth === 0) {
@@ -102,7 +102,7 @@ function pair(
   depth = 0;
   let end = -1;
   for (let j = offset; j < text.length; j++) {
-    const c = text[j];
+    const c = text.charAt(j);
     if (c === open && j !== start) depth++;
     else if (c === close) {
       if (depth === 0) {
@@ -124,22 +124,23 @@ function stringThing(
   const n = text.length;
   let i = 0;
   while (i < n) {
-    const c = text[i];
+    const c = text.charAt(i);
     if (c === '"' || c === "'" || c === '`') {
-      const triple = i + 2 < n && text[i + 1] === c && text[i + 2] === c;
+      const triple =
+        i + 2 < n && text.charAt(i + 1) === c && text.charAt(i + 2) === c;
       const len = triple ? 3 : 1;
       const open = i;
       let j = i + len;
       let closeEnd = -1;
       while (j < n) {
-        const d = text[j];
+        const d = text.charAt(j);
         if (!triple && d === '\n') break;
         if (d === '\\') {
           j += 2;
           continue;
         }
         const closes = triple
-          ? j + 2 < n && text[j + 1] === c && text[j + 2] === c
+          ? j + 2 < n && text.charAt(j + 1) === c && text.charAt(j + 2) === c
           : true;
         if (d === c && closes) {
           closeEnd = j + len;
@@ -166,14 +167,14 @@ function stringThing(
 
 function symbol(text: string, offset: number): Bounds | null {
   let o = offset;
-  if (o >= text.length || !isSymbolChar(text[o])) {
-    if (o > 0 && isSymbolChar(text[o - 1])) o--;
+  if (o >= text.length || !isSymbolChar(text.charAt(o))) {
+    if (o > 0 && isSymbolChar(text.charAt(o - 1))) o--;
     else return null;
   }
   let s = o;
   let e = o;
-  while (s > 0 && isSymbolChar(text[s - 1])) s--;
-  while (e < text.length && isSymbolChar(text[e])) e++;
+  while (s > 0 && isSymbolChar(text.charAt(s - 1))) s--;
+  while (e < text.length && isSymbolChar(text.charAt(e))) e++;
   return { start: s, end: e };
 }
 
@@ -241,26 +242,30 @@ function sentence(text: string, offset: number, inner: boolean): Bounds | null {
   if (text.length === 0) return null;
   let s = clamp(offset, 0, text.length - 1);
   while (s > 0) {
-    const c = text[s - 1];
+    const c = text.charAt(s - 1);
     if (
       SENTENCE_ENDERS.includes(c) ||
-      (c === '\n' && s > 1 && text[s - 2] === '\n')
+      (c === '\n' && s > 1 && text.charAt(s - 2) === '\n')
     )
       break;
     s--;
   }
-  while (s < text.length && /\s/.test(text[s])) s++;
+  while (s < text.length && /\s/.test(text.charAt(s))) s++;
   let e = clamp(offset, 0, text.length);
   while (
     e < text.length &&
-    !SENTENCE_ENDERS.includes(text[e]) &&
-    !(text[e] === '\n' && e + 1 < text.length && text[e + 1] === '\n')
+    !SENTENCE_ENDERS.includes(text.charAt(e)) &&
+    !(
+      text.charAt(e) === '\n' &&
+      e + 1 < text.length &&
+      text.charAt(e + 1) === '\n'
+    )
   )
     e++;
-  if (e < text.length && SENTENCE_ENDERS.includes(text[e])) e++;
+  if (e < text.length && SENTENCE_ENDERS.includes(text.charAt(e))) e++;
   if (e <= s) return null;
   if (inner) return { start: s, end: e };
   let be = e;
-  while (be < text.length && text[be] === ' ') be++;
+  while (be < text.length && text.charAt(be) === ' ') be++;
   return { start: s, end: be };
 }

@@ -26,13 +26,13 @@ export function escapeRegExp(s: string): string {
 export function lineOfOffset(text: string, offset: number): number {
   let ln = 0;
   const end = clamp(offset, 0, text.length);
-  for (let i = 0; i < end; i++) if (text[i] === '\n') ln++;
+  for (let i = 0; i < end; i++) if (text.charAt(i) === '\n') ln++;
   return ln;
 }
 
 export function lineCount(text: string): number {
   let n = 1;
-  for (let i = 0; i < text.length; i++) if (text[i] === '\n') n++;
+  for (let i = 0; i < text.length; i++) if (text.charAt(i) === '\n') n++;
   return n;
 }
 
@@ -40,7 +40,7 @@ export function lineStart(text: string, line: number): number {
   if (line <= 0) return 0;
   let ln = 0;
   for (let i = 0; i < text.length; i++) {
-    if (text[i] === '\n' && ++ln === line) return i + 1;
+    if (text.charAt(i) === '\n' && ++ln === line) return i + 1;
   }
   return text.length;
 }
@@ -49,7 +49,7 @@ export function lineEnd(text: string, line: number): number {
   const s = lineStart(text, line);
   const nl = text.indexOf('\n', s);
   if (nl < 0) return text.length;
-  return nl > s && text[nl - 1] === '\r' ? nl - 1 : nl;
+  return nl > s && text.charAt(nl - 1) === '\r' ? nl - 1 : nl;
 }
 
 export function isBlankLine(text: string, line: number): boolean {
@@ -70,13 +70,13 @@ export function charPred(symbol: boolean): (c: string) => boolean {
 
 function indexOfChar(text: string, c: string, from: number): number {
   for (let i = Math.max(from, 0); i < text.length; i++)
-    if (text[i] === c) return i;
+    if (text.charAt(i) === c) return i;
   return -1;
 }
 
 function lastIndexOfChar(text: string, c: string, from: number): number {
   for (let i = Math.min(from, text.length - 1); i >= 0; i--)
-    if (text[i] === c) return i;
+    if (text.charAt(i) === c) return i;
   return -1;
 }
 
@@ -113,9 +113,9 @@ export const SENTENCE_ENDERS = '.!?';
 export function nextSentenceEnd(text: string, from: number, n: number): number {
   let i = clamp(from, 0, text.length);
   for (let k = 0; k < n; k++) {
-    while (i < text.length && !SENTENCE_ENDERS.includes(text[i])) i++;
-    while (i < text.length && SENTENCE_ENDERS.includes(text[i])) i++;
-    while (i < text.length && /\s/.test(text[i])) i++;
+    while (i < text.length && !SENTENCE_ENDERS.includes(text.charAt(i))) i++;
+    while (i < text.length && SENTENCE_ENDERS.includes(text.charAt(i))) i++;
+    while (i < text.length && /\s/.test(text.charAt(i))) i++;
   }
   return i;
 }
@@ -128,28 +128,28 @@ export function prevSentenceStart(
   const isGap = (c: string) => /\s/.test(c) || SENTENCE_ENDERS.includes(c);
   let i = clamp(from, 0, text.length);
   for (let k = 0; k < n; k++) {
-    while (i > 0 && isGap(text[i - 1])) i--;
-    while (i > 0 && !isGap(text[i - 1])) i--;
+    while (i > 0 && isGap(text.charAt(i - 1))) i--;
+    while (i > 0 && !isGap(text.charAt(i - 1))) i--;
   }
   return i;
 }
 
 function lineStartAt(text: string, offset: number): number {
   let i = offset;
-  while (i > 0 && text[i - 1] !== '\n') i--;
+  while (i > 0 && text.charAt(i - 1) !== '\n') i--;
   return i;
 }
 
 function followingLineStart(text: string, bol: number): number {
   let i = bol;
-  while (i < text.length && text[i] !== '\n') i++;
+  while (i < text.length && text.charAt(i) !== '\n') i++;
   return i < text.length ? i + 1 : i;
 }
 
 function blankLineAt(text: string, bol: number): boolean {
   let i = bol;
-  while (i < text.length && text[i] !== '\n') {
-    if (!/\s/.test(text[i])) return false;
+  while (i < text.length && text.charAt(i) !== '\n') {
+    if (!/\s/.test(text.charAt(i))) return false;
     i++;
   }
   return true;
@@ -193,7 +193,9 @@ function paragraphStartBefore(text: string, offset: number): number {
   while (i > 0 && !blankLineAt(text, lineStartAt(text, i - 1)))
     i = lineStartAt(text, i - 1);
   const prevLineEmpty =
-    i > 0 && text[i - 1] === '\n' && (i === 1 || text[i - 2] === '\n');
+    i > 0 &&
+    text.charAt(i - 1) === '\n' &&
+    (i === 1 || text.charAt(i - 2) === '\n');
   return prevLineEmpty ? i - 1 : i;
 }
 
@@ -206,8 +208,8 @@ export const Words = {
   ): number {
     let i = clamp(from, 0, text.length);
     for (let k = 0; k < n; k++) {
-      while (i < text.length && !pred(text[i])) i++;
-      while (i < text.length && pred(text[i])) i++;
+      while (i < text.length && !pred(text.charAt(i))) i++;
+      while (i < text.length && pred(text.charAt(i))) i++;
     }
     return i;
   },
@@ -220,8 +222,8 @@ export const Words = {
   ): number {
     let i = clamp(from, 0, text.length);
     for (let k = 0; k < n; k++) {
-      while (i > 0 && !pred(text[i - 1])) i--;
-      while (i > 0 && pred(text[i - 1])) i--;
+      while (i > 0 && !pred(text.charAt(i - 1))) i--;
+      while (i > 0 && pred(text.charAt(i - 1))) i--;
     }
     return i;
   },
@@ -248,20 +250,20 @@ export const Words = {
     pred: (c: string) => boolean,
   ): [number, number] | null {
     let o = offset;
-    if (o >= text.length || !pred(text[o])) {
-      if (o > 0 && pred(text[o - 1])) {
+    if (o >= text.length || !pred(text.charAt(o))) {
+      if (o > 0 && pred(text.charAt(o - 1))) {
         o--;
       } else {
         let f = o;
-        while (f < text.length && !pred(text[f])) f++;
+        while (f < text.length && !pred(text.charAt(f))) f++;
         if (f >= text.length) return null;
         o = f;
       }
     }
     let s = o;
     let e = o;
-    while (s > 0 && pred(text[s - 1])) s--;
-    while (e < text.length && pred(text[e])) e++;
+    while (s > 0 && pred(text.charAt(s - 1))) s--;
+    while (e < text.length && pred(text.charAt(e))) e++;
     return [s, e];
   },
 };

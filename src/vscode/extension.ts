@@ -117,7 +117,11 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
     },
 
     input: (prompt, initial) =>
-      Promise.resolve(vscode.window.showInputBox({ prompt, value: initial })),
+      Promise.resolve(
+        vscode.window.showInputBox(
+          initial === undefined ? { prompt } : { prompt, value: initial },
+        ),
+      ),
 
     runCommand: async (id) => {
       await vscode.commands.executeCommand(id);
@@ -297,7 +301,8 @@ function fillWhichKeyMenu(
     description: `→ ${d}`,
     meowKey: k === 'SPC' ? ' ' : k,
   }));
-  qp.activeItems = qp.items.length > 0 ? [qp.items[0]] : [];
+  const [firstRow] = qp.items;
+  qp.activeItems = firstRow ? [firstRow] : [];
 }
 
 function dispatchMenuKeys(
@@ -440,20 +445,22 @@ async function aceWindow(): Promise<void> {
     })),
   );
   const decision = Ace.plan(groups.length);
-  if (decision === Ace.Plan.None) return;
-  if (decision === Ace.Plan.Other) {
+  if (decision === Ace.Plan.NONE) return;
+  if (decision === Ace.Plan.OTHER) {
     await vscode.commands.executeCommand('workbench.action.focusNextGroup');
     return;
   }
   const byKey = new Map<string, string>();
   const labeled: [vscode.TextEditor, vscode.DecorationOptions][] = [];
-  groups.slice(0, ACE_FOCUS_GROUP_COMMANDS.length).forEach((group, i) => {
+  ACE_FOCUS_GROUP_COMMANDS.forEach((focusGroup, i) => {
+    const group = groups[i];
+    if (!group) return;
     const editor = vscode.window.visibleTextEditors.find(
       (e) => e.viewColumn === group.viewColumn,
     );
     if (!editor) return;
-    const key = ACE_KEYS[i];
-    byKey.set(key, ACE_FOCUS_GROUP_COMMANDS[i]);
+    const key = ACE_KEYS.charAt(i);
+    byKey.set(key, focusGroup);
     const pos = editor.visibleRanges[0]?.start ?? new vscode.Position(0, 0);
     labeled.push([
       editor,
@@ -625,15 +632,13 @@ export function activate(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
       vscode.commands.registerCommand(
         'type',
-        async (args: { text?: string }) => {
+        async (args: { text?: string }): Promise<void> => {
           const editor = vscode.window.activeTextEditor;
           const text = args?.text ?? '';
-          if (!editor || text === '') {
-            return vscode.commands.executeCommand('default:type', args);
-          }
-          const st = stateFor(editor);
-          if (!st || st.mode === MeowMode.INSERT) {
-            return vscode.commands.executeCommand('default:type', args);
+          const st = editor && text !== '' ? stateFor(editor) : undefined;
+          if (!editor || !st || st.mode === MeowMode.INSERT) {
+            await vscode.commands.executeCommand('default:type', args);
+            return;
           }
           const ctx = makeCtx(editor, st);
           for (const ch of text) {
@@ -746,23 +751,23 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.registerCommand(
       'codemeow.toolWindowEscape',
-      (surface: unknown) => {
+      async (surface: unknown): Promise<void> => {
         if (typeof surface !== 'string') return;
         if (ToolWindowEscape.onEscape(surface, Date.now())) {
-          return vscode.commands.executeCommand(
+          await vscode.commands.executeCommand(
             'workbench.action.focusActiveEditorGroup',
           );
+          return;
         }
         if (surface === 'terminal') {
-          return vscode.commands.executeCommand(
+          await vscode.commands.executeCommand(
             'workbench.action.terminal.sendSequence',
-            {
-              text: ESC_SEQUENCE,
-            },
+            { text: ESC_SEQUENCE },
           );
+          return;
         }
         if (surface === 'list') {
-          return vscode.commands.executeCommand('list.clear');
+          await vscode.commands.executeCommand('list.clear');
         }
       },
     ),

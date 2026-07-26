@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // (see LICENSE for the full GPL-3.0-or-later text)
 
-import { describe, it } from 'node:test';
-import { freshSpec } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 import { SelType } from '../core/state';
 
 describe('ThingsSpec', () => {

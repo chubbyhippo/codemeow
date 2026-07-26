@@ -54,12 +54,23 @@ export function subdiv(n: number, b: number): number[] {
   ];
 }
 
+function onlyCandidate(candidates: number[]): number | null {
+  const [first, ...rest] = candidates;
+  return first !== undefined && rest.length === 0 ? first : null;
+}
+
+function leafOrTree(candidates: number[], keys: string): AvyNode {
+  const only = onlyCandidate(candidates);
+  if (only === null) return tree(candidates, keys);
+  return { kind: 'leaf', offset: only };
+}
+
 function tree(candidates: number[], keys: string = KEYS): Branch {
   if (candidates.length < keys.length) {
     return {
       kind: 'branch',
       children: candidates.map((offset, i) => [
-        keys[i],
+        keys.charAt(i),
         { kind: 'leaf', offset },
       ]),
     };
@@ -69,10 +80,7 @@ function tree(candidates: number[], keys: string = KEYS): Branch {
   subdiv(candidates.length, keys.length).forEach((size, i) => {
     const taken = rest.slice(0, size);
     rest = rest.slice(size);
-    children.push([
-      keys[i],
-      size === 1 ? { kind: 'leaf', offset: taken[0] } : tree(taken, keys),
-    ]);
+    children.push([keys.charAt(i), leafOrTree(taken, keys)]);
   });
   return { kind: 'branch', children };
 }
@@ -135,12 +143,13 @@ export function finishInput(ctx: Ctx): void {
   if (session.timer !== null) clearTimeout(session.timer);
   session.timer = null;
   const candidates = matches(ctx, session.input);
+  const only = onlyCandidate(candidates);
   if (candidates.length === 0) {
     cancel(ctx);
     ctx.ui.hint('zero candidates');
-  } else if (candidates.length === 1) {
+  } else if (only !== null) {
     cancel(ctx);
-    jump(ctx, candidates[0]);
+    jump(ctx, only);
   } else {
     toSelecting(ctx, session, candidates);
   }
@@ -184,7 +193,7 @@ async function select(ctx: Ctx, session: AvySession, c: string): Promise<void> {
 }
 
 function jump(ctx: Ctx, offset: number): void {
-  const sel = ctx.port.getSelections()[0];
+  const [sel] = ctx.port.getSelections();
   if (sel.anchor !== sel.active) {
     ctx.port.setSelections([{ anchor: Sel.mark(ctx), active: offset }]);
   } else {

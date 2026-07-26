@@ -2,9 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // (see LICENSE for the full GPL-3.0-or-later text)
 
-import { describe, it } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { freshSpec } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 import * as Engine from '../core/engine';
 import { Rc } from '../core/rc';
 import { RcState } from '../core/rcState';
@@ -35,7 +34,7 @@ describe('RepeatSpec', () => {
   it('given a repeat line with a bad target then an error is collected', () => {
     const c = Rc.parse(['repeat nav . meow-frobnicate', 'repeat nav']);
     assert.equal(c.errors.length, 2);
-    assert.ok(c.errors[0].includes('meow-frobnicate'));
+    assert.ok(c.errors[0]?.includes('meow-frobnicate'));
   });
 
   it('given a repeat key that is not a single printable key then an error is collected', () => {

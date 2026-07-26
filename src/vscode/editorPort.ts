@@ -16,7 +16,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import * as vscode from 'vscode';
-import { ClipboardPort, EditorPort, SelRange, TextEdit } from '../core/port';
+import {
+  ClipboardPort,
+  EditorPort,
+  SelRange,
+  selections,
+  Selections,
+  TextEdit,
+} from '../core/port';
 import { isWritableScheme } from '../core/attachPolicy';
 
 export class VscEditorPort implements EditorPort {
@@ -30,11 +37,13 @@ export class VscEditorPort implements EditorPort {
     return this.doc.getText();
   }
 
-  getSelections(): SelRange[] {
-    return this.editor.selections.map((s) => ({
-      anchor: this.doc.offsetAt(s.anchor),
-      active: this.doc.offsetAt(s.active),
-    }));
+  getSelections(): Selections {
+    return selections(
+      this.editor.selections.map((s) => ({
+        anchor: this.doc.offsetAt(s.anchor),
+        active: this.doc.offsetAt(s.active),
+      })),
+    );
   }
 
   setSelections(sels: SelRange[]): void {
@@ -45,7 +54,8 @@ export class VscEditorPort implements EditorPort {
           this.doc.positionAt(s.active),
         ),
     );
-    const caret = this.doc.positionAt(sels[0].active);
+    const [primary] = selections(sels);
+    const caret = this.doc.positionAt(primary.active);
     this.editor.revealRange(
       new vscode.Range(caret, caret),
       vscode.TextEditorRevealType.Default,

@@ -69,10 +69,7 @@ function allMatches(text: string, pattern: string): Match[] {
 function search(ctx: Ctx): void {
   const st = ctx.st;
   const sel = Sel.primary(ctx);
-  let pattern =
-    st.searchHistory.length > 0
-      ? st.searchHistory[st.searchHistory.length - 1]
-      : null;
+  let pattern = st.searchHistory.at(-1) ?? null;
   if (Sel.hasSelection(sel)) {
     const selText = ctx.port.getText().slice(Sel.lo(sel), Sel.hi(sel));
     if (
@@ -113,10 +110,7 @@ function searchWith(ctx: Ctx, pattern: string, backward: boolean): void {
     m = matches.find((x) => x.start >= caret) ?? matches[0];
   } else {
     const before = matches.filter((x) => x.end <= caret);
-    m =
-      before.length > 0
-        ? before[before.length - 1]
-        : matches[matches.length - 1];
+    m = before.at(-1) ?? matches.at(-1);
   }
   if (!m) {
     ctx.ui.hint(`No match: ${pattern}`);
