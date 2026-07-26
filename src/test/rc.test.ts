@@ -177,7 +177,7 @@ describe('RcSpec', () => {
 
   it('overlay colors layer user over the bundled default', () => {
     const s = freshSpec();
-    assert.equal(Rc.overlayColor(), '#e52b50');
+    assert.equal(Rc.overlayColor(), '#2ecc71');
     s.givenRc('set overlay-color=#010203\nset grab-color=#040506');
     assert.equal(Rc.overlayColor(), '#010203');
     assert.equal(Rc.grabColor(), '#040506');

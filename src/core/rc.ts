@@ -42,7 +42,7 @@ export class Config {
 }
 
 const DEFAULT_WHICH_KEY_DELAY_MS = 250;
-const DEFAULT_OVERLAY_COLOR = '#e52b50';
+const DEFAULT_OVERLAY_COLOR = '#2ecc71';
 const DEFAULT_OVERLAY_TEXT_COLOR = '#ffffff';
 
 let userConfig = new Config();
