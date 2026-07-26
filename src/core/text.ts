@@ -267,3 +267,5 @@ export const Words = {
     return [s, e];
   },
 };
+
+export const isBlank = (ch: string): boolean => ch === ' ' || ch === '\t';

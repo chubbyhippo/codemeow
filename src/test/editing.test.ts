@@ -8,6 +8,30 @@ import { describe, freshSpec, it } from './helpers';
 import { MeowMode } from '../core/state';
 
 describe('EditingSpec', () => {
+  it('given a caret mid-line then open-line breaks the line and stays put', async () => {
+    const s = freshSpec();
+    s.given('one line', 'hel<caret>lo');
+    await s.whenCommand('open-line');
+    s.thenText('hel\nlo');
+    s.thenCaretAt(3);
+  });
+
+  it('given blanks around the caret then delete-horizontal-space removes them all', async () => {
+    const s = freshSpec();
+    s.given('spaced', 'a   <caret>   b');
+    await s.whenCommand('delete-horizontal-space');
+    s.thenText('ab');
+    s.thenCaretAt(1);
+  });
+
+  it('given blanks around the caret then just-one-space leaves exactly one', async () => {
+    const s = freshSpec();
+    s.given('spaced', 'a   <caret>   b');
+    await s.whenCommand('just-one-space');
+    s.thenText('a b');
+    s.thenCaretAt(2);
+  });
+
   it('given a selection when i then INSERT starts at the selection beginning', async () => {
     const s = freshSpec();
     s.given('word', '<caret>hello world');

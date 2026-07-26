@@ -8,6 +8,21 @@ import { Rc } from '../core/rc';
 import { MeowMode, SelType } from '../core/state';
 
 describe('EmacsMotionSpec', () => {
+  it('given an indented line then back-to-indentation lands on the first real char', async () => {
+    const s = freshSpec();
+    s.given('indented', '    hel<caret>lo');
+    await s.whenCommand('back-to-indentation');
+    s.thenCaretAt(4);
+  });
+
+  it('given a selection then back-to-indentation extends it like the other motions', async () => {
+    const s = freshSpec();
+    s.given('indented', '    hello world<caret>');
+    await s.whenKeys('w');
+    await s.whenCommand('back-to-indentation');
+    s.thenSelection('hello ');
+  });
+
   it('given no selection when forward-char then the caret moves right without selecting', async () => {
     const s = freshSpec();
     s.given('plain text', '<caret>hello');

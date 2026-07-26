@@ -18,7 +18,14 @@
 import { Ctx, SelRange, TextEdit } from './port';
 import { MeowMode, SelType } from './state';
 import { setMode } from './port';
-import { charPred, lineEnd, lineOfOffset, lineStart, Words } from './text';
+import {
+  Words,
+  charPred,
+  isBlank,
+  lineEnd,
+  lineOfOffset,
+  lineStart,
+} from './text';
 import { MeowCommand } from './command';
 import * as Sel from './selections';
 import * as Grab from './grab';
@@ -51,6 +58,9 @@ export const commands: Map<string, MeowCommand> = new Map([
   ['downcase-word', (ctx: Ctx) => caseWord(ctx, 'downcase')],
   ['capitalize-word', (ctx: Ctx) => caseWord(ctx, 'capitalize')],
   ['kill-word', (ctx: Ctx) => killWord(ctx)],
+  ['open-line', (ctx: Ctx) => openLine(ctx)],
+  ['delete-horizontal-space', (ctx: Ctx) => horizontalSpace(ctx, '')],
+  ['just-one-space', (ctx: Ctx) => horizontalSpace(ctx, ' ')],
 ]);
 
 type CaseOp = 'upcase' | 'downcase' | 'capitalize';
@@ -116,6 +126,33 @@ async function openBelow(ctx: Ctx): Promise<void> {
   await ctx.port.edit(edits);
   ctx.port.setSelections([{ anchor: eol + 1, active: eol + 1 }]);
   setMode(ctx, MeowMode.INSERT);
+}
+
+async function openLine(ctx: Ctx): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
+  Sel.collapse(ctx);
+  const at = Sel.primary(ctx).active;
+  const edits = [{ start: at, end: at, text: '\n' }];
+  Grab.adjustForEdits(ctx.st, edits);
+  await ctx.port.edit(edits);
+  ctx.port.setSelections([{ anchor: at, active: at }]);
+}
+
+async function horizontalSpace(ctx: Ctx, replacement: string): Promise<void> {
+  if (blockedReadOnly(ctx)) return;
+  Sel.collapse(ctx);
+  const text = ctx.port.getText();
+  const at = Sel.primary(ctx).active;
+  let from = at;
+  while (from > 0 && isBlank(text.charAt(from - 1))) from--;
+  let to = at;
+  while (to < text.length && isBlank(text.charAt(to))) to++;
+  if (from === to && replacement === '') return;
+  const edits = [{ start: from, end: to, text: replacement }];
+  Grab.adjustForEdits(ctx.st, edits);
+  await ctx.port.edit(edits);
+  const caret = from + replacement.length;
+  ctx.port.setSelections([{ anchor: caret, active: caret }]);
 }
 
 async function openAbove(ctx: Ctx): Promise<void> {
