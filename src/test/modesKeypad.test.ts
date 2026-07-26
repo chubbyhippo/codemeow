@@ -173,4 +173,12 @@ describe('ModesKeypadSpec', () => {
     s.pressEsc();
     assert.deepEqual(s.ui.modes, [MeowMode.INSERT, MeowMode.NORMAL]);
   });
+
+  it('given a selection in NORMAL when escape then it collapses to the caret', async () => {
+    const s = freshSpec();
+    s.given('plain text', '<caret>hello world');
+    await s.whenKeys('w');
+    assert.equal(s.pressEsc(), true);
+    s.thenNoSelection();
+  });
 });

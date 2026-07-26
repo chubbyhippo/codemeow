@@ -152,7 +152,7 @@ export function cancel(ctx: Ctx): void {
   resetSelectionMemory(ctx.st);
 }
 
-function cancelAll(ctx: Ctx): void {
+export function cancelAll(ctx: Ctx): void {
   const sels = ctx.port.getSelections();
   if (sels.length > 1) ctx.port.setSelections([sels[0]]);
   cancel(ctx);

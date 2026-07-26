@@ -20,6 +20,7 @@ import { MeowMode, Pending } from './state';
 import { COMMANDS } from './registry';
 import { Binding, Rc } from './rc';
 import * as Motions from './motions';
+import * as Sel from './selections';
 import * as Structures from './structures';
 import * as Keypad from './keypad';
 import * as Avy from './avy';
@@ -202,9 +203,8 @@ export function escapeKey(ctx: Ctx): boolean {
     return true;
   }
   const sels = ctx.port.getSelections();
-  if (sels.length > 1) {
-    const p = sels[0];
-    ctx.port.setSelections([{ anchor: p.active, active: p.active }]);
+  if (sels.length > 1 || Sel.hasSelection(sels[0])) {
+    Sel.cancelAll(ctx);
     ctx.ui.refresh(st);
     return true;
   }
