@@ -64,7 +64,7 @@ describe('RepeatSpec', () => {
     assert.equal(g.get('i')!.action, 'editor.action.fontZoomIn');
   });
 
-  it('the bundled default codemeowrc declares the init el repeat groups', () => {
+  it('the bundled rc declares the init el repeat groups', () => {
     freshSpec();
     const d = Rc.defaults().repeat;
     assert.equal(

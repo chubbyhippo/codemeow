@@ -193,7 +193,7 @@ describe('RcSpec', () => {
     assert.deepEqual(c.errors, []);
   });
 
-  it('the bundled default codemeowrc defines the whole keymap', () => {
+  it('the bundled rc defines the whole keymap', () => {
     freshSpec();
     const d = Rc.defaults();
     assert.deepEqual(d.errors, [], 'bundled default must parse clean');
