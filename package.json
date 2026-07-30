@@ -49,6 +49,11 @@
         "category": "codemeow"
       },
       {
+        "command": "codemeow.chord",
+        "title": "Emacs Chord",
+        "category": "codemeow"
+      },
+      {
         "command": "codemeow.windmoveLeft",
         "title": "Windmove Left",
         "category": "codemeow"
@@ -74,93 +79,8 @@
         "category": "codemeow"
       },
       {
-        "command": "codemeow.emacsForwardChar",
-        "title": "Emacs Forward Char",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsBackwardChar",
-        "title": "Emacs Backward Char",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsNextLine",
-        "title": "Emacs Next Line",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsPreviousLine",
-        "title": "Emacs Previous Line",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsBeginningOfLine",
-        "title": "Emacs Beginning Of Line",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsEndOfLine",
-        "title": "Emacs End Of Line",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsForwardWord",
-        "title": "Emacs Forward Word",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsBackwardWord",
-        "title": "Emacs Backward Word",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsBackwardSentence",
-        "title": "Emacs Backward Sentence",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsForwardSentence",
-        "title": "Emacs Forward Sentence",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsBeginningOfBuffer",
-        "title": "Emacs Beginning Of Buffer",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsEndOfBuffer",
-        "title": "Emacs End Of Buffer",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsBackwardParagraph",
-        "title": "Emacs Backward Paragraph",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsForwardParagraph",
-        "title": "Emacs Forward Paragraph",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsUpcaseWord",
-        "title": "Emacs Upcase Word",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsDowncaseWord",
-        "title": "Emacs Downcase Word",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsCapitalizeWord",
-        "title": "Emacs Capitalize Word",
-        "category": "codemeow"
-      },
-      {
-        "command": "codemeow.emacsKillWord",
-        "title": "Emacs Kill Word",
+        "command": "codemeow.aceClick",
+        "title": "Ace Click",
         "category": "codemeow"
       }
     ],
@@ -170,6 +90,12 @@
           "command": "codemeow.reloadRc",
           "when": "resourceFilename == .codemeowrc && codemeow.rcChanged",
           "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "codemeow.chord",
+          "when": "false"
         }
       ]
     },
@@ -205,96 +131,6 @@
         "when": "editorTextFocus && codemeow.active"
       },
       {
-        "key": "ctrl+f",
-        "command": "codemeow.emacsForwardChar",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "ctrl+b",
-        "command": "codemeow.emacsBackwardChar",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "ctrl+n",
-        "command": "codemeow.emacsNextLine",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "ctrl+p",
-        "command": "codemeow.emacsPreviousLine",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "ctrl+a",
-        "command": "codemeow.emacsBeginningOfLine",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "ctrl+e",
-        "command": "codemeow.emacsEndOfLine",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+f",
-        "command": "codemeow.emacsForwardWord",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+b",
-        "command": "codemeow.emacsBackwardWord",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+a",
-        "command": "codemeow.emacsBackwardSentence",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+e",
-        "command": "codemeow.emacsForwardSentence",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+shift+,",
-        "command": "codemeow.emacsBeginningOfBuffer",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+shift+.",
-        "command": "codemeow.emacsEndOfBuffer",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+shift+[",
-        "command": "codemeow.emacsBackwardParagraph",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+shift+]",
-        "command": "codemeow.emacsForwardParagraph",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+u",
-        "command": "codemeow.emacsUpcaseWord",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+l",
-        "command": "codemeow.emacsDowncaseWord",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+c",
-        "command": "codemeow.emacsCapitalizeWord",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
-        "key": "alt+d",
-        "command": "codemeow.emacsKillWord",
-        "when": "editorTextFocus && codemeow.normal"
-      },
-      {
         "key": "escape",
         "command": "codemeow.toolWindowEscape",
         "args": "terminal",
@@ -311,6 +147,192 @@
         "command": "codemeow.toolWindowEscape",
         "args": "view",
         "when": "!listFocus && !inputFocus && !editorTextFocus && !terminalFocus && (sideBarFocus || panelFocus || auxiliaryBarFocus)"
+      },
+      {
+        "key": "ctrl+f",
+        "command": "codemeow.chord",
+        "args": "C-f",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlF"
+      },
+      {
+        "key": "ctrl+b",
+        "command": "codemeow.chord",
+        "args": "C-b",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlB"
+      },
+      {
+        "key": "ctrl+n",
+        "command": "codemeow.chord",
+        "args": "C-n",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlN"
+      },
+      {
+        "key": "ctrl+p",
+        "command": "codemeow.chord",
+        "args": "C-p",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlP"
+      },
+      {
+        "key": "ctrl+a",
+        "command": "codemeow.chord",
+        "args": "C-a",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlA"
+      },
+      {
+        "key": "ctrl+e",
+        "command": "codemeow.chord",
+        "args": "C-e",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlE"
+      },
+      {
+        "key": "alt+f",
+        "command": "codemeow.chord",
+        "args": "M-f",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altF"
+      },
+      {
+        "key": "alt+b",
+        "command": "codemeow.chord",
+        "args": "M-b",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altB"
+      },
+      {
+        "key": "alt+a",
+        "command": "codemeow.chord",
+        "args": "M-a",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altA"
+      },
+      {
+        "key": "alt+e",
+        "command": "codemeow.chord",
+        "args": "M-e",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altE"
+      },
+      {
+        "key": "alt+shift+,",
+        "command": "codemeow.chord",
+        "args": "M-<",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altLess"
+      },
+      {
+        "key": "alt+shift+.",
+        "command": "codemeow.chord",
+        "args": "M->",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altGreater"
+      },
+      {
+        "key": "alt+shift+[",
+        "command": "codemeow.chord",
+        "args": "M-{",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altBraceLeft"
+      },
+      {
+        "key": "alt+shift+]",
+        "command": "codemeow.chord",
+        "args": "M-}",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altBraceRight"
+      },
+      {
+        "key": "alt+u",
+        "command": "codemeow.chord",
+        "args": "M-u",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altU"
+      },
+      {
+        "key": "alt+l",
+        "command": "codemeow.chord",
+        "args": "M-l",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altL"
+      },
+      {
+        "key": "alt+c",
+        "command": "codemeow.chord",
+        "args": "M-c",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altC"
+      },
+      {
+        "key": "alt+d",
+        "command": "codemeow.chord",
+        "args": "M-d",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altD"
+      },
+      {
+        "key": "ctrl+/",
+        "command": "codemeow.chord",
+        "args": "C-/",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlSlash"
+      },
+      {
+        "key": "ctrl+shift+-",
+        "command": "codemeow.chord",
+        "args": "C-_",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlUnderscore"
+      },
+      {
+        "key": "ctrl+d",
+        "command": "codemeow.chord",
+        "args": "C-d",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlD"
+      },
+      {
+        "key": "ctrl+k",
+        "command": "codemeow.chord",
+        "args": "C-k",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlK"
+      },
+      {
+        "key": "ctrl+w",
+        "command": "codemeow.chord",
+        "args": "C-w",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlW"
+      },
+      {
+        "key": "alt+w",
+        "command": "codemeow.chord",
+        "args": "M-w",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altW"
+      },
+      {
+        "key": "ctrl+y",
+        "command": "codemeow.chord",
+        "args": "C-y",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlY"
+      },
+      {
+        "key": "ctrl+g",
+        "command": "codemeow.chord",
+        "args": "C-g",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlG"
+      },
+      {
+        "key": "alt+m",
+        "command": "codemeow.chord",
+        "args": "M-m",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altM"
+      },
+      {
+        "key": "ctrl+o",
+        "command": "codemeow.chord",
+        "args": "C-o",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlO"
+      },
+      {
+        "key": "alt+\\",
+        "command": "codemeow.chord",
+        "args": "M-\\",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altBackslash"
+      },
+      {
+        "key": "alt+space",
+        "command": "codemeow.chord",
+        "args": "M-SPC",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altSpace"
+      },
+      {
+        "key": "alt+shift+6",
+        "command": "codemeow.chord",
+        "args": "M-^",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altCaret"
       },
       {
         "key": "a",

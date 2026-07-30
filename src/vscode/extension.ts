@@ -19,8 +19,11 @@ import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import * as vscode from 'vscode';
+import * as AceClick from '../core/aceClick';
 import * as Ace from '../core/aceWindow';
 import { attachMode } from '../core/attachPolicy';
+import { Chord } from '../core/chord';
+import { Chords } from '../core/chords';
 import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
 import { Config, Rc } from '../core/rc';
@@ -35,6 +38,7 @@ import {
   plan,
   WindmoveDir,
 } from '../core/windmove';
+import { CHORD_KEYS } from './chordKeys';
 import { VscClipboard, VscEditorPort } from './editorPort';
 import { TREE_KEYS } from './treeKeys';
 
@@ -376,6 +380,17 @@ function syncTreeKeys(): void {
   }
 }
 
+function syncChordKeys(): void {
+  const bound = Rc.chordBindings();
+  for (const { spelling, ctx } of CHORD_KEYS) {
+    void vscode.commands.executeCommand(
+      'setContext',
+      `codemeow.chord.${ctx}`,
+      bound.has(spelling),
+    );
+  }
+}
+
 async function runTreeCommand(id: string): Promise<void> {
   try {
     await vscode.commands.executeCommand(id);
@@ -435,6 +450,152 @@ const ACE_FOCUS_GROUP_COMMANDS = [
   'workbench.action.focusSeventhEditorGroup',
   'workbench.action.focusEighthEditorGroup',
 ];
+
+const ACE_CLICK_LINK_RESOLVE_LIMIT = 40;
+
+interface ClickTarget {
+  description: string;
+  detail: string;
+  range: vscode.Range | undefined;
+  open: () => Thenable<unknown>;
+}
+
+function tabUri(input: unknown): vscode.Uri | undefined {
+  if (input instanceof vscode.TabInputText) return input.uri;
+  if (input instanceof vscode.TabInputTextDiff) return input.modified;
+  if (input instanceof vscode.TabInputNotebook) return input.uri;
+  if (input instanceof vscode.TabInputCustom) return input.uri;
+  return undefined;
+}
+
+function tabTargets(): ClickTarget[] {
+  const groups = Ace.ordered(
+    vscode.window.tabGroups.all.map((g) => ({
+      item: g,
+      x: g.viewColumn,
+      y: 0,
+    })),
+  );
+  const out: ClickTarget[] = [];
+  groups.forEach((group, column) => {
+    group.tabs.forEach((tab) => {
+      const uri = tabUri(tab.input);
+      if (!uri) return;
+      out.push({
+        description: tab.label,
+        detail: `tab · group ${column + 1}${tab.isActive ? ' · active' : ''}`,
+        range: undefined,
+        open: () =>
+          vscode.commands.executeCommand('vscode.open', uri, {
+            viewColumn: group.viewColumn,
+            preview: false,
+          }),
+      });
+    });
+  });
+  return out;
+}
+
+async function linkTargets(): Promise<ClickTarget[]> {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return [];
+  const visible = editor.visibleRanges[0];
+  if (!visible) return [];
+  let links: vscode.DocumentLink[];
+  try {
+    links =
+      (await vscode.commands.executeCommand<vscode.DocumentLink[]>(
+        'vscode.executeLinkProvider',
+        editor.document.uri,
+        ACE_CLICK_LINK_RESOLVE_LIMIT,
+      )) ?? [];
+  } catch {
+    return [];
+  }
+  const inView = links.filter(
+    (link) => link.target !== undefined && visible.contains(link.range.start),
+  );
+  return Ace.ordered(
+    inView.map((link) => ({
+      item: link,
+      x: link.range.start.character,
+      y: link.range.start.line,
+    })),
+  ).map((link) => ({
+    description: editor.document.getText(link.range),
+    detail: `link · line ${link.range.start.line + 1}`,
+    range: link.range,
+    open: () => vscode.commands.executeCommand('vscode.open', link.target),
+  }));
+}
+
+async function aceClick(): Promise<void> {
+  const targets = [...tabTargets(), ...(await linkTargets())];
+  if (AceClick.plan(targets.length) === AceClick.Plan.NONE) return;
+  const editor = vscode.window.activeTextEditor;
+  const labels = AceClick.labels(targets.length);
+  const painted = targets
+    .map((target, i) => ({ target, label: labels[i] ?? '' }))
+    .filter((entry) => entry.target.range !== undefined);
+  const paint = (visible: typeof painted): void => {
+    if (!editor) return;
+    editor.setDecorations(
+      avyLabelDecoration,
+      visible.map(({ target, label }) => ({
+        range: new vscode.Range(
+          target.range?.start ?? new vscode.Position(0, 0),
+          target.range?.start ?? new vscode.Position(0, 0),
+        ),
+        renderOptions: { after: { contentText: ` ${label} ` } },
+      })),
+    );
+  };
+  paint(painted);
+  const clear = (): void => {
+    if (editor) editor.setDecorations(avyLabelDecoration, []);
+  };
+
+  const picker = vscode.window.createQuickPick();
+  picker.title = 'Ace click';
+  picker.placeholder = 'target label';
+  const items = targets.map((target, i) => ({
+    label: labels[i] ?? '',
+    description: target.description,
+    detail: target.detail,
+  }));
+  picker.items = items;
+  let input = '';
+  let picked: ClickTarget | undefined;
+  picker.onDidChangeValue((value) => {
+    picker.value = '';
+    input += value.slice(-1);
+    const still = AceClick.matches(labels, input);
+    const exact = labels.indexOf(input);
+    if (exact >= 0) {
+      picked = targets[exact];
+      picker.hide();
+      return;
+    }
+    if (still.length === 0) {
+      vscode.window.setStatusBarMessage(
+        `No such candidate: ${input}`,
+        STATUS_MESSAGE_MS,
+      );
+      input = '';
+      picker.items = items;
+      paint(painted);
+      return;
+    }
+    picker.items = items.filter((item) => still.includes(item.label));
+    paint(painted.filter((entry) => still.includes(entry.label)));
+  });
+  picker.onDidHide(() => {
+    clear();
+    picker.dispose();
+    if (picked) void picked.open();
+  });
+  picker.show();
+}
 
 async function aceWindow(): Promise<void> {
   const groups = Ace.ordered(
@@ -503,12 +664,14 @@ async function aceWindow(): Promise<void> {
   picker.show();
 }
 
-async function emacsChord(command: string): Promise<void> {
+async function emacsChord(spelling: unknown): Promise<void> {
+  if (typeof spelling !== 'string') return;
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
   const st = stateFor(editor);
-  if (!st || st.mode !== MeowMode.NORMAL) return;
-  await Engine.runEmacsMotion(makeCtx(editor, st), command);
+  if (!st) return;
+  const ctx = makeCtx(editor, st);
+  if (await Chords.dispatch(ctx, Chord.parse(spelling))) ctx.ui.refresh(st);
 }
 
 function userRcPath(): string {
@@ -614,6 +777,7 @@ export function activate(context: vscode.ExtensionContext): void {
   loadUserRc();
   buildDecorations();
   syncTreeKeys();
+  syncChordKeys();
   syncRcChanged();
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) => {
@@ -693,60 +857,10 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand('codemeow.aceWindow', () => aceWindow()),
+    vscode.commands.registerCommand('codemeow.aceClick', () => aceClick()),
 
-    vscode.commands.registerCommand('codemeow.emacsForwardChar', () =>
-      emacsChord('forward-char'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsBackwardChar', () =>
-      emacsChord('backward-char'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsNextLine', () =>
-      emacsChord('next-line'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsPreviousLine', () =>
-      emacsChord('previous-line'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsBeginningOfLine', () =>
-      emacsChord('move-beginning-of-line'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsEndOfLine', () =>
-      emacsChord('move-end-of-line'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsForwardWord', () =>
-      emacsChord('forward-word'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsBackwardWord', () =>
-      emacsChord('backward-word'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsBackwardSentence', () =>
-      emacsChord('backward-sentence'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsForwardSentence', () =>
-      emacsChord('forward-sentence'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsBeginningOfBuffer', () =>
-      emacsChord('beginning-of-buffer'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsEndOfBuffer', () =>
-      emacsChord('end-of-buffer'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsBackwardParagraph', () =>
-      emacsChord('backward-paragraph'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsForwardParagraph', () =>
-      emacsChord('forward-paragraph'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsUpcaseWord', () =>
-      emacsChord('upcase-word'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsDowncaseWord', () =>
-      emacsChord('downcase-word'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsCapitalizeWord', () =>
-      emacsChord('capitalize-word'),
-    ),
-    vscode.commands.registerCommand('codemeow.emacsKillWord', () =>
-      emacsChord('kill-word'),
+    vscode.commands.registerCommand('codemeow.chord', (spelling: unknown) =>
+      emacsChord(spelling),
     ),
 
     vscode.commands.registerCommand(
@@ -783,12 +897,14 @@ export function activate(context: vscode.ExtensionContext): void {
       const c = loadUserRc();
       buildDecorations();
       syncTreeKeys();
+      syncChordKeys();
       syncRcChanged();
       const problems =
         c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
         `Reloaded ~/${Rc.FILE_NAME}: ${c.normal.size} normal map(s), ${c.motion.size} motion map(s), ` +
-          `${c.keypad.size} keypad map(s), ${c.keypadDesc.size} description(s)${problems}`,
+          `${c.chords.size} chord(s), ${c.keypad.size} keypad map(s), ` +
+          `${c.keypadDesc.size} description(s)${problems}`,
       );
     }),
 

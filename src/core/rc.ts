@@ -30,6 +30,7 @@ export class Config {
   motion = new Map<string, Binding>();
   keypad = new Map<string, Binding>();
   keypadDesc = new Map<string, string>();
+  chords = new Map<string, Binding>();
 
   repeat = new Map<string, Map<string, Binding>>();
   whichKey: boolean | null = null;
@@ -85,6 +86,14 @@ export const Rc = {
 
   keypadDescs(): Map<string, string> {
     return new Map([...defaultConfig.keypadDesc, ...userConfig.keypadDesc]);
+  },
+
+  chordBindings(): Map<string, Binding> {
+    const merged = new Map([...defaultConfig.chords, ...userConfig.chords]);
+    for (const [spelling, binding] of [...merged]) {
+      if (binding.command === 'ignore') merged.delete(spelling);
+    }
+    return merged;
   },
 
   repeatGroups(): Map<string, Map<string, Binding>> {

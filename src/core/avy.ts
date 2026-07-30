@@ -85,6 +85,12 @@ function tree(candidates: number[], keys: string = KEYS): Branch {
   return { kind: 'branch', children };
 }
 
+export function labelsFor(count: number): string[] {
+  if (count <= 0) return [];
+  const indexed = labels(tree([...Array<number>(count).keys()]));
+  return indexed.sort(([a], [b]) => a - b).map(([, label]) => label);
+}
+
 function labels(node: Branch): Array<[number, string]> {
   const out: Array<[number, string]> = [];
   const walk = (n: AvyNode, path: string): void => {

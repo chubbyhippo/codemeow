@@ -21,6 +21,7 @@
 "   mmap / mnoremap <key> <target>      the same, for MOTION mode (the keymap
 "                                       of the workbench trees; read-only
 "                                       editors stay NORMAL)
+"   cmap / cnoremap <chord> <target>    the Emacs modifier-chord layer
 "   map <leader><seq> <target>          keypad (SPC) entry
 "   desc <leader><seq> <text>           which-key label for an entry or a group
 "   set timeoutlen=300                  which-key hint delay in ms
@@ -137,6 +138,69 @@ mmap l meow-right
 mmap q <action>(workbench.action.toggleSidebarVisibility)
 
 " ============================================================================
+" The Emacs chord layer — modifier-key bindings, like the vanilla Emacs keymap
+" ----------------------------------------------------------------------------
+" Unlike the single-key layout above, these are Ctrl-/Alt- CHORDS. They fire
+" in NORMAL and MOTION — never in INSERT, never mid-keypad — and, like meow's
+" own motions, EXTEND an active selection instead of replacing it (so C-f
+" after a selection grows it). Either spelling works: the Emacs one (C-f, M-<)
+" or the host one (control F, alt shift COMMA).
+" An unbound chord stays VS Code's; to hand a bound one back, map it to
+" `ignore` — e.g. `cmap C-f ignore` restores Find. Because VS Code cannot
+" register keybindings at runtime, the manifest decides WHICH chords are
+" intercepted (it enumerates exactly the ones below) and these lines decide
+" what each one does.
+" ============================================================================
+
+" point motions (C-f C-b C-n C-p C-a C-e, M-f M-b M-a M-e)
+cmap C-f forward-char
+cmap C-b backward-char
+cmap C-n next-line
+cmap C-p previous-line
+cmap C-a move-beginning-of-line
+cmap C-e move-end-of-line
+cmap M-f forward-word
+cmap M-b backward-word
+cmap M-a backward-sentence
+cmap M-e forward-sentence
+
+" buffer + paragraph (M-< M-> M-{ M-})
+cmap M-< beginning-of-buffer
+cmap M-> end-of-buffer
+cmap M-{ backward-paragraph
+cmap M-} forward-paragraph
+
+" case + kill (M-u M-l M-c M-d)
+cmap M-u upcase-word
+cmap M-l downcase-word
+cmap M-c capitalize-word
+cmap M-d kill-word
+
+" stock-Emacs edit chords. Each maps onto the meow command that IS the Emacs
+" one (meow-semantics.md): meow-kill's no-selection fallback is meow-C-k, so
+" C-k kills the line and C-w the region through the same command; meow-save is
+" kill-ring-save; meow-cancel-selection is keyboard-quit; meow-delete is
+" delete-forward-char. These never fire in INSERT, so VS Code keeps them while
+" you type.
+cmap C-/ meow-undo
+cmap C-_ meow-undo
+cmap C-d meow-delete
+cmap C-k meow-kill
+cmap C-w meow-kill
+cmap M-w meow-save
+cmap C-y meow-yank
+cmap C-g meow-cancel-selection
+
+" stock-Emacs whitespace and line chords. M-^ is meow-join + kill: the ledger
+" records that killing the join selection IS delete-indentation, so it needs no
+" command of its own.
+cmap M-m back-to-indentation
+cmap C-o open-line
+cmap M-\ delete-horizontal-space
+cmap M-SPC just-one-space
+cmap M-^ ms
+
+" ============================================================================
 " The keypad (SPC) table — every entry an rc line, like the layout above
 " ----------------------------------------------------------------------------
 " Group names follow the Emacs prefixes: SPC x / c / m = the C-x / C-c / M-
@@ -162,7 +226,14 @@ map <leader>b7 <action>(numberedBookmarks.toggleBookmark7)
 map <leader>b8 <action>(numberedBookmarks.toggleBookmark8)
 map <leader>b9 <action>(numberedBookmarks.toggleBookmark9)
 map <leader>bj <action>(numberedBookmarks.listFromAllFiles)
-map <leader><Space> <action>(workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup)
+" SPC SPC = ace-click, the sibling slot: labels every target reachable from a
+" VS Code extension — every open tab across all groups, plus the links visible
+" in the active editor — then one label key "clicks" it (activates the tab,
+" opens the link). An extension runs outside the workbench UI process, so
+" buttons, menus and tree rows cannot be labelled the way ideameow/netmeow
+" label them; those are unreachable here, not unimplemented.
+desc <leader><Space> ace-click
+map <leader><Space> <action>(codemeow.aceClick)
 
 " SPC x = C-x: files / buffers / windows
 map <leader>xf <action>(workbench.action.quickOpen)
@@ -271,6 +342,12 @@ map <leader>wh <action>(codemeow.windmoveLeft)
 map <leader>wj <action>(codemeow.windmoveDown)
 map <leader>wk <action>(codemeow.windmoveUp)
 map <leader>wl <action>(codemeow.windmoveRight)
+" H/J/K/L: windmove-swap — move THIS editor group to the other side of the
+" grid, the closest real analog of Emacs' window-swap-states
+map <leader>wH <action>(workbench.action.moveActiveEditorGroupLeft)
+map <leader>wJ <action>(workbench.action.moveActiveEditorGroupDown)
+map <leader>wK <action>(workbench.action.moveActiveEditorGroupUp)
+map <leader>wL <action>(workbench.action.moveActiveEditorGroupRight)
 " b: balance the split sizes
 map <leader>wb <action>(workbench.action.evenEditorWidths)
 map <leader>wi <action>(editor.action.fontZoomIn)
@@ -325,10 +402,14 @@ map <leader>;z <action>(workbench.action.toggleZenMode)
 " --- SPC a — activate views (tool windows) -----------------------------------
 desc <leader>a activate view
 map <leader>aB <action>(workbench.action.tasks.build)
+" C: the coverage view — ideameow's Coverage tool window
+map <leader>aC <action>(testing.openCoverage)
 map <leader>ac <action>(workbench.view.scm)
 map <leader>ad <action>(workbench.view.debug)
 map <leader>af <action>(workbench.view.search)
 map <leader>ag <action>(workbench.view.scm)
+" h: the call-hierarchy view — ideameow's Hierarchy tool window
+map <leader>ah <action>(editor.showCallHierarchy)
 map <leader>ai <action>(workbench.action.chat.open)
 map <leader>ak <action>(workbench.action.toggleScreencastMode)
 map <leader>an <action>(notifications.showList)
@@ -391,6 +472,9 @@ map <leader>gi <action>(editor.action.goToImplementation)
 map <leader>gl <action>(workbench.view.scm)
 map <leader>gp <action>(git.pull)
 map <leader>gs <action>(workbench.action.gotoSymbol)
+" t/T: jump between a file and its tests — ideameow's GotoTest
+map <leader>gt <action>(testing.goToRelatedTest)
+map <leader>gT <action>(testing.goToRelatedTest)
 
 " --- SPC h — hide the side bar --------------------------------------------------
 desc <leader>h hide side bar
@@ -466,6 +550,9 @@ desc <leader>r run / refactor / replace
 map <leader>ra <action>(workbench.action.showCommands)
 map <leader>rb <action>(git.revertSelectedRanges)
 map <leader>rB <action>(git.clean)
+" c/C: coverage — run it for this file, and open the coverage view
+map <leader>rc <action>(testing.coverageCurrentFile)
+map <leader>rC <action>(testing.openCoverage)
 map <leader>rd <action>(workbench.action.debug.start)
 map <leader>re <action>(editor.action.refactor)
 map <leader>rf <action>(workbench.action.showAllEditorsByMostRecentlyUsed)

@@ -64,7 +64,8 @@ describe('RcSpec', () => {
     ]);
     assert.deepEqual(c.errors, []);
     assert.equal(c.normal.get('Z')!.keys, ',b');
-    assert.equal(c.normal.size, 1, 'cmap and cnoremap add no bindings');
+    assert.equal(c.normal.size, 1, 'cmap and cnoremap add no normal bindings');
+    assert.equal(c.chords.size, 2, 'they land in the chord map instead');
   });
 
   it('given comment-only rc edits then the reload button reports no changes', () => {
@@ -213,10 +214,7 @@ describe('RcSpec', () => {
       d.keypad.get('bb')?.action,
       'workbench.action.showAllEditorsByMostRecentlyUsed',
     );
-    assert.equal(
-      d.keypad.get(' ')?.action,
-      'workbench.action.quickOpenPreviousRecentlyUsedEditorInGroup',
-    );
+    assert.equal(d.keypad.get(' ')?.action, 'codemeow.aceClick');
     assert.equal(d.keypad.get('cm')?.action, 'codemeow.editRc');
     assert.equal(d.keypad.get('cM')?.action, 'codemeow.reloadRc');
     assert.equal(d.keypad.get('id')?.action, 'codemeow.commandIds');
