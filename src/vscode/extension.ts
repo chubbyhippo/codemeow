@@ -451,14 +451,45 @@ const ACE_FOCUS_GROUP_COMMANDS = [
   'workbench.action.focusEighthEditorGroup',
 ];
 
-const ACE_CLICK_LINK_RESOLVE_LIMIT = 40;
+const ACE_CLICK_RESOLVE_LIMIT = 40;
+const ACE_BADGE_COLOR = 'charts.green';
+
+type ClickPaint =
+  | { kind: 'text'; editor: vscode.TextEditor; at: vscode.Position }
+  | { kind: 'badge'; uri: vscode.Uri };
 
 interface ClickTarget {
-  description: string;
-  detail: string;
-  range: vscode.Range | undefined;
+  paint: ClickPaint;
   open: () => Thenable<unknown>;
 }
+
+class AceBadgeProvider implements vscode.FileDecorationProvider {
+  private labels = new Map<string, string>();
+  private readonly changed = new vscode.EventEmitter<vscode.Uri[]>();
+  readonly onDidChangeFileDecorations = this.changed.event;
+
+  provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
+    const badge = this.labels.get(uri.toString());
+    if (badge === undefined) return undefined;
+    return new vscode.FileDecoration(
+      badge,
+      `ace-click: ${badge}`,
+      new vscode.ThemeColor(ACE_BADGE_COLOR),
+    );
+  }
+
+  show(labels: Map<string, string>): void {
+    const touched = new Set([...this.labels.keys(), ...labels.keys()]);
+    this.labels = labels;
+    this.changed.fire([...touched].map((u) => vscode.Uri.parse(u)));
+  }
+
+  clear(): void {
+    this.show(new Map());
+  }
+}
+
+const aceBadges = new AceBadgeProvider();
 
 function tabUri(input: unknown): vscode.Uri | undefined {
   if (input instanceof vscode.TabInputText) return input.uri;
@@ -476,118 +507,216 @@ function tabTargets(): ClickTarget[] {
       y: 0,
     })),
   );
+  const seen = new Set<string>();
   const out: ClickTarget[] = [];
-  groups.forEach((group, column) => {
-    group.tabs.forEach((tab) => {
+  for (const group of groups) {
+    for (const tab of group.tabs) {
       const uri = tabUri(tab.input);
-      if (!uri) return;
+      if (!uri || seen.has(uri.toString())) continue;
+      seen.add(uri.toString());
       out.push({
-        description: tab.label,
-        detail: `tab · group ${column + 1}${tab.isActive ? ' · active' : ''}`,
-        range: undefined,
+        paint: { kind: 'badge', uri },
         open: () =>
           vscode.commands.executeCommand('vscode.open', uri, {
             viewColumn: group.viewColumn,
             preview: false,
           }),
       });
-    });
-  });
+    }
+  }
   return out;
 }
 
-async function linkTargets(): Promise<ClickTarget[]> {
-  const editor = vscode.window.activeTextEditor;
-  if (!editor) return [];
-  const visible = editor.visibleRanges[0];
-  if (!visible) return [];
+async function linkTargets(
+  editor: vscode.TextEditor,
+  visible: vscode.Range,
+): Promise<ClickTarget[]> {
   let links: vscode.DocumentLink[];
   try {
     links =
       (await vscode.commands.executeCommand<vscode.DocumentLink[]>(
         'vscode.executeLinkProvider',
         editor.document.uri,
-        ACE_CLICK_LINK_RESOLVE_LIMIT,
+        ACE_CLICK_RESOLVE_LIMIT,
       )) ?? [];
   } catch {
     return [];
   }
-  const inView = links.filter(
-    (link) => link.target !== undefined && visible.contains(link.range.start),
-  );
-  return Ace.ordered(
-    inView.map((link) => ({
-      item: link,
-      x: link.range.start.character,
-      y: link.range.start.line,
+  return links
+    .filter(
+      (link) => link.target !== undefined && visible.contains(link.range.start),
+    )
+    .map((link) => ({
+      paint: { kind: 'text' as const, editor, at: link.range.start },
+      open: () => vscode.commands.executeCommand('vscode.open', link.target),
+    }));
+}
+
+async function lensTargets(
+  editor: vscode.TextEditor,
+  visible: vscode.Range,
+): Promise<ClickTarget[]> {
+  let lenses: vscode.CodeLens[];
+  try {
+    lenses =
+      (await vscode.commands.executeCommand<vscode.CodeLens[]>(
+        'vscode.executeCodeLensProvider',
+        editor.document.uri,
+        ACE_CLICK_RESOLVE_LIMIT,
+      )) ?? [];
+  } catch {
+    return [];
+  }
+  return lenses
+    .filter(
+      (lens) =>
+        lens.command !== undefined && visible.contains(lens.range.start),
+    )
+    .map((lens) => {
+      const command = lens.command?.command ?? '';
+      const args: unknown[] = lens.command?.arguments ?? [];
+      return {
+        paint: { kind: 'text' as const, editor, at: lens.range.start },
+        open: () => vscode.commands.executeCommand(command, ...args),
+      };
+    });
+}
+
+function quickFixTargets(
+  editor: vscode.TextEditor,
+  visible: vscode.Range,
+): ClickTarget[] {
+  return vscode.languages
+    .getDiagnostics(editor.document.uri)
+    .filter((d) => visible.contains(d.range.start))
+    .map((d) => ({
+      paint: { kind: 'text' as const, editor, at: d.range.start },
+      open: async () => {
+        const shown = await vscode.window.showTextDocument(
+          editor.document,
+          editor.viewColumn,
+        );
+        shown.selection = new vscode.Selection(d.range.start, d.range.start);
+        await vscode.commands.executeCommand('editor.action.quickFix');
+      },
+    }));
+}
+
+async function inTextTargets(): Promise<ClickTarget[]> {
+  const editors = Ace.ordered(
+    vscode.window.visibleTextEditors.map((e) => ({
+      item: e,
+      x: e.viewColumn ?? 0,
+      y: 0,
     })),
-  ).map((link) => ({
-    description: editor.document.getText(link.range),
-    detail: `link · line ${link.range.start.line + 1}`,
-    range: link.range,
-    open: () => vscode.commands.executeCommand('vscode.open', link.target),
-  }));
+  );
+  const out: ClickTarget[] = [];
+  for (const editor of editors) {
+    const visible = editor.visibleRanges[0];
+    if (!visible) continue;
+    const found = [
+      ...(await linkTargets(editor, visible)),
+      ...(await lensTargets(editor, visible)),
+      ...quickFixTargets(editor, visible),
+    ];
+    out.push(
+      ...Ace.ordered(
+        found.map((target) => ({
+          item: target,
+          x: target.paint.kind === 'text' ? target.paint.at.line : 0,
+          y: target.paint.kind === 'text' ? target.paint.at.character : 0,
+        })),
+      ),
+    );
+  }
+  return out;
+}
+
+async function clickTargets(): Promise<ClickTarget[]> {
+  return [...tabTargets(), ...(await inTextTargets())];
 }
 
 async function aceClick(): Promise<void> {
-  const targets = [...tabTargets(), ...(await linkTargets())];
-  if (AceClick.plan(targets.length) === AceClick.Plan.NONE) return;
-  const editor = vscode.window.activeTextEditor;
+  const targets = await clickTargets();
+  if (AceClick.plan(targets.length) === AceClick.Plan.NONE) {
+    vscode.window.setStatusBarMessage(
+      'meow: nothing clickable in view',
+      STATUS_MESSAGE_MS,
+    );
+    return;
+  }
   const labels = AceClick.labels(targets.length);
-  const painted = targets
-    .map((target, i) => ({ target, label: labels[i] ?? '' }))
-    .filter((entry) => entry.target.range !== undefined);
-  const paint = (visible: typeof painted): void => {
-    if (!editor) return;
-    editor.setDecorations(
-      avyLabelDecoration,
-      visible.map(({ target, label }) => ({
-        range: new vscode.Range(
-          target.range?.start ?? new vscode.Position(0, 0),
-          target.range?.start ?? new vscode.Position(0, 0),
+  const hinted = targets.map((target, i) => ({
+    target,
+    label: labels[i] ?? '',
+  }));
+
+  const paint = (shown: typeof hinted): void => {
+    const inText = shown.flatMap((h) =>
+      h.target.paint.kind === 'text'
+        ? [
+            {
+              label: h.label,
+              editor: h.target.paint.editor,
+              at: h.target.paint.at,
+            },
+          ]
+        : [],
+    );
+    for (const editor of vscode.window.visibleTextEditors) {
+      editor.setDecorations(
+        avyLabelDecoration,
+        inText
+          .filter((h) => h.editor === editor)
+          .map((h) => ({
+            range: new vscode.Range(h.at, h.at),
+            renderOptions: { after: { contentText: ` ${h.label} ` } },
+          })),
+      );
+    }
+    aceBadges.show(
+      new Map(
+        shown.flatMap((h): Array<[string, string]> =>
+          h.target.paint.kind === 'badge'
+            ? [[h.target.paint.uri.toString(), h.label]]
+            : [],
         ),
-        renderOptions: { after: { contentText: ` ${label} ` } },
-      })),
+      ),
     );
   };
-  paint(painted);
   const clear = (): void => {
-    if (editor) editor.setDecorations(avyLabelDecoration, []);
+    for (const editor of vscode.window.visibleTextEditors) {
+      editor.setDecorations(avyLabelDecoration, []);
+    }
+    aceBadges.clear();
   };
+  paint(hinted);
 
   const picker = vscode.window.createQuickPick();
   picker.title = 'Ace click';
-  picker.placeholder = 'target label';
-  const items = targets.map((target, i) => ({
-    label: labels[i] ?? '',
-    description: target.description,
-    detail: target.detail,
-  }));
-  picker.items = items;
+  picker.placeholder = `${targets.length} hint(s) — type the label`;
   let input = '';
   let picked: ClickTarget | undefined;
   picker.onDidChangeValue((value) => {
     picker.value = '';
     input += value.slice(-1);
-    const still = AceClick.matches(labels, input);
     const exact = labels.indexOf(input);
     if (exact >= 0) {
       picked = targets[exact];
       picker.hide();
       return;
     }
+    const still = AceClick.matches(labels, input);
     if (still.length === 0) {
       vscode.window.setStatusBarMessage(
         `No such candidate: ${input}`,
         STATUS_MESSAGE_MS,
       );
       input = '';
-      picker.items = items;
-      paint(painted);
+      paint(hinted);
       return;
     }
-    picker.items = items.filter((item) => still.includes(item.label));
-    paint(painted.filter((entry) => still.includes(entry.label)));
+    paint(hinted.filter((h) => still.includes(h.label)));
   });
   picker.onDidHide(() => {
     clear();
@@ -773,6 +902,9 @@ export function activate(context: vscode.ExtensionContext): void {
     dispose: disposeDecorations,
   });
 
+  context.subscriptions.push(
+    vscode.window.registerFileDecorationProvider(aceBadges),
+  );
   loadDefaults(context.extensionPath);
   loadUserRc();
   buildDecorations();

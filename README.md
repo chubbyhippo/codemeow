@@ -94,17 +94,26 @@ image) can't take a label, and picks reach the first eight groups — the
 platform's own focus-group commands. The key prompt rides a quick-pick
 sink, the same trick the which-key menu uses.
 
-**Ace-click** — `SPC SPC` labels the things you can "click" from here and one
-key does it: **every open tab** in every group (the label opens it, wherever it
-lives) and **every link visible in the current editor** (the label follows it).
-Labels use avy's subdivision, so past nine targets they grow a second letter
-and narrow as you type; link labels are painted right in the text; `Esc`
-cancels. Be honest about the limit: an extension runs outside the workbench's
-own process, so buttons, toolbar icons, menu items and tree rows are not
-reachable from here and never will be — a full Vimium-style overlay is
-something only an in-page editor can offer. Tabs with nothing to open (a
-terminal, a webview) get no label, and there is no Shift-to-right-click, since
-VS Code exposes no per-target context menu.
+**Ace-click** — `SPC SPC` paints a hint on every clickable thing and one key
+clicks it. Two kinds of hint, both real paint, no lists:
+
+- **every open tab** gets its label as a **badge on the tab** (and on the
+  file's Explorer row, for free) — the label activates that editor
+- **links, code lenses and quick-fix lightbulbs in view** get their label
+  painted in the text — the label follows the link, runs the lens, or opens the
+  fix menu right there
+
+Editor panes are deliberately not targets: labelling panes is ace-window's job,
+`SPC w w`. Labels come from avy's own subdivision, so past nine targets they
+grow a second letter and the surviving hints narrow as you type; `Esc` cancels.
+Two platform notes: tab badges need `workbench.editor.decorations.badges` (on
+by default) and VS Code renders at most two badge characters, so with more than
+about seventy targets the deepest labels stop being distinguishable on tabs.
+Toolbar buttons and menu items stay unreachable — an extension runs outside the
+workbench's own process and cannot paint on them, which is why a full
+Vimium-style overlay is something only an in-page editor can offer. There is
+also no Shift-to-right-click, since VS Code exposes no per-target context
+menu.
 
 **Emacs chords** — `Ctrl+f/b/n/p/a/e` and `Alt+f/b/a/e` are the real
 Emacs point motions (`forward/backward-char`, `next/previous-line`,

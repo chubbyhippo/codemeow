@@ -226,12 +226,15 @@ map <leader>b7 <action>(numberedBookmarks.toggleBookmark7)
 map <leader>b8 <action>(numberedBookmarks.toggleBookmark8)
 map <leader>b9 <action>(numberedBookmarks.toggleBookmark9)
 map <leader>bj <action>(numberedBookmarks.listFromAllFiles)
-" SPC SPC = ace-click, the sibling slot: labels every target reachable from a
-" VS Code extension — every open tab across all groups, plus the links visible
-" in the active editor — then one label key "clicks" it (activates the tab,
-" opens the link). An extension runs outside the workbench UI process, so
-" buttons, menus and tree rows cannot be labelled the way ideameow/netmeow
-" label them; those are unreachable here, not unimplemented.
+" SPC SPC = ace-click, the sibling slot: it PAINTS a hint on every CLICKABLE
+" thing and one label key clicks it — every open TAB (the hint is a badge on the
+" tab itself, and on its Explorer row), plus the links, code lenses and
+" quick-fix lightbulbs in view (hints painted in the text). Editor panes are
+" deliberately NOT targets: labelling panes is ace-window's job, SPC w w.
+" Labels grow a second letter past nine targets and narrow as you type; ESC
+" cancels. Tab badges need workbench.editor.decorations.badges (on by default)
+" and VS Code shows at most two badge characters. Toolbar buttons and menu
+" items stay unreachable — an extension cannot paint on them.
 desc <leader><Space> ace-click
 map <leader><Space> <action>(codemeow.aceClick)
 

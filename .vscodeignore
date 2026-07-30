@@ -12,3 +12,7 @@ package-lock.json
 .gitignore
 .vscodeignore
 *.vsix
+.idea/**
+.prettierrc
+.prettierignore
+eslint.config.mjs
