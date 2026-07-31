@@ -87,6 +87,11 @@
         "command": "codemeow.aceClick",
         "title": "Ace Click",
         "category": "codemeow"
+      },
+      {
+        "command": "codemeow.aceResize",
+        "title": "Ace Resize",
+        "category": "codemeow"
       }
     ],
     "menus": {

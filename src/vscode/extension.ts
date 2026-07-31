@@ -25,6 +25,7 @@ import { attachMode } from '../core/attachPolicy';
 import { Chord } from '../core/chord';
 import { Chords } from '../core/chords';
 import { Hosts } from '../core/hosts';
+import { Resizes } from '../core/resize';
 import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
 import { Config, Rc } from '../core/rc';
@@ -932,6 +933,39 @@ async function aceWindow(): Promise<void> {
   runHintSession('Ace window', targets, labels, Ace.matches, unpainted);
 }
 
+function aceResize(): void {
+  const keys = Resizes.keys();
+  if (keys.length === 0) {
+    vscode.window.setStatusBarMessage(
+      'meow: no resize keys in the rc',
+      STATUS_MESSAGE_MS,
+    );
+    return;
+  }
+  const picker = vscode.window.createQuickPick();
+  picker.title = 'Ace resize';
+  picker.placeholder = `resize: ${keys.join(' ')} — ESC when done`;
+  picker.onDidChangeValue((value) => {
+    const key = value.slice(-1);
+    picker.value = '';
+    if (key === '') return;
+    const editor = vscode.window.activeTextEditor;
+    if (!editor) return;
+    const st = stateFor(editor);
+    if (!st) return;
+    void Resizes.dispatch(makeCtx(editor, st), key).then((handled) => {
+      if (!handled) {
+        vscode.window.setStatusBarMessage(
+          `No such resize key: ${key}`,
+          STATUS_MESSAGE_MS,
+        );
+      }
+    });
+  });
+  picker.onDidHide(() => picker.dispose());
+  picker.show();
+}
+
 async function hostKey(key: unknown): Promise<void> {
   if (typeof key !== 'string') return;
   const editor = vscode.window.activeTextEditor;
@@ -1140,6 +1174,7 @@ export function activate(context: vscode.ExtensionContext): void {
 
     vscode.commands.registerCommand('codemeow.aceWindow', () => aceWindow()),
     vscode.commands.registerCommand('codemeow.aceClick', () => aceClick()),
+    vscode.commands.registerCommand('codemeow.aceResize', () => aceResize()),
 
     vscode.commands.registerCommand('codemeow.chord', (spelling: unknown) =>
       emacsChord(spelling),
@@ -1190,7 +1225,8 @@ export function activate(context: vscode.ExtensionContext): void {
         c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
         `Reloaded ~/${Rc.FILE_NAME}: ${c.normal.size} normal map(s), ${c.motion.size} motion map(s), ` +
-          `${c.chords.size} chord(s), ${c.hosts.size} host key(s), ${c.keypad.size} keypad map(s), ` +
+          `${c.chords.size} chord(s), ${c.hosts.size} host key(s), ${c.resizes.size} resize key(s), ` +
+          `${c.keypad.size} keypad map(s), ` +
           `${c.keypadDesc.size} description(s)${problems}`,
       );
     }),

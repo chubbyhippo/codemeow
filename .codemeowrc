@@ -22,6 +22,7 @@
 "                                       of the workbench trees; read-only
 "                                       editors stay NORMAL)
 "   cmap / cnoremap <chord> <target>    the Emacs modifier-chord layer
+"   resizemap <key> <target>            a key inside the SPC w r resize session
 "   hostmap <key> <target>              the five host keys that fire in every
 "                                       state (M-; and S-arrows) — see below
 "   map <leader><seq> <target>          keypad (SPC) entry
@@ -213,6 +214,22 @@ hostmap S-right <action>(codemeow.windmoveRight)
 hostmap S-up <action>(codemeow.windmoveUp)
 hostmap S-down <action>(codemeow.windmoveDown)
 
+" ============================================================================
+" Ace resize — the keys inside the SPC w r session
+" ----------------------------------------------------------------------------
+" SPC w r opens a resize session that stays open until ESC, so one press can
+" nudge the layout many times. ideameow labels every splitter and tool-window
+" divider first; VS Code exposes no dividers, so this resizes the group that
+" already has focus — pick a different one with SPC w w first. Rebind any key
+" here, or map one to `ignore` to drop it.
+" ============================================================================
+resizemap l <action>(workbench.action.increaseViewWidth)
+resizemap h <action>(workbench.action.decreaseViewWidth)
+resizemap k <action>(workbench.action.increaseViewHeight)
+resizemap j <action>(workbench.action.decreaseViewHeight)
+resizemap = <action>(workbench.action.evenEditorWidths)
+resizemap m <action>(workbench.action.toggleMaximizeEditorGroup)
+
 " stock-Emacs view chord. C-l is recenter-top-bottom: the first press centers the
 " caret's line, the next two put it at the top then the bottom, and any other
 " command in between starts the cycle over.
@@ -353,7 +370,7 @@ map <leader>wm <action>(workbench.action.editorLayoutSingle)
 map <leader>ww <action>(codemeow.aceWindow)
 map <leader>wW <action>(workbench.action.moveEditorToNextGroup)
 " r: grow the current editor group (= / _ resize in NORMAL; SPC w b balances splits)
-map <leader>wr <action>(workbench.action.increaseViewSize)
+map <leader>wr <action>(codemeow.aceResize)
 " n/p (aliases . and ,): cycle editor tabs (C-x <right>/<left>); the tab
 " repeat group below keeps a bare n/p/./, walking afterwards
 map <leader>wn <action>(workbench.action.nextEditor)

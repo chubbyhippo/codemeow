@@ -54,6 +54,10 @@ export function parse(lines: string[]): Config {
       case 'hostnoremap':
         parseHostKey(c, cmd, rest, err);
         break;
+      case 'resizemap':
+      case 'resizenoremap':
+        parseResizeKey(c, cmd, rest, err);
+        break;
       case 'set':
         parseSet(c, rest, err);
         break;
@@ -202,6 +206,34 @@ function parseHostKey(
   const binding = parseTarget(rhs, cmd === 'hostmap', `${cmd} ${rest}`, err);
   if (binding === null) return;
   c.hosts.set(host, binding);
+}
+
+function parseResizeKey(
+  c: Config,
+  cmd: string,
+  rest: string,
+  err: (m: string) => void,
+): void {
+  const m = /^(\S+)\s+(.*)$/.exec(rest);
+  if (!m) {
+    err(`${cmd} needs a key and a target`);
+    return;
+  }
+  const [, lhs = '', rhsRaw = ''] = m;
+  const key = parseKeys(lhs, err);
+  if (key === null) return;
+  if (key.length !== 1) {
+    err(`resize key must be a single printable key: ${lhs}`);
+    return;
+  }
+  const binding = parseTarget(
+    rhsRaw.trim(),
+    cmd === 'resizemap',
+    `${cmd} ${rest}`,
+    err,
+  );
+  if (binding === null) return;
+  c.resizes.set(key, binding);
 }
 
 function parseMap(
