@@ -480,11 +480,14 @@ const ACE_CLICK_RESOLVE_LIMIT = 40;
 const ACE_BADGE_COLOR = 'charts.green';
 const SIDE_BAR_FOCUS_COMMAND = 'workbench.action.focusSideBar';
 const SIDE_BAR_NAME = 'Explorer';
+const TERMINAL_FOCUS_COMMAND = 'workbench.action.terminal.focus';
+const TERMINAL_NAME = 'Terminal';
 const STICKY_SCROLL_MAX_LINES = 5;
 
 type HintPaint =
   | { kind: 'text'; editor: vscode.TextEditor; at: vscode.Position }
-  | { kind: 'badge'; uri: vscode.Uri };
+  | { kind: 'badge'; uri: vscode.Uri }
+  | { kind: 'none' };
 
 interface HintTarget {
   paint: HintPaint;
@@ -728,6 +731,11 @@ function runHintSession(
   }));
   paintHints(hinted);
 
+  const unpaintable =
+    unpainted === ''
+      ? undefined
+      : vscode.window.setStatusBarMessage(`meow ace: ${unpainted}`);
+
   const picker = vscode.window.createQuickPick();
   picker.title = title;
   picker.placeholder =
@@ -759,6 +767,7 @@ function runHintSession(
   });
   picker.onDidHide(() => {
     clearHints();
+    unpaintable?.dispose();
     picker.dispose();
     if (picked) void picked.open();
   });
@@ -875,11 +884,26 @@ function sideBarWindowTarget(): WindowTarget | undefined {
   };
 }
 
+function terminalWindowTarget(): WindowTarget | undefined {
+  if (vscode.window.terminals.length === 0) return undefined;
+  return {
+    paint: { kind: 'none' },
+    open: () => vscode.commands.executeCommand(TERMINAL_FOCUS_COMMAND),
+    focused: false,
+    unpaintedName: TERMINAL_NAME,
+  };
+}
+
 function windowTargets(): WindowTarget[] {
   const groups = groupWindowTargets();
   const sideBar = sideBarWindowTarget();
-  if (!sideBar) return groups;
-  return sideBarOnRight() ? [...groups, sideBar] : [sideBar, ...groups];
+  const terminal = terminalWindowTarget();
+  const withSideBar = !sideBar
+    ? groups
+    : sideBarOnRight()
+      ? [...groups, sideBar]
+      : [sideBar, ...groups];
+  return terminal ? [...withSideBar, terminal] : withSideBar;
 }
 
 async function aceWindow(): Promise<void> {
