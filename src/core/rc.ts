@@ -31,6 +31,7 @@ export class Config {
   keypad = new Map<string, Binding>();
   keypadDesc = new Map<string, string>();
   chords = new Map<string, Binding>();
+  hosts = new Map<string, Binding>();
 
   repeat = new Map<string, Map<string, Binding>>();
   whichKey: boolean | null = null;
@@ -92,6 +93,14 @@ export const Rc = {
     const merged = new Map([...defaultConfig.chords, ...userConfig.chords]);
     for (const [spelling, binding] of [...merged]) {
       if (binding.command === 'ignore') merged.delete(spelling);
+    }
+    return merged;
+  },
+
+  hostBindings(): Map<string, Binding> {
+    const merged = new Map([...defaultConfig.hosts, ...userConfig.hosts]);
+    for (const [key, binding] of [...merged]) {
+      if (binding.command === 'ignore') merged.delete(key);
     }
     return merged;
   },

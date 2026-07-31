@@ -22,6 +22,8 @@
 "                                       of the workbench trees; read-only
 "                                       editors stay NORMAL)
 "   cmap / cnoremap <chord> <target>    the Emacs modifier-chord layer
+"   hostmap <key> <target>              the five host keys that fire in every
+"                                       state (M-; and S-arrows) — see below
 "   map <leader><seq> <target>          keypad (SPC) entry
 "   desc <leader><seq> <text>           which-key label for an entry or a group
 "   set timeoutlen=300                  which-key hint delay in ms
@@ -49,8 +51,9 @@ set overlay-text-color=#ffffff
 " ----------------------------------------------------------------------------
 " Rebind any key to another meow command, to an <action>(...), or to
 " replayed keys; bind a key to `ignore` to disable it.
-" SPC is the keypad key and cannot be remapped; ESC and modifier
-" chords never reach the modal engine (put those on VS Code's keybindings).
+" SPC is the keypad key and cannot be remapped, and ESC always returns to
+" NORMAL; every other default lives in this file — modifier chords in the
+" `cmap` block, the five every-state host keys in the `hostmap` block.
 " ============================================================================
 
 " expand / counts
@@ -194,6 +197,22 @@ cmap C-g meow-cancel-selection
 " stock-Emacs whitespace and line chords. M-^ is meow-join + kill: the ledger
 " records that killing the join selection IS delete-indentation, so it needs no
 " command of its own.
+" ============================================================================
+" Host keys — the five non-chord keys the manifest intercepts for every state
+" ----------------------------------------------------------------------------
+" These fire in EVERY meow state, including INSERT, which is why they cannot be
+" cmap lines (the chord layer is NORMAL/MOTION only). Both spellings work:
+" the Emacs one (M-;, S-left) or the host one (alt+;, shift+left). Map one to
+" `ignore` to hand the key back to VS Code — e.g. `hostmap S-left ignore`
+" restores Shift+Left's select-one-character-left. ESC is deliberately NOT
+" here: it is the way back to NORMAL and stays unremappable.
+" ============================================================================
+hostmap M-; meow-keypad
+hostmap S-left <action>(codemeow.windmoveLeft)
+hostmap S-right <action>(codemeow.windmoveRight)
+hostmap S-up <action>(codemeow.windmoveUp)
+hostmap S-down <action>(codemeow.windmoveDown)
+
 " stock-Emacs view chord. C-l is recenter-top-bottom: the first press centers the
 " caret's line, the next two put it at the top then the bottom, and any other
 " command in between starts the cycle over.
@@ -343,9 +362,8 @@ map <leader>w. <action>(workbench.action.nextEditor)
 map <leader>w, <action>(workbench.action.previousEditor)
 " h/j/k/l: directional window focus — editor groups AND the two panes of a
 " side-by-side diff (which plain group focus never crosses). Plain
-" Shift+arrows are bound to the same moves in the manifest keybindings
-" (rebind in Preferences > Keyboard Shortcuts > Windmove *), not in this
-" rc — modifier chords never reach the modal engine.
+" Shift+arrows do the same moves in every state through the `hostmap` block
+" above, so they are rebindable here too.
 map <leader>wh <action>(codemeow.windmoveLeft)
 map <leader>wj <action>(codemeow.windmoveDown)
 map <leader>wk <action>(codemeow.windmoveUp)

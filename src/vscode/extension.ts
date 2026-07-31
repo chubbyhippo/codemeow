@@ -24,6 +24,7 @@ import * as Ace from '../core/aceWindow';
 import { attachMode } from '../core/attachPolicy';
 import { Chord } from '../core/chord';
 import { Chords } from '../core/chords';
+import { Hosts } from '../core/hosts';
 import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
 import { Config, Rc } from '../core/rc';
@@ -39,6 +40,7 @@ import {
   WindmoveDir,
 } from '../core/windmove';
 import { CHORD_KEYS } from './chordKeys';
+import { HOST_KEY_TABLE } from './hostKeys';
 import { VscClipboard, VscEditorPort } from './editorPort';
 import { TREE_KEYS } from './treeKeys';
 
@@ -400,6 +402,17 @@ function syncChordKeys(): void {
       'setContext',
       `codemeow.chord.${ctx}`,
       bound.has(spelling),
+    );
+  }
+}
+
+function syncHostKeys(): void {
+  const bound = Rc.hostBindings();
+  for (const { host, ctx } of HOST_KEY_TABLE) {
+    void vscode.commands.executeCommand(
+      'setContext',
+      `codemeow.host.${ctx}`,
+      bound.has(host),
     );
   }
 }
@@ -895,6 +908,16 @@ async function aceWindow(): Promise<void> {
   runHintSession('Ace window', targets, labels, Ace.matches, unpainted);
 }
 
+async function hostKey(key: unknown): Promise<void> {
+  if (typeof key !== 'string') return;
+  const editor = vscode.window.activeTextEditor;
+  if (!editor) return;
+  const st = stateFor(editor);
+  if (!st) return;
+  const ctx = makeCtx(editor, st);
+  if (await Hosts.dispatch(ctx, key)) ctx.ui.refresh(st);
+}
+
 async function emacsChord(spelling: unknown): Promise<void> {
   if (typeof spelling !== 'string') return;
   const editor = vscode.window.activeTextEditor;
@@ -1012,6 +1035,7 @@ export function activate(context: vscode.ExtensionContext): void {
   buildDecorations();
   syncTreeKeys();
   syncChordKeys();
+  syncHostKeys();
   syncRcChanged();
   context.subscriptions.push(
     vscode.workspace.onDidChangeTextDocument((e) => {
@@ -1097,6 +1121,10 @@ export function activate(context: vscode.ExtensionContext): void {
       emacsChord(spelling),
     ),
 
+    vscode.commands.registerCommand('codemeow.hostKey', (key: unknown) =>
+      hostKey(key),
+    ),
+
     vscode.commands.registerCommand(
       'codemeow.toolWindowEscape',
       async (surface: unknown): Promise<void> => {
@@ -1132,12 +1160,13 @@ export function activate(context: vscode.ExtensionContext): void {
       buildDecorations();
       syncTreeKeys();
       syncChordKeys();
+      syncHostKeys();
       syncRcChanged();
       const problems =
         c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
         `Reloaded ~/${Rc.FILE_NAME}: ${c.normal.size} normal map(s), ${c.motion.size} motion map(s), ` +
-          `${c.chords.size} chord(s), ${c.keypad.size} keypad map(s), ` +
+          `${c.chords.size} chord(s), ${c.hosts.size} host key(s), ${c.keypad.size} keypad map(s), ` +
           `${c.keypadDesc.size} description(s)${problems}`,
       );
     }),

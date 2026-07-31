@@ -96,25 +96,40 @@ describe('WindmoveSpec', () => {
     );
   });
 
-  it('given the manifest then shift+arrows dispatch windmove on meow editors', () => {
+  it('given the manifest and the rc then shift+arrows dispatch windmove on meow editors', () => {
+    freshSpec();
     const pkg = JSON.parse(
       fs.readFileSync(path.join(__dirname, '..', '..', 'package.json'), 'utf8'),
     ) as {
       contributes: {
-        keybindings: Array<{ key: string; command: string; when: string }>;
+        keybindings: Array<{
+          key: string;
+          command: string;
+          args?: string;
+          when: string;
+        }>;
       };
     };
-    const bound = pkg.contributes.keybindings.filter((k) =>
-      k.command.startsWith('codemeow.windmove'),
-    );
+    const arrows = ['left', 'right', 'up', 'down'] as const;
     assert.deepEqual(
-      bound,
-      (['Left', 'Right', 'Up', 'Down'] as const).map((d) => ({
-        key: `shift+${d.toLowerCase()}`,
-        command: `codemeow.windmove${d}`,
-        when: 'editorTextFocus && codemeow.active',
+      pkg.contributes.keybindings
+        .filter((k) => arrows.some((d) => k.key === `shift+${d}`))
+        .map((k) => ({ key: k.key, command: k.command, args: k.args })),
+      arrows.map((d) => ({
+        key: `shift+${d}`,
+        command: 'codemeow.hostKey',
+        args: `shift+${d}`,
       })),
+      'the manifest intercepts the arrows as host keys, in every meow state',
     );
+    const hosts = Rc.hostBindings();
+    for (const d of arrows) {
+      assert.equal(
+        hosts.get(`shift+${d}`)?.action,
+        `codemeow.windmove${d.charAt(0).toUpperCase()}${d.slice(1)}`,
+        `the rc decides what shift+${d} does`,
+      );
+    }
   });
 
   it('given the bundled rc then SPC w w and SPC x o both arm ace-window', () => {

@@ -16,6 +16,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 import { Chord } from './chord';
+import { HOST_KEYS, normalize as normalizeHostKey } from './hostKey';
 import { Binding, Config } from './rc';
 import { COMMANDS } from './registry';
 
@@ -48,6 +49,10 @@ export function parse(lines: string[]): Config {
       case 'cmap':
       case 'cnoremap':
         parseChord(c, cmd, rest, err);
+        break;
+      case 'hostmap':
+      case 'hostnoremap':
+        parseHostKey(c, cmd, rest, err);
         break;
       case 'set':
         parseSet(c, rest, err);
@@ -174,6 +179,29 @@ function parseChord(
   const binding = parseTarget(rhs, cmd === 'cmap', `${cmd} ${rest}`, err);
   if (binding === null) return;
   c.chords.set(Chord.spelling(chord), binding);
+}
+
+function parseHostKey(
+  c: Config,
+  cmd: string,
+  rest: string,
+  err: (m: string) => void,
+): void {
+  const split = Math.max(rest.lastIndexOf(' '), rest.lastIndexOf('\t'));
+  if (split <= 0) {
+    err(`${cmd} needs a host key and a target`);
+    return;
+  }
+  const spelling = rest.slice(0, split).trim();
+  const host = normalizeHostKey(spelling);
+  if (host === null) {
+    err(`not a host key (one of ${HOST_KEYS.join(' ')}): ${spelling}`);
+    return;
+  }
+  const rhs = rest.slice(split + 1).trim();
+  const binding = parseTarget(rhs, cmd === 'hostmap', `${cmd} ${rest}`, err);
+  if (binding === null) return;
+  c.hosts.set(host, binding);
 }
 
 function parseMap(

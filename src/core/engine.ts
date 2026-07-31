@@ -34,6 +34,7 @@ export function clearRepeat(): void {
 }
 
 export function enterKeypad(ctx: Ctx): void {
+  if (ctx.st.mode === MeowMode.KEYPAD) return;
   ctx.st.keypadPreviousState = ctx.st.mode;
   setMode(ctx, MeowMode.KEYPAD);
   ctx.ui.scheduleWhichKey('keypad', '');

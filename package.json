@@ -54,6 +54,11 @@
         "category": "codemeow"
       },
       {
+        "command": "codemeow.hostKey",
+        "title": "Host Key",
+        "category": "codemeow"
+      },
+      {
         "command": "codemeow.windmoveLeft",
         "title": "Windmove Left",
         "category": "codemeow"
@@ -96,6 +101,10 @@
         {
           "command": "codemeow.chord",
           "when": "false"
+        },
+        {
+          "command": "codemeow.hostKey",
+          "when": "false"
         }
       ]
     },
@@ -107,28 +116,33 @@
       },
       {
         "key": "alt+;",
-        "command": "codemeow.keypad",
-        "when": "editorTextFocus && codemeow.active"
+        "command": "codemeow.hostKey",
+        "args": "alt+;",
+        "when": "editorTextFocus && codemeow.active && codemeow.host.altSemicolon"
       },
       {
         "key": "shift+left",
-        "command": "codemeow.windmoveLeft",
-        "when": "editorTextFocus && codemeow.active"
+        "command": "codemeow.hostKey",
+        "args": "shift+left",
+        "when": "editorTextFocus && codemeow.active && codemeow.host.shiftLeft"
       },
       {
         "key": "shift+right",
-        "command": "codemeow.windmoveRight",
-        "when": "editorTextFocus && codemeow.active"
+        "command": "codemeow.hostKey",
+        "args": "shift+right",
+        "when": "editorTextFocus && codemeow.active && codemeow.host.shiftRight"
       },
       {
         "key": "shift+up",
-        "command": "codemeow.windmoveUp",
-        "when": "editorTextFocus && codemeow.active"
+        "command": "codemeow.hostKey",
+        "args": "shift+up",
+        "when": "editorTextFocus && codemeow.active && codemeow.host.shiftUp"
       },
       {
         "key": "shift+down",
-        "command": "codemeow.windmoveDown",
-        "when": "editorTextFocus && codemeow.active"
+        "command": "codemeow.hostKey",
+        "args": "shift+down",
+        "when": "editorTextFocus && codemeow.active && codemeow.host.shiftDown"
       },
       {
         "key": "escape",
