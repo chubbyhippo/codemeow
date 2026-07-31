@@ -15,7 +15,7 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import { labelsFor } from './avy';
+import { labelsFor, labelsMatching } from './avy';
 
 export enum Plan {
   NONE = 'none',
@@ -31,5 +31,5 @@ export function labels(targetCount: number): string[] {
 }
 
 export function matches(labelList: string[], input: string): string[] {
-  return labelList.filter((label) => label.startsWith(input));
+  return labelsMatching(labelList, input);
 }

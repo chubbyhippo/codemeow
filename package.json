@@ -185,6 +185,12 @@
         "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlE"
       },
       {
+        "key": "ctrl+l",
+        "command": "codemeow.chord",
+        "args": "C-l",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlL"
+      },
+      {
         "key": "alt+f",
         "command": "codemeow.chord",
         "args": "M-f",

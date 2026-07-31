@@ -91,6 +91,10 @@ export function labelsFor(count: number): string[] {
   return indexed.sort(([a], [b]) => a - b).map(([, label]) => label);
 }
 
+export function labelsMatching(labelList: string[], input: string): string[] {
+  return labelList.filter((label) => label.startsWith(input));
+}
+
 function labels(node: Branch): Array<[number, string]> {
   const out: Array<[number, string]> = [];
   const walk = (n: AvyNode, path: string): void => {

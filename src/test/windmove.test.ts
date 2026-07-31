@@ -31,6 +31,16 @@ describe('WindmoveSpec', () => {
     assert.equal(Ace.plan(9), Ace.Plan.LABELS);
   });
 
+  it('given labelled windows then ace-window labels follow the avy subdivision', () => {
+    assert.deepEqual(Ace.labels(3), ['a', 's', 'd']);
+    assert.deepEqual(Ace.labels(0), []);
+  });
+
+  it('given a typed prefix then ace-window keeps only the windows still matching', () => {
+    assert.deepEqual(Ace.matches(['a', 's', 'la', 'ls'], 'l'), ['la', 'ls']);
+    assert.deepEqual(Ace.matches(['a', 's', 'la', 'ls'], 'z'), []);
+  });
+
   it('given a side-by-side diff then left from the modified pane crosses to the original', () => {
     assert.equal(
       plan('left', { onOriginal: false, onModified: true, ...sideBySide }),
@@ -105,6 +115,13 @@ describe('WindmoveSpec', () => {
         when: 'editorTextFocus && codemeow.active',
       })),
     );
+  });
+
+  it('given the bundled rc then SPC w w and SPC x o both arm ace-window', () => {
+    freshSpec();
+    const d = Rc.defaults().keypad;
+    assert.equal(d.get('ww')?.action, 'codemeow.aceWindow');
+    assert.equal(d.get('xo')?.action, 'codemeow.aceWindow');
   });
 
   it('given the bundled rc then SPC w hjkl dispatch windmove', () => {

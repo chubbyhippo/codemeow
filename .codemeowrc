@@ -194,6 +194,11 @@ cmap C-g meow-cancel-selection
 " stock-Emacs whitespace and line chords. M-^ is meow-join + kill: the ledger
 " records that killing the join selection IS delete-indentation, so it needs no
 " command of its own.
+" stock-Emacs view chord. C-l is recenter-top-bottom: the first press centers the
+" caret's line, the next two put it at the top then the bottom, and any other
+" command in between starts the cycle over.
+cmap C-l recenter-top-bottom
+
 cmap M-m back-to-indentation
 cmap C-o open-line
 cmap M-\ delete-horizontal-space
@@ -400,6 +405,7 @@ map <leader>;r <action>(workbench.action.debug.selectandstart)
 map <leader>;R <action>(workbench.action.reloadWindow)
 map <leader>;s <action>(workbench.action.openSettings)
 map <leader>;t <action>(workbench.action.selectTheme)
+map <leader>;T <action>(workbench.action.toggleActivityBarVisibility)
 map <leader>;z <action>(workbench.action.toggleZenMode)
 
 " --- SPC a — activate views (tool windows) -----------------------------------
@@ -423,6 +429,7 @@ map <leader>as <action>(outline.focus)
 map <leader>at <action>(workbench.action.terminal.toggleTerminal)
 map <leader>aT <action>(workbench.action.tasks.runTask)
 map <leader>av <action>(workbench.view.scm)
+map <leader>aw <action>(workbench.view.scm)
 map <leader>ax <action>(workbench.view.extensions)
 
 " --- SPC d — debug / run ------------------------------------------------------
@@ -478,6 +485,7 @@ map <leader>gs <action>(workbench.action.gotoSymbol)
 " t/T: jump between a file and its tests — ideameow's GotoTest
 map <leader>gt <action>(testing.goToRelatedTest)
 map <leader>gT <action>(testing.goToRelatedTest)
+map <leader>gw <action>(workbench.view.scm)
 
 " --- SPC h — hide the side bar --------------------------------------------------
 desc <leader>h hide side bar
@@ -532,6 +540,7 @@ map <leader>om <action>(editor.action.sourceAction)
 map <leader>op <action>(workbench.view.explorer)
 map <leader>or <action>(workbench.action.openRecent)
 map <leader>ot <action>(workbench.action.terminal.new)
+map <leader>ob <action>(simpleBrowser.show)
 
 " --- SPC p — popup / project / parameter info / docs -------------------------------------
 desc <leader>p popup / project / docs
@@ -551,6 +560,7 @@ map <leader>q <action>(workbench.action.closeActiveEditor)
 " --- SPC r — run / refactor / replace -------------------------------------------------------
 desc <leader>r run / refactor / replace
 map <leader>ra <action>(workbench.action.showCommands)
+map <leader>rA <action>(workbench.action.debug.selectandstart)
 map <leader>rb <action>(git.revertSelectedRanges)
 map <leader>rB <action>(git.clean)
 " c/C: coverage — run it for this file, and open the coverage view
@@ -605,6 +615,7 @@ map <leader>sw <action>(editor.action.surroundWithSnippet)
 desc <leader>t toggle / breakpoints
 map <leader>tb <action>(editor.debug.action.toggleBreakpoint)
 map <leader>tc <action>(workbench.action.toggleActivityBarVisibility)
+map <leader>tt <action>(workbench.action.toggleActivityBarVisibility)
 map <leader>tf <action>(workbench.action.toggleFullScreen)
 map <leader>tk <action>(workbench.action.toggleScreencastMode)
 map <leader>tz <action>(workbench.action.toggleZenMode)

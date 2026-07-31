@@ -30,6 +30,7 @@ export const CHORD_KEYS: ChordKey[] = [
   { spelling: 'C-p', key: 'ctrl+p', ctx: 'ctrlP' },
   { spelling: 'C-a', key: 'ctrl+a', ctx: 'ctrlA' },
   { spelling: 'C-e', key: 'ctrl+e', ctx: 'ctrlE' },
+  { spelling: 'C-l', key: 'ctrl+l', ctx: 'ctrlL' },
   { spelling: 'M-f', key: 'alt+f', ctx: 'altF' },
   { spelling: 'M-b', key: 'alt+b', ctx: 'altB' },
   { spelling: 'M-a', key: 'alt+a', ctx: 'altA' },

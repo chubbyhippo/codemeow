@@ -131,6 +131,13 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
       await vscode.commands.executeCommand(id);
     },
 
+    revealCaret: async (at) => {
+      await vscode.commands.executeCommand('revealLine', {
+        lineNumber: editor.selection.active.line,
+        at,
+      });
+    },
+
     scheduleWhichKey: (kind, buffer) => {
       if (whichKeyCloseTimer !== undefined) {
         clearTimeout(whichKeyCloseTimer);
@@ -362,11 +369,17 @@ function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
     'codemeow.normal',
     st.mode === MeowMode.NORMAL,
   );
+  void vscode.commands.executeCommand(
+    'setContext',
+    'codemeow.insert',
+    st.mode === MeowMode.INSERT,
+  );
 }
 
 function clearActiveContext(): void {
   void vscode.commands.executeCommand('setContext', 'codemeow.active', false);
   void vscode.commands.executeCommand('setContext', 'codemeow.normal', false);
+  void vscode.commands.executeCommand('setContext', 'codemeow.insert', false);
 }
 
 function syncTreeKeys(): void {
@@ -439,7 +452,6 @@ async function windmove(dir: WindmoveDir): Promise<void> {
   }
 }
 
-const ACE_KEYS = 'asdfghjkl';
 const ACE_FOCUS_GROUP_COMMANDS = [
   'workbench.action.focusFirstEditorGroup',
   'workbench.action.focusSecondEditorGroup',
@@ -453,14 +465,27 @@ const ACE_FOCUS_GROUP_COMMANDS = [
 
 const ACE_CLICK_RESOLVE_LIMIT = 40;
 const ACE_BADGE_COLOR = 'charts.green';
+const SIDE_BAR_FOCUS_COMMAND = 'workbench.action.focusSideBar';
+const SIDE_BAR_NAME = 'Explorer';
+const STICKY_SCROLL_MAX_LINES = 5;
 
-type ClickPaint =
+type HintPaint =
   | { kind: 'text'; editor: vscode.TextEditor; at: vscode.Position }
   | { kind: 'badge'; uri: vscode.Uri };
 
-interface ClickTarget {
-  paint: ClickPaint;
+interface HintTarget {
+  paint: HintPaint;
   open: () => Thenable<unknown>;
+}
+
+interface WindowTarget extends HintTarget {
+  focused: boolean;
+  unpaintedName?: string;
+}
+
+interface Hint {
+  target: HintTarget;
+  label: string;
 }
 
 class AceBadgeProvider implements vscode.FileDecorationProvider {
@@ -473,7 +498,7 @@ class AceBadgeProvider implements vscode.FileDecorationProvider {
     if (badge === undefined) return undefined;
     return new vscode.FileDecoration(
       badge,
-      `ace-click: ${badge}`,
+      `ace: ${badge}`,
       new vscode.ThemeColor(ACE_BADGE_COLOR),
     );
   }
@@ -499,7 +524,7 @@ function tabUri(input: unknown): vscode.Uri | undefined {
   return undefined;
 }
 
-function tabTargets(): ClickTarget[] {
+function tabTargets(): HintTarget[] {
   const groups = Ace.ordered(
     vscode.window.tabGroups.all.map((g) => ({
       item: g,
@@ -508,7 +533,7 @@ function tabTargets(): ClickTarget[] {
     })),
   );
   const seen = new Set<string>();
-  const out: ClickTarget[] = [];
+  const out: HintTarget[] = [];
   for (const group of groups) {
     for (const tab of group.tabs) {
       const uri = tabUri(tab.input);
@@ -530,7 +555,7 @@ function tabTargets(): ClickTarget[] {
 async function linkTargets(
   editor: vscode.TextEditor,
   visible: vscode.Range,
-): Promise<ClickTarget[]> {
+): Promise<HintTarget[]> {
   let links: vscode.DocumentLink[];
   try {
     links =
@@ -555,7 +580,7 @@ async function linkTargets(
 async function lensTargets(
   editor: vscode.TextEditor,
   visible: vscode.Range,
-): Promise<ClickTarget[]> {
+): Promise<HintTarget[]> {
   let lenses: vscode.CodeLens[];
   try {
     lenses =
@@ -585,7 +610,7 @@ async function lensTargets(
 function quickFixTargets(
   editor: vscode.TextEditor,
   visible: vscode.Range,
-): ClickTarget[] {
+): HintTarget[] {
   return vscode.languages
     .getDiagnostics(editor.document.uri)
     .filter((d) => visible.contains(d.range.start))
@@ -602,7 +627,7 @@ function quickFixTargets(
     }));
 }
 
-async function inTextTargets(): Promise<ClickTarget[]> {
+async function inTextTargets(): Promise<HintTarget[]> {
   const editors = Ace.ordered(
     vscode.window.visibleTextEditors.map((e) => ({
       item: e,
@@ -610,7 +635,7 @@ async function inTextTargets(): Promise<ClickTarget[]> {
       y: 0,
     })),
   );
-  const out: ClickTarget[] = [];
+  const out: HintTarget[] = [];
   for (const editor of editors) {
     const visible = editor.visibleRanges[0];
     if (!visible) continue;
@@ -632,8 +657,99 @@ async function inTextTargets(): Promise<ClickTarget[]> {
   return out;
 }
 
-async function clickTargets(): Promise<ClickTarget[]> {
+async function clickTargets(): Promise<HintTarget[]> {
   return [...tabTargets(), ...(await inTextTargets())];
+}
+
+function paintHints(shown: Hint[]): void {
+  const inText = shown.flatMap((h) =>
+    h.target.paint.kind === 'text'
+      ? [
+          {
+            label: h.label,
+            editor: h.target.paint.editor,
+            at: h.target.paint.at,
+          },
+        ]
+      : [],
+  );
+  for (const editor of vscode.window.visibleTextEditors) {
+    editor.setDecorations(
+      avyLabelDecoration,
+      inText
+        .filter((h) => h.editor === editor)
+        .map((h) => ({
+          range: new vscode.Range(h.at, h.at),
+          renderOptions: { after: { contentText: ` ${h.label} ` } },
+        })),
+    );
+  }
+  aceBadges.show(
+    new Map(
+      shown.flatMap((h): Array<[string, string]> =>
+        h.target.paint.kind === 'badge'
+          ? [[h.target.paint.uri.toString(), h.label]]
+          : [],
+      ),
+    ),
+  );
+}
+
+function clearHints(): void {
+  for (const editor of vscode.window.visibleTextEditors) {
+    editor.setDecorations(avyLabelDecoration, []);
+  }
+  aceBadges.clear();
+}
+
+function runHintSession(
+  title: string,
+  targets: HintTarget[],
+  labels: string[],
+  narrow: (labelList: string[], input: string) => string[],
+  unpainted = '',
+): void {
+  const hinted = targets.map((target, i) => ({
+    target,
+    label: labels[i] ?? '',
+  }));
+  paintHints(hinted);
+
+  const picker = vscode.window.createQuickPick();
+  picker.title = title;
+  picker.placeholder =
+    unpainted === ''
+      ? `${targets.length} hint(s) — type the label`
+      : `${targets.length} hint(s) — type the label (${unpainted})`;
+  let input = '';
+  let picked: HintTarget | undefined;
+  picker.onDidChangeValue((value) => {
+    picker.value = '';
+    input += value.slice(-1);
+    const exact = labels.indexOf(input);
+    if (exact >= 0) {
+      picked = targets[exact];
+      picker.hide();
+      return;
+    }
+    const still = narrow(labels, input);
+    if (still.length === 0) {
+      vscode.window.setStatusBarMessage(
+        `No such candidate: ${input}`,
+        STATUS_MESSAGE_MS,
+      );
+      input = '';
+      paintHints(hinted);
+      return;
+    }
+    paintHints(hinted.filter((h) => still.includes(h.label)));
+  });
+  picker.onDidHide(() => {
+    clearHints();
+    picker.dispose();
+    if (picked) void picked.open();
+  });
+  picker.show();
 }
 
 async function aceClick(): Promise<void> {
@@ -645,88 +761,65 @@ async function aceClick(): Promise<void> {
     );
     return;
   }
-  const labels = AceClick.labels(targets.length);
-  const hinted = targets.map((target, i) => ({
-    target,
-    label: labels[i] ?? '',
-  }));
-
-  const paint = (shown: typeof hinted): void => {
-    const inText = shown.flatMap((h) =>
-      h.target.paint.kind === 'text'
-        ? [
-            {
-              label: h.label,
-              editor: h.target.paint.editor,
-              at: h.target.paint.at,
-            },
-          ]
-        : [],
-    );
-    for (const editor of vscode.window.visibleTextEditors) {
-      editor.setDecorations(
-        avyLabelDecoration,
-        inText
-          .filter((h) => h.editor === editor)
-          .map((h) => ({
-            range: new vscode.Range(h.at, h.at),
-            renderOptions: { after: { contentText: ` ${h.label} ` } },
-          })),
-      );
-    }
-    aceBadges.show(
-      new Map(
-        shown.flatMap((h): Array<[string, string]> =>
-          h.target.paint.kind === 'badge'
-            ? [[h.target.paint.uri.toString(), h.label]]
-            : [],
-        ),
-      ),
-    );
-  };
-  const clear = (): void => {
-    for (const editor of vscode.window.visibleTextEditors) {
-      editor.setDecorations(avyLabelDecoration, []);
-    }
-    aceBadges.clear();
-  };
-  paint(hinted);
-
-  const picker = vscode.window.createQuickPick();
-  picker.title = 'Ace click';
-  picker.placeholder = `${targets.length} hint(s) — type the label`;
-  let input = '';
-  let picked: ClickTarget | undefined;
-  picker.onDidChangeValue((value) => {
-    picker.value = '';
-    input += value.slice(-1);
-    const exact = labels.indexOf(input);
-    if (exact >= 0) {
-      picked = targets[exact];
-      picker.hide();
-      return;
-    }
-    const still = AceClick.matches(labels, input);
-    if (still.length === 0) {
-      vscode.window.setStatusBarMessage(
-        `No such candidate: ${input}`,
-        STATUS_MESSAGE_MS,
-      );
-      input = '';
-      paint(hinted);
-      return;
-    }
-    paint(hinted.filter((h) => still.includes(h.label)));
-  });
-  picker.onDidHide(() => {
-    clear();
-    picker.dispose();
-    if (picked) void picked.open();
-  });
-  picker.show();
+  runHintSession(
+    'Ace click',
+    targets,
+    AceClick.labels(targets.length),
+    AceClick.matches,
+  );
 }
 
-async function aceWindow(): Promise<void> {
+function stickyScrollLines(editor: vscode.TextEditor): number {
+  const editorConfig = vscode.workspace.getConfiguration(
+    'editor',
+    editor.document.uri,
+  );
+  if (!editorConfig.get<boolean>('stickyScroll.enabled')) return 0;
+  return (
+    editorConfig.get<number>('stickyScroll.maxLineCount') ??
+    STICKY_SCROLL_MAX_LINES
+  );
+}
+
+function hintAnchor(editor: vscode.TextEditor): vscode.Position {
+  const visible = editor.visibleRanges[0];
+  if (!visible) return new vscode.Position(0, 0);
+  const firstUncoveredLine = Math.min(
+    visible.start.line + stickyScrollLines(editor),
+    visible.end.line,
+  );
+  const caret = editor.selection.active;
+  const caretIsInSight =
+    caret.line >= firstUncoveredLine &&
+    editor.visibleRanges.some((range) => range.contains(caret));
+  return caretIsInSight ? caret : new vscode.Position(firstUncoveredLine, 0);
+}
+
+function groupPaint(group: vscode.TabGroup): HintPaint | undefined {
+  const editor = vscode.window.visibleTextEditors.find(
+    (e) => e.viewColumn === group.viewColumn,
+  );
+  if (editor) return { kind: 'text', editor, at: hintAnchor(editor) };
+  const uri = tabUri(group.activeTab?.input);
+  return uri ? { kind: 'badge', uri } : undefined;
+}
+
+function groupFocus(
+  group: vscode.TabGroup,
+  index: number,
+): (() => Thenable<unknown>) | undefined {
+  const focusGroup = ACE_FOCUS_GROUP_COMMANDS[index];
+  if (focusGroup) return () => vscode.commands.executeCommand(focusGroup);
+  const uri = tabUri(group.activeTab?.input);
+  if (!uri) return undefined;
+  return () =>
+    vscode.commands.executeCommand('vscode.open', uri, {
+      viewColumn: group.viewColumn,
+      preview: false,
+    });
+}
+
+function groupWindowTargets(): WindowTarget[] {
   const groups = Ace.ordered(
     vscode.window.tabGroups.all.map((g) => ({
       item: g,
@@ -734,63 +827,72 @@ async function aceWindow(): Promise<void> {
       y: 0,
     })),
   );
-  const decision = Ace.plan(groups.length);
-  if (decision === Ace.Plan.NONE) return;
-  if (decision === Ace.Plan.OTHER) {
-    await vscode.commands.executeCommand('workbench.action.focusNextGroup');
+  return groups.flatMap((group, index) => {
+    const paint = groupPaint(group);
+    const open = groupFocus(group, index);
+    if (!paint || !open) return [];
+    return [
+      {
+        paint,
+        open,
+        focused: group === vscode.window.tabGroups.activeTabGroup,
+      },
+    ];
+  });
+}
+
+function sideBarOnRight(): boolean {
+  return (
+    vscode.workspace
+      .getConfiguration('workbench')
+      .get<string>('sideBar.location') === 'right'
+  );
+}
+
+function sideBarWindowTarget(): WindowTarget | undefined {
+  const folders = vscode.workspace.workspaceFolders;
+  const folder = folders?.[0];
+  if (!folder) return undefined;
+  const rootRowExists = folders.length > 1;
+  return {
+    paint: { kind: 'badge', uri: folder.uri },
+    open: () => vscode.commands.executeCommand(SIDE_BAR_FOCUS_COMMAND),
+    focused: false,
+    ...(rootRowExists ? {} : { unpaintedName: SIDE_BAR_NAME }),
+  };
+}
+
+function windowTargets(): WindowTarget[] {
+  const groups = groupWindowTargets();
+  const sideBar = sideBarWindowTarget();
+  if (!sideBar) return groups;
+  return sideBarOnRight() ? [...groups, sideBar] : [sideBar, ...groups];
+}
+
+async function aceWindow(): Promise<void> {
+  const targets = windowTargets();
+  const decision = Ace.plan(targets.length);
+  if (decision === Ace.Plan.NONE) {
+    vscode.window.setStatusBarMessage(
+      'meow: no other window',
+      STATUS_MESSAGE_MS,
+    );
     return;
   }
-  const byKey = new Map<string, string>();
-  const labeled: [vscode.TextEditor, vscode.DecorationOptions][] = [];
-  ACE_FOCUS_GROUP_COMMANDS.forEach((focusGroup, i) => {
-    const group = groups[i];
-    if (!group) return;
-    const editor = vscode.window.visibleTextEditors.find(
-      (e) => e.viewColumn === group.viewColumn,
-    );
-    if (!editor) return;
-    const key = ACE_KEYS.charAt(i);
-    byKey.set(key, focusGroup);
-    const pos = editor.visibleRanges[0]?.start ?? new vscode.Position(0, 0);
-    labeled.push([
-      editor,
-      {
-        range: new vscode.Range(pos, pos),
-        renderOptions: { after: { contentText: ` ${key} ` } },
-      },
-    ]);
-  });
-  if (labeled.length === 0) return;
-  for (const [editor, opt] of labeled)
-    editor.setDecorations(avyLabelDecoration, [opt]);
-  const clear = () => {
-    for (const [editor] of labeled)
-      editor.setDecorations(avyLabelDecoration, []);
-  };
-  const picker = vscode.window.createQuickPick();
-  picker.title = 'Ace window';
-  picker.placeholder = 'window key';
-  let picked: string | undefined;
-  picker.onDidChangeValue((value) => {
-    const ch = value.slice(-1);
-    picker.value = '';
-    const command = byKey.get(ch);
-    if (!command) {
-      vscode.window.setStatusBarMessage(
-        `No such candidate: ${ch}`,
-        STATUS_MESSAGE_MS,
-      );
-      return;
-    }
-    picked = command;
-    picker.hide();
-  });
-  picker.onDidHide(() => {
-    clear();
-    picker.dispose();
-    if (picked) void vscode.commands.executeCommand(picked);
-  });
-  picker.show();
+  if (decision === Ace.Plan.OTHER) {
+    const other = targets.find((target) => !target.focused);
+    if (other) await other.open();
+    return;
+  }
+  const labels = Ace.labels(targets.length);
+  const unpainted = targets
+    .flatMap((target, i) =>
+      target.unpaintedName === undefined
+        ? []
+        : [`${labels[i]} = ${target.unpaintedName}`],
+    )
+    .join(', ');
+  runHintSession('Ace window', targets, labels, Ace.matches, unpainted);
 }
 
 async function emacsChord(spelling: unknown): Promise<void> {

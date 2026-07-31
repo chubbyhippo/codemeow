@@ -11,9 +11,11 @@
 #
 # Detection covers VS Code and VSCodium on Linux/macOS (~/.vscode/extensions,
 # ~/.vscode-oss/extensions), the WSL remote server (~/.vscode-server/
-# extensions), and Windows editors from WSL (/mnt/c/Users/<user>/.vscode/
-# extensions and .vscode-oss). The extension is side-loaded as a plain
-# directory — no marketplace needed; restart the editor to pick it up.
+# extensions), Windows editors from WSL (/mnt/c/Users/<user>/.vscode/
+# extensions and .vscode-oss) and scoop's portable installs, which keep their
+# extensions inside the app (scoop/apps/{vscode,vscodium}/current/data/
+# extensions) and never read the ~/.vscode ones. The extension is side-loaded
+# as a plain directory — no marketplace needed; restart the editor to pick it up.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
@@ -52,9 +54,15 @@ detect_ext_dirs() {
     for d in "$HOME/.vscode" "$HOME/.vscode-oss" "$HOME/.vscode-server"; do
         [ -d "$d" ] && printf '%s\n' "$d/extensions"
     done
+    for d in "$HOME"/scoop/apps/vscode/current/data "$HOME"/scoop/apps/vscodium/current/data; do
+        [ -d "$d/extensions" ] && printf '%s\n' "$d/extensions"
+    done
     if grep -qi microsoft /proc/version 2>/dev/null; then
         for d in /mnt/c/Users/*/.vscode /mnt/c/Users/*/.vscode-oss; do
             [ -d "$d" ] && printf '%s\n' "$d/extensions"
+        done
+        for d in /mnt/c/Users/*/scoop/apps/vscode/current/data /mnt/c/Users/*/scoop/apps/vscodium/current/data; do
+            [ -d "$d/extensions" ] && printf '%s\n' "$d/extensions"
         done
     fi
     return 0

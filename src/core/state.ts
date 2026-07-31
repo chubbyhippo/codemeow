@@ -73,6 +73,8 @@ export class MeowState {
 
   goalColumn: number | null = null;
 
+  recenterPhase = 0;
+
   lastCommand: string | null = null;
 
   grab: { start: number; end: number } | null = null;

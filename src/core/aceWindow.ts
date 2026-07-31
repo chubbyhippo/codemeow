@@ -15,6 +15,8 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+import { labelsFor, labelsMatching } from './avy';
+
 export const LABEL_THRESHOLD = 2;
 
 export enum Plan {
@@ -27,6 +29,14 @@ export function plan(windowCount: number): Plan {
   if (windowCount <= 1) return Plan.NONE;
   if (windowCount <= LABEL_THRESHOLD) return Plan.OTHER;
   return Plan.LABELS;
+}
+
+export function labels(windowCount: number): string[] {
+  return labelsFor(windowCount);
+}
+
+export function matches(labelList: string[], input: string): string[] {
+  return labelsMatching(labelList, input);
 }
 
 export function ordered<T>(

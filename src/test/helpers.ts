@@ -25,6 +25,7 @@ import {
   ClipboardPort,
   Ctx,
   EditorPort,
+  RevealAt,
   SelRange,
   selections,
   Selections,
@@ -161,6 +162,13 @@ class FakeUi implements UiPort {
     this.avyLabels = [];
   }
   setGrabHighlight(): void {}
+
+  revealed: RevealAt[] = [];
+
+  revealCaret(at: RevealAt): Promise<void> {
+    this.revealed.push(at);
+    return Promise.resolve();
+  }
 
   modeChanged(st: MeowState): void {
     this.modes.push(st.mode);

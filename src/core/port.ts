@@ -52,8 +52,11 @@ export interface ClipboardPort {
   write(text: string): Promise<void>;
 }
 
+export type RevealAt = 'center' | 'top' | 'bottom';
+
 export interface UiPort {
   hint(text: string): void;
+  revealCaret(at: RevealAt): Promise<void>;
   info(title: string, body: string): void;
   input(prompt: string, initial?: string): Promise<string | undefined>;
   runCommand(id: string): Promise<void>;

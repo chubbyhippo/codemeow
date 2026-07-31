@@ -24,6 +24,7 @@ import * as Structures from './structures';
 import * as Grab from './grab';
 import * as Edits from './edits';
 import * as Avy from './avy';
+import * as View from './view';
 import * as Engine from './engine';
 
 export const COMMANDS: Map<string, MeowCommand> = new Map([
@@ -34,6 +35,7 @@ export const COMMANDS: Map<string, MeowCommand> = new Map([
   ...Grab.commands,
   ...Edits.commands,
   ...Avy.commands,
+  ...View.commands,
   [
     'meow-negative-argument',
     (ctx: Ctx) => {
