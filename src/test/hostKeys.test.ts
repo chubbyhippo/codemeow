@@ -36,6 +36,32 @@ describe('HostKeySpec', () => {
     assert.equal(normalize('shift+down'), 'shift+down');
   });
 
+  it('given SPC then it is a host key that opens the keypad outside the editor', () => {
+    freshSpec();
+    assert.equal(normalize('SPC'), 'space');
+    assert.equal(normalize('<space>'), 'space');
+    assert.equal(normalize('space'), 'space');
+    assert.equal(Rc.hostBindings().get('space')?.command, 'meow-keypad');
+    const treeEntry = HOST_KEY_TABLE.find(({ host }) => host === 'space');
+    assert.equal(treeEntry?.key, 'space');
+    assert.ok(
+      treeEntry?.when.includes('listFocus') &&
+        treeEntry.when.includes('!inputFocus') &&
+        treeEntry.when.includes('!editorTextFocus') &&
+        treeEntry.when.includes('!terminalFocus'),
+      'SPC must stay out of editors, text inputs and the terminal',
+    );
+  });
+
+  it('given SPC in a tree then it enters the keypad from whatever state the editor was in', async () => {
+    const s = freshSpec();
+    s.given('a buffer', 'hello<caret>');
+    s.st.mode = MeowMode.NORMAL;
+    assert.equal(await Hosts.dispatch(s.ctx, 'SPC'), true);
+    assert.equal(s.st.mode, MeowMode.KEYPAD);
+    assert.equal(s.st.keypadPreviousState, MeowMode.NORMAL);
+  });
+
   it('given a key that is not a host key then it is not accepted', () => {
     assert.equal(normalize('C-f'), null);
     assert.equal(normalize('shift+home'), null);

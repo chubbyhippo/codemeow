@@ -120,6 +120,12 @@
         "when": "editorTextFocus && codemeow.active && !suggestWidgetVisible && !findWidgetVisible && !parameterHintsVisible && !renameInputVisible && !inSnippetMode"
       },
       {
+        "key": "space",
+        "command": "codemeow.hostKey",
+        "args": "space",
+        "when": "listFocus && !inputFocus && !editorTextFocus && !terminalFocus && codemeow.active && codemeow.host.space"
+      },
+      {
         "key": "alt+;",
         "command": "codemeow.hostKey",
         "args": "alt+;",

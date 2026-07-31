@@ -21,16 +21,26 @@ interface HostKeyBinding {
   host: HostKey;
   key: string;
   ctx: string;
+  when: string;
 }
 
-const HOST_WHEN = 'editorTextFocus && codemeow.active';
+const IN_EDITOR = 'editorTextFocus && codemeow.active';
+const IN_TREE =
+  'listFocus && !inputFocus && !editorTextFocus && !terminalFocus && ' +
+  'codemeow.active';
 
 export const HOST_KEY_TABLE: HostKeyBinding[] = [
-  { host: 'alt+;', key: 'alt+;', ctx: 'altSemicolon' },
-  { host: 'shift+left', key: 'shift+left', ctx: 'shiftLeft' },
-  { host: 'shift+right', key: 'shift+right', ctx: 'shiftRight' },
-  { host: 'shift+up', key: 'shift+up', ctx: 'shiftUp' },
-  { host: 'shift+down', key: 'shift+down', ctx: 'shiftDown' },
+  { host: 'space', key: 'space', ctx: 'space', when: IN_TREE },
+  { host: 'alt+;', key: 'alt+;', ctx: 'altSemicolon', when: IN_EDITOR },
+  { host: 'shift+left', key: 'shift+left', ctx: 'shiftLeft', when: IN_EDITOR },
+  {
+    host: 'shift+right',
+    key: 'shift+right',
+    ctx: 'shiftRight',
+    when: IN_EDITOR,
+  },
+  { host: 'shift+up', key: 'shift+up', ctx: 'shiftUp', when: IN_EDITOR },
+  { host: 'shift+down', key: 'shift+down', ctx: 'shiftDown', when: IN_EDITOR },
 ];
 
 export function hostKeybindings(): Array<{
@@ -39,10 +49,10 @@ export function hostKeybindings(): Array<{
   args: string;
   when: string;
 }> {
-  return HOST_KEY_TABLE.map(({ host, key, ctx }) => ({
+  return HOST_KEY_TABLE.map(({ host, key, ctx, when }) => ({
     key,
     command: 'codemeow.hostKey',
     args: host,
-    when: `${HOST_WHEN} && codemeow.host.${ctx}`,
+    when: `${when} && codemeow.host.${ctx}`,
   }));
 }

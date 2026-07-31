@@ -16,6 +16,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 export const HOST_KEYS = [
+  'space',
   'alt+;',
   'shift+left',
   'shift+right',
@@ -33,13 +34,20 @@ const SPELLINGS: Array<{ key: HostKey; mods: string[]; names: string[] }> = [
   { key: 'shift+down', mods: ['shift', 's'], names: ['down'] },
 ];
 
-const ALIASES: Map<string, HostKey> = new Map(
-  SPELLINGS.flatMap(({ key, mods, names }) =>
+const BARE_SPELLINGS: Array<{ key: HostKey; names: string[] }> = [
+  { key: 'space', names: ['space', 'spc'] },
+];
+
+const ALIASES: Map<string, HostKey> = new Map([
+  ...SPELLINGS.flatMap(({ key, mods, names }) =>
     mods.flatMap((mod) =>
       names.map((name): [string, HostKey] => [`${mod} ${name}`, key]),
     ),
   ),
-);
+  ...BARE_SPELLINGS.flatMap(({ key, names }) =>
+    names.map((name): [string, HostKey] => [name, key]),
+  ),
+]);
 
 export function normalize(spelling: string): HostKey | null {
   const flat = spelling

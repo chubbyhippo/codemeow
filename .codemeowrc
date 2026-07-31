@@ -199,15 +199,25 @@ cmap C-g meow-cancel-selection
 " records that killing the join selection IS delete-indentation, so it needs no
 " command of its own.
 " ============================================================================
-" Host keys — the five non-chord keys the manifest intercepts for every state
+" Host keys — the keys the manifest intercepts outside NORMAL's single-key layer
 " ----------------------------------------------------------------------------
 " These fire in EVERY meow state, including INSERT, which is why they cannot be
 " cmap lines (the chord layer is NORMAL/MOTION only). Both spellings work:
-" the Emacs one (M-;, S-left) or the host one (alt+;, shift+left). Map one to
-" `ignore` to hand the key back to VS Code — e.g. `hostmap S-left ignore`
-" restores Shift+Left's select-one-character-left. ESC is deliberately NOT
-" here: it is the way back to NORMAL and stays unremappable.
+" the Emacs one (SPC, M-;, S-left) or the host one (space, alt+;, shift+left).
+" Map one to `ignore` to hand the key back to VS Code — e.g.
+" `hostmap S-left ignore` restores Shift+Left's select-one-character-left, and
+" `hostmap SPC ignore` gives the trees their own Space back.
+"
+" SPC is the leader OUTSIDE the editor: pressed while a tree or list has focus
+" (the Explorer, search results, problems, outline, timeline, SCM, the debug
+" views) it opens the same keypad you get with SPC in NORMAL, and the which-key
+" popup appears at once because that popup is also what collects the keys. It
+" deliberately does NOT fire in a text input, in the terminal, or while an
+" editor has focus — the same exclusions ideameow's SpaceLeader.nativeSpace
+" makes. Inside the editor SPC needs no line here: it is NORMAL's own key.
+" ESC is the only key still hardcoded: it is the way back to NORMAL.
 " ============================================================================
+hostmap SPC meow-keypad
 hostmap M-; meow-keypad
 hostmap S-left <action>(codemeow.windmoveLeft)
 hostmap S-right <action>(codemeow.windmoveRight)

@@ -24,6 +24,7 @@ import * as Ace from '../core/aceWindow';
 import { attachMode } from '../core/attachPolicy';
 import { Chord } from '../core/chord';
 import { Chords } from '../core/chords';
+import { normalize as normalizeHostKey } from '../core/hostKey';
 import { Hosts } from '../core/hosts';
 import { Resizes } from '../core/resize';
 import * as Engine from '../core/engine';
@@ -966,6 +967,8 @@ function aceResize(): void {
   picker.show();
 }
 
+const KEYPAD_SINK_HOST_KEY = 'space';
+
 async function hostKey(key: unknown): Promise<void> {
   if (typeof key !== 'string') return;
   const editor = vscode.window.activeTextEditor;
@@ -973,7 +976,13 @@ async function hostKey(key: unknown): Promise<void> {
   const st = stateFor(editor);
   if (!st) return;
   const ctx = makeCtx(editor, st);
-  if (await Hosts.dispatch(ctx, key)) ctx.ui.refresh(st);
+  if (!(await Hosts.dispatch(ctx, key))) return;
+  ctx.ui.refresh(st);
+  const pressedOutsideTheEditor =
+    normalizeHostKey(key) === KEYPAD_SINK_HOST_KEY;
+  if (pressedOutsideTheEditor && st.mode === MeowMode.KEYPAD) {
+    openWhichKeyMenu(editor, st, 'keypad', '');
+  }
 }
 
 async function emacsChord(spelling: unknown): Promise<void> {
