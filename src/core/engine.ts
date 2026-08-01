@@ -189,6 +189,7 @@ export function escapeKey(ctx: Ctx): boolean {
     ctx.ui.refresh(st);
     return true;
   }
+  const hadTransient = st.pending !== null || repeatMap !== null;
   st.pending = null;
   repeatMap = null;
   ctx.ui.hideWhichKey();
@@ -209,5 +210,5 @@ export function escapeKey(ctx: Ctx): boolean {
     ctx.ui.refresh(st);
     return true;
   }
-  return false;
+  return hadTransient;
 }

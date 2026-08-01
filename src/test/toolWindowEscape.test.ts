@@ -17,10 +17,18 @@
 
 import assert from 'node:assert/strict';
 import { beforeEach } from 'node:test';
+import * as Engine from '../core/engine';
+import { MeowMode } from '../core/state';
 import { onEscape, reset, TIMEOUT_MS } from '../core/toolWindowEscape';
-import { describe, it } from './helpers';
+import { describe, freshSpec, it } from './helpers';
 
 describe('ToolWindowEscapeSpec', () => {
+  const navRc = [
+    'map <leader>tn meow-next',
+    'repeat nav . meow-next',
+    'repeat nav , meow-prev',
+  ].join('\n');
+
   beforeEach(() => reset());
 
   it('given a single escape in a tool window then it does not jump', () => {
@@ -54,5 +62,48 @@ describe('ToolWindowEscapeSpec', () => {
     onEscape('terminal', 1_000);
     assert.equal(onEscape(null, 1_100), false);
     assert.equal(onEscape('terminal', 1_200), false);
+  });
+
+  it("given KEYPAD then escape is meow's and exits the keypad", async () => {
+    const s = freshSpec();
+    s.given('keypad escape', '<caret>hello');
+    await s.whenKeys(' ');
+    s.thenMode(MeowMode.KEYPAD);
+    assert.equal(s.pressEsc(), true);
+    s.thenMode(MeowMode.NORMAL);
+  });
+
+  it("given an active selection then escape is meow's and clears it", async () => {
+    const s = freshSpec();
+    s.given('selection escape', '<caret>hello world');
+    await s.whenKeys('w');
+    assert.notEqual(s.selectedText(), undefined);
+    assert.equal(s.pressEsc(), true);
+    assert.equal(s.selectedText(), undefined);
+  });
+
+  it("given an armed repeat run then escape is meow's and ends it", async () => {
+    const s = freshSpec();
+    s.given('four lines', '<caret>one\ntwo\nthree\nfour');
+    s.givenRc(navRc);
+    await s.whenKeys(' tn');
+    assert.notEqual(Engine.repeatMap, null);
+    assert.equal(s.pressEsc(), true);
+    assert.equal(Engine.repeatMap, null);
+  });
+
+  it("given NORMAL with nothing to cancel then escape is not meow's", () => {
+    const s = freshSpec();
+    s.given('idle escape', '<caret>hello');
+    assert.equal(s.pressEsc(), false);
+  });
+
+  it("given INSERT then escape is meow's and returns to NORMAL", async () => {
+    const s = freshSpec();
+    s.given('insert escape', '<caret>hello');
+    await s.whenKeys('i');
+    s.thenMode(MeowMode.INSERT);
+    assert.equal(s.pressEsc(), true);
+    s.thenMode(MeowMode.NORMAL);
   });
 });
