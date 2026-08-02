@@ -56,10 +56,10 @@ describe('HostKeySpec', () => {
   it('given SPC in a tree then it enters the keypad from whatever state the editor was in', async () => {
     const s = freshSpec();
     s.given('a buffer', 'hello<caret>');
-    s.st.mode = MeowMode.NORMAL;
+    s.state.mode = MeowMode.NORMAL;
     assert.equal(await Hosts.dispatch(s.ctx, 'SPC'), true);
-    assert.equal(s.st.mode, MeowMode.KEYPAD);
-    assert.equal(s.st.keypadPreviousState, MeowMode.NORMAL);
+    assert.equal(s.state.mode, MeowMode.KEYPAD);
+    assert.equal(s.state.keypadPreviousState, MeowMode.NORMAL);
   });
 
   it('given a key that is not a host key then it is not accepted', () => {
@@ -93,7 +93,7 @@ describe('HostKeySpec', () => {
     const s = freshSpec();
     s.given('a buffer', 'hello<caret>');
     s.givenRc('hostmap S-left <action>(x.left)');
-    s.st.mode = MeowMode.INSERT;
+    s.state.mode = MeowMode.INSERT;
     assert.equal(await Hosts.dispatch(s.ctx, 'S-left'), true);
     assert.deepEqual(s.ui.ran, ['x.left']);
   });
@@ -101,11 +101,11 @@ describe('HostKeySpec', () => {
   it('given the keypad is already open then the keypad host key keeps the state it returns to', async () => {
     const s = freshSpec();
     s.given('a buffer', 'hello<caret>');
-    s.st.mode = MeowMode.INSERT;
+    s.state.mode = MeowMode.INSERT;
     await Hosts.dispatch(s.ctx, 'M-;');
     await Hosts.dispatch(s.ctx, 'M-;');
-    assert.equal(s.st.mode, MeowMode.KEYPAD);
-    assert.equal(s.st.keypadPreviousState, MeowMode.INSERT);
+    assert.equal(s.state.mode, MeowMode.KEYPAD);
+    assert.equal(s.state.keypadPreviousState, MeowMode.INSERT);
   });
 
   it('given an unmapped host key then it is handed back rather than swallowed', async () => {

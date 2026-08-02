@@ -35,8 +35,8 @@ const SELECTION_HISTORY_LIMIT = 200;
 const EXPAND_ZERO_COUNT = 10;
 
 export const commands: Map<string, MeowCommand> = new Map();
-for (let n = 0; n <= 9; n++) {
-  commands.set(`meow-expand-${n}`, (ctx) => expandOrCount(ctx, n));
+for (let digit = 0; digit <= 9; digit++) {
+  commands.set(`meow-expand-${digit}`, (ctx) => expandOrCount(ctx, digit));
 }
 commands.set('meow-reverse', (ctx) => reverse(ctx));
 commands.set('meow-cancel-selection', (ctx) => cancelAll(ctx));
@@ -94,18 +94,18 @@ export function recordSelect(
   expand: boolean,
   posBefore?: number,
 ): void {
-  const st = ctx.st;
-  const prev: SavedSelection = st.lastSelection ?? {
+  const state = ctx.state;
+  const prev: SavedSelection = state.lastSelection ?? {
     type: null,
     expand: false,
     anchor: posBefore ?? active,
     active: posBefore ?? active,
   };
-  const head = st.selectionHistory[st.selectionHistory.length - 1];
-  if (!head || !sameSaved(head, prev)) st.selectionHistory.push(prev);
-  while (st.selectionHistory.length > SELECTION_HISTORY_LIMIT)
-    st.selectionHistory.shift();
-  st.lastSelection = { type, expand, anchor, active };
+  const head = state.selectionHistory[state.selectionHistory.length - 1];
+  if (!head || !sameSaved(head, prev)) state.selectionHistory.push(prev);
+  while (state.selectionHistory.length > SELECTION_HISTORY_LIMIT)
+    state.selectionHistory.shift();
+  state.lastSelection = { type, expand, anchor, active };
 }
 
 export function select(
@@ -116,25 +116,25 @@ export function select(
   expand: boolean,
   push = true,
 ): void {
-  const { port, st } = ctx;
+  const { port, state: state } = ctx;
   const len = port.getText().length;
-  const m = clamp(markOff, 0, len);
-  const p = clamp(point, 0, len);
+  const mark = clamp(markOff, 0, len);
+  const caret = clamp(point, 0, len);
   const sels = port.getSelections();
-  if (push) recordSelect(ctx, type, m, p, expand, sels[0].active);
-  else st.lastSelection = { type, expand, anchor: m, active: p };
-  st.selType = type;
-  st.selExpand = expand;
+  if (push) recordSelect(ctx, type, mark, caret, expand, sels[0].active);
+  else state.lastSelection = { type, expand, anchor: mark, active: caret };
+  state.selType = type;
+  state.selExpand = expand;
   const next = sels.slice();
-  next[0] = { anchor: m, active: p };
+  next[0] = { anchor: mark, active: caret };
   port.setSelections(next);
   Grab.beacon(ctx);
   ctx.ui.showExpandHints(expandHintPositions(ctx));
 }
 
-export function resetSelectionMemory(st: MeowState): void {
-  st.selectionHistory = [];
-  st.lastSelection = null;
+export function resetSelectionMemory(state: MeowState): void {
+  state.selectionHistory = [];
+  state.lastSelection = null;
 }
 
 export function collapse(ctx: Ctx): void {
@@ -143,13 +143,13 @@ export function collapse(ctx: Ctx): void {
   const sels: SelRange[] = [...current];
   sels[0] = { anchor: caret, active: caret };
   ctx.port.setSelections(sels);
-  ctx.st.selType = SelType.NONE;
-  ctx.st.selExpand = false;
+  ctx.state.selType = SelType.NONE;
+  ctx.state.selExpand = false;
 }
 
 export function cancel(ctx: Ctx): void {
   collapse(ctx);
-  resetSelectionMemory(ctx.st);
+  resetSelectionMemory(ctx.state);
 }
 
 export function cancelAll(ctx: Ctx): void {
@@ -167,9 +167,9 @@ function reverse(ctx: Ctx): void {
 }
 
 function pop(ctx: Ctx): void {
-  const st = ctx.st;
+  const state = ctx.state;
   if (hasSelection(primary(ctx))) {
-    const entry = st.selectionHistory.pop();
+    const entry = state.selectionHistory.pop();
     if (!entry) return;
     if (entry.type === null) {
       const sels = ctx.port.getSelections().slice();
@@ -185,58 +185,58 @@ function pop(ctx: Ctx): void {
   }
 }
 
-function expandOrCount(ctx: Ctx, n: number): void {
-  const st = ctx.st;
-  if (hasSelection(primary(ctx)) && EXPANDABLE.has(st.selType)) {
-    expand(ctx, n === 0 ? EXPAND_ZERO_COUNT : n);
+function expandOrCount(ctx: Ctx, digit: number): void {
+  const state = ctx.state;
+  if (hasSelection(primary(ctx)) && EXPANDABLE.has(state.selType)) {
+    expand(ctx, digit === 0 ? EXPAND_ZERO_COUNT : digit);
   } else {
-    st.pendingCount = st.pendingCount * 10 + n;
+    state.pendingCount = state.pendingCount * 10 + digit;
   }
 }
 
-function expand(ctx: Ctx, n: number): void {
-  const st = ctx.st;
+function expand(ctx: Ctx, count: number): void {
+  const state = ctx.state;
   const text = ctx.port.getText();
   const back = backwardP(ctx);
   const caret = primary(ctx).active;
   let target: number;
-  switch (st.selType) {
+  switch (state.selType) {
     case SelType.CHAR:
-      target = caret + (back ? -n : n);
+      target = caret + (back ? -count : count);
       break;
     case SelType.WORD:
     case SelType.SYMBOL: {
-      const p = charPred(st.selType === SelType.SYMBOL);
+      const isWord = charPred(state.selType === SelType.SYMBOL);
       target = back
-        ? Words.prevStart(text, caret, n, p)
-        : Words.nextEnd(text, caret, n, p);
+        ? Words.prevStart(text, caret, count, isWord)
+        : Words.nextEnd(text, caret, count, isWord);
       break;
     }
     case SelType.LINE: {
-      const ln = lineOfOffset(text, caret);
+      const caretLine = lineOfOffset(text, caret);
       target = back
-        ? lineStart(text, Math.max(ln - n, 0))
-        : lineEnd(text, Math.min(ln + n, lineCount(text) - 1));
+        ? lineStart(text, Math.max(caretLine - count, 0))
+        : lineEnd(text, Math.min(caretLine + count, lineCount(text) - 1));
       break;
     }
     case SelType.FIND:
     case SelType.TILL: {
-      const ch = st.lastFind;
-      if (ch === null) return;
-      const t = nthCharTarget(
+      const findChar = state.lastFind;
+      if (findChar === null) return;
+      const found = nthCharTarget(
         text,
-        ch,
+        findChar,
         caret,
-        n,
+        count,
         back,
-        st.selType === SelType.TILL,
+        state.selType === SelType.TILL,
       );
-      if (t < 0) return;
-      target = t;
+      if (found < 0) return;
+      target = found;
       break;
     }
     default:
       return;
   }
-  select(ctx, st.selType, mark(ctx), target, false);
+  select(ctx, state.selType, mark(ctx), target, false);
 }

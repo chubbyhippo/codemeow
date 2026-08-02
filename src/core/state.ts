@@ -92,11 +92,11 @@ export class MeowState {
   replayDepth = 0;
   noremapDepth = 0;
 
-  takeCount(def = 1): number {
-    const n = this.pendingCount === 0 ? def : this.pendingCount;
-    const r = this.negative ? -n : n;
+  takeCount(fallback = 1): number {
+    const magnitude = this.pendingCount === 0 ? fallback : this.pendingCount;
+    const signed = this.negative ? -magnitude : magnitude;
     this.pendingCount = 0;
     this.negative = false;
-    return r;
+    return signed;
   }
 }

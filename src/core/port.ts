@@ -68,19 +68,19 @@ export interface UiPort {
   showAvyLabels(labels: Array<[number, string]>): void;
   clearAvy(): void;
   setGrabHighlight(range: { start: number; end: number } | null): void;
-  modeChanged(st: MeowState): void;
-  refresh(st: MeowState): void;
+  modeChanged(state: MeowState): void;
+  refresh(state: MeowState): void;
 }
 
 export interface Ctx {
   port: EditorPort;
   clipboard: ClipboardPort;
   ui: UiPort;
-  st: MeowState;
+  state: MeowState;
 }
 
 export function setMode(ctx: Ctx, mode: MeowMode): void {
-  ctx.st.mode = mode;
-  if (mode !== MeowMode.KEYPAD) ctx.st.keypad = '';
-  ctx.ui.modeChanged(ctx.st);
+  ctx.state.mode = mode;
+  if (mode !== MeowMode.KEYPAD) ctx.state.keypad = '';
+  ctx.ui.modeChanged(ctx.state);
 }

@@ -106,7 +106,7 @@ describe('FindSearchSpec', () => {
   it('given a selection that does not match the pattern when n then the selection text becomes the pattern', async () => {
     const s = freshSpec();
     s.given('repeats', 'foo <caret>bar foo bar');
-    s.st.searchHistory.push('zzz');
+    s.state.searchHistory.push('zzz');
     await s.whenKeys(',e');
     await s.whenKeys('n');
     s.thenSelection('bar');

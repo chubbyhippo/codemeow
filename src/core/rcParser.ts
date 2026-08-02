@@ -24,17 +24,17 @@ const ACTION_RE = /^<action>\(([\w.\-$(),=]+)\)$/i;
 const WHICHKEY_LET_RE = /^let\s+g:WhichKeyDesc\w*\s*=\s*"(.+)"$/;
 
 export function parse(lines: string[]): Config {
-  const c = new Config();
+  const config = new Config();
   lines.forEach((raw, i) => {
     let line = raw.trim();
-    const err = (msg: string) => c.errors.push(`line ${i + 1}: ${msg}`);
+    const err = (msg: string) => config.errors.push(`line ${i + 1}: ${msg}`);
 
     if (line === '' || line.startsWith('"') || line.startsWith('#')) return;
 
     const wk = WHICHKEY_LET_RE.exec(line);
     if (wk) {
       const [, descBody = ''] = wk;
-      parseDescBody(c, descBody, err);
+      parseDescBody(config, descBody, err);
       return;
     }
 
@@ -48,21 +48,21 @@ export function parse(lines: string[]): Config {
         break;
       case 'cmap':
       case 'cnoremap':
-        parseChord(c, cmd, rest, err);
+        parseChord(config, cmd, rest, err);
         break;
       case 'hostmap':
       case 'hostnoremap':
-        parseHostKey(c, cmd, rest, err);
+        parseHostKey(config, cmd, rest, err);
         break;
       case 'resizemap':
       case 'resizenoremap':
-        parseResizeKey(c, cmd, rest, err);
+        parseResizeKey(config, cmd, rest, err);
         break;
       case 'set':
-        parseSet(c, rest, err);
+        parseSet(config, rest, err);
         break;
       case 'desc':
-        parseDescBody(c, rest, err);
+        parseDescBody(config, rest, err);
         break;
       case 'map':
       case 'noremap':
@@ -70,16 +70,16 @@ export function parse(lines: string[]): Config {
       case 'nnoremap':
       case 'mmap':
       case 'mnoremap':
-        parseMap(c, cmd, rest, err);
+        parseMap(config, cmd, rest, err);
         break;
       case 'repeat':
-        parseRepeat(c, rest, err);
+        parseRepeat(config, rest, err);
         break;
       default:
         err(`unknown command '${cmd}'`);
     }
   });
-  return c;
+  return config;
 }
 
 function splitFirstWord(line: string): [string, string] {
@@ -88,17 +88,21 @@ function splitFirstWord(line: string): [string, string] {
   return [line.slice(0, gap), line.slice(gap).trim()];
 }
 
-function parseSet(c: Config, rest: string, err: (m: string) => void): void {
-  if (rest === 'which-key') c.whichKey = true;
-  else if (rest === 'nowhich-key') c.whichKey = false;
+function parseSet(
+  config: Config,
+  rest: string,
+  err: (m: string) => void,
+): void {
+  if (rest === 'which-key') config.whichKey = true;
+  else if (rest === 'nowhich-key') config.whichKey = false;
   else if (rest.startsWith('timeoutlen')) {
     const eq = rest.includes('=')
       ? rest.slice(rest.indexOf('=') + 1).trim()
       : '';
-    const n =
+    const parsed =
       eq !== '' ? parseInt(eq, 10) : parseInt(splitFirstWord(rest)[1], 10);
-    if (!Number.isNaN(n) && n >= 0) c.whichKeyDelayMs = n;
-  } else parseSetColor(c, rest, err);
+    if (!Number.isNaN(parsed) && parsed >= 0) config.whichKeyDelayMs = parsed;
+  } else parseSetColor(config, rest, err);
 }
 
 type ColorField =
@@ -114,7 +118,7 @@ const COLOR_SET_FIELDS = new Map<string, ColorField>([
 const HEX_COLOR_RE = /^[0-9a-fA-F]{6}$/;
 
 function parseSetColor(
-  c: Config,
+  config: Config,
   rest: string,
   err: (m: string) => void,
 ): void {
@@ -126,7 +130,7 @@ function parseSetColor(
     err(`set ${key}: invalid color '${value}' (expected #RRGGBB)`);
     return;
   }
-  c[field] = color;
+  config[field] = color;
 }
 
 function splitSetOption(rest: string): { key: string; value: string } {
@@ -142,7 +146,7 @@ function parseHexColor(text: string): string | null {
 }
 
 function parseDescBody(
-  c: Config,
+  config: Config,
   body: string,
   err: (m: string) => void,
 ): void {
@@ -159,11 +163,11 @@ function parseDescBody(
     err(`empty key sequence in description: ${body}`);
     return;
   }
-  c.keypadDesc.set(seq, desc);
+  config.keypadDesc.set(seq, desc);
 }
 
 function parseChord(
-  c: Config,
+  config: Config,
   cmd: string,
   rest: string,
   err: (m: string) => void,
@@ -182,11 +186,11 @@ function parseChord(
   const rhs = rest.slice(split + 1).trim();
   const binding = parseTarget(rhs, cmd === 'cmap', `${cmd} ${rest}`, err);
   if (binding === null) return;
-  c.chords.set(Chord.spelling(chord), binding);
+  config.chords.set(Chord.spelling(chord), binding);
 }
 
 function parseHostKey(
-  c: Config,
+  config: Config,
   cmd: string,
   rest: string,
   err: (m: string) => void,
@@ -205,21 +209,21 @@ function parseHostKey(
   const rhs = rest.slice(split + 1).trim();
   const binding = parseTarget(rhs, cmd === 'hostmap', `${cmd} ${rest}`, err);
   if (binding === null) return;
-  c.hosts.set(host, binding);
+  config.hosts.set(host, binding);
 }
 
 function parseResizeKey(
-  c: Config,
+  config: Config,
   cmd: string,
   rest: string,
   err: (m: string) => void,
 ): void {
-  const m = /^(\S+)\s+(.*)$/.exec(rest);
-  if (!m) {
+  const matched = /^(\S+)\s+(.*)$/.exec(rest);
+  if (!matched) {
     err(`${cmd} needs a key and a target`);
     return;
   }
-  const [, lhs = '', rhsRaw = ''] = m;
+  const [, lhs = '', rhsRaw = ''] = matched;
   const key = parseKeys(lhs, err);
   if (key === null) return;
   if (key.length !== 1) {
@@ -233,21 +237,21 @@ function parseResizeKey(
     err,
   );
   if (binding === null) return;
-  c.resizes.set(key, binding);
+  config.resizes.set(key, binding);
 }
 
 function parseMap(
-  c: Config,
+  config: Config,
   cmd: string,
   rest: string,
   err: (m: string) => void,
 ): void {
-  const m = /^(\S+)\s+(.*)$/.exec(rest);
-  if (!m) {
+  const matched = /^(\S+)\s+(.*)$/.exec(rest);
+  if (!matched) {
     err(`${cmd} needs a key and a target`);
     return;
   }
-  const [, lhs = '', rhsRaw = ''] = m;
+  const [, lhs = '', rhsRaw = ''] = matched;
   const rhs = rhsRaw.trim();
   const recursive = cmd === 'map' || cmd === 'nmap' || cmd === 'mmap';
   const motion = cmd === 'mmap' || cmd === 'mnoremap';
@@ -267,7 +271,7 @@ function parseMap(
       err(
         `keypad ${seq.charAt(0)} is reserved (digit argument / cheatsheet / describe)`,
       );
-    } else c.keypad.set(seq, binding);
+    } else config.keypad.set(seq, binding);
     return;
   }
 
@@ -280,7 +284,7 @@ function parseMap(
   } else if (keys === ' ') {
     err('SPC is the keypad key and cannot be remapped');
   } else {
-    (motion ? c.motion : c.normal).set(keys, binding);
+    (motion ? config.motion : config.normal).set(keys, binding);
   }
 }
 
@@ -306,13 +310,17 @@ function parseTarget(
   return { keys, recursive };
 }
 
-function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
-  const m = /^(\S+)\s+(\S+)\s+(.*)$/.exec(rest);
-  if (!m) {
+function parseRepeat(
+  config: Config,
+  rest: string,
+  err: (m: string) => void,
+): void {
+  const matched = /^(\S+)\s+(\S+)\s+(.*)$/.exec(rest);
+  if (!matched) {
     err('repeat needs a group, a member key and a target');
     return;
   }
-  const [, group = '', keyToken = '', targetToken = ''] = m;
+  const [, group = '', keyToken = '', targetToken = ''] = matched;
   const key = parseKeys(keyToken, err);
   if (key === null) return;
   if (key.length !== 1) {
@@ -327,39 +335,39 @@ function parseRepeat(c: Config, rest: string, err: (m: string) => void): void {
       err,
     );
     if (binding === null) return;
-    let members = c.repeat.get(group);
+    let members = config.repeat.get(group);
     if (!members) {
       members = new Map<string, Binding>();
-      c.repeat.set(group, members);
+      config.repeat.set(group, members);
     }
     members.set(key, binding);
   }
 }
 
-function parseKeys(s: string, err: (m: string) => void): string | null {
+function parseKeys(spec: string, err: (msg: string) => void): string | null {
   let out = '';
   let i = 0;
-  while (i < s.length) {
-    const ch = s.charAt(i);
-    if (ch === '<') {
-      const close = s.indexOf('>', i);
+  while (i < spec.length) {
+    const char = spec.charAt(i);
+    if (char === '<') {
+      const close = spec.indexOf('>', i);
       if (close < 0) {
-        out += ch;
+        out += char;
         i++;
         continue;
       }
-      const token = s.slice(i + 1, close).toLowerCase();
+      const token = spec.slice(i + 1, close).toLowerCase();
       if (token === 'space') out += ' ';
       else if (token === 'lt') out += '<';
       else {
         err(
-          `unsupported key token ${s.slice(i, close + 1)} (only printable keys reach the meow engine)`,
+          `unsupported key token ${spec.slice(i, close + 1)} (only printable keys reach the meow engine)`,
         );
         return null;
       }
       i = close + 1;
     } else {
-      out += ch;
+      out += char;
       i++;
     }
   }

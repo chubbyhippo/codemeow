@@ -12,9 +12,9 @@ describe('GrabBeaconSpec', () => {
     s.given('word', '<caret>hello world');
     await s.whenKeys('wG');
     s.thenNoSelection();
-    assert.ok(s.st.grab);
-    assert.equal(s.st.grab.start, 0);
-    assert.equal(s.st.grab.end, 5);
+    assert.ok(s.state.grab);
+    assert.equal(s.state.grab.start, 0);
+    assert.equal(s.state.grab.end, 5);
   });
 
   it('given a grab and a selection elsewhere when R then the two texts swap (meow-swap-grab)', async () => {
@@ -28,7 +28,7 @@ describe('GrabBeaconSpec', () => {
     s.thenText('three two one');
     s.thenNoSelection();
     assert.equal(
-      s.editor.text.slice(s.st.grab!.start, s.st.grab!.end),
+      s.editor.text.slice(s.state.grab!.start, s.state.grab!.end),
       'three',
       'grab now holds the swapped-in text',
     );
@@ -38,9 +38,9 @@ describe('GrabBeaconSpec', () => {
     const s = freshSpec();
     s.given('word', '<caret>hello world');
     await s.whenKeys('wG');
-    assert.ok(s.st.grab);
+    assert.ok(s.state.grab);
     await s.whenKeys('G');
-    assert.equal(s.st.grab, null);
+    assert.equal(s.state.grab, null);
   });
 
   it('given no grab when R then nothing changes', async () => {
@@ -68,8 +68,8 @@ describe('GrabBeaconSpec', () => {
     s.givenCaretAt(6);
     await s.whenKeys('wY');
     s.thenNoSelection();
-    assert.equal(s.st.grab!.start, 6);
-    assert.equal(s.st.grab!.end, 11);
+    assert.equal(s.state.grab!.start, 6);
+    assert.equal(s.state.grab!.end, 11);
   });
 
   it('given a grab when marking a word inside it then a cursor lands on every occurrence (BEACON)', async () => {

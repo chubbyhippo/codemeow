@@ -31,30 +31,32 @@ export const commands: Map<string, MeowCommand> = new Map([
 ]);
 
 function clear(ctx: Ctx): void {
-  ctx.st.grab = null;
+  ctx.state.grab = null;
   ctx.ui.setGrabHighlight(null);
 }
 
 function set(ctx: Ctx, start: number, end: number): void {
-  ctx.st.grab = { start, end };
+  ctx.state.grab = { start, end };
   ctx.ui.setGrabHighlight(end > start ? { start, end } : null);
 }
 
-export function adjustForEdits(st: MeowState, edits: TextEdit[]): void {
-  const g = st.grab;
-  if (!g) return;
-  for (const e of [...edits].sort((a, b) => b.start - a.start)) {
-    const delta = e.text.length - (e.end - e.start);
-    if (g.start >= e.end) {
-      g.start += delta;
-      g.end += delta;
+export function adjustForEdits(state: MeowState, edits: TextEdit[]): void {
+  const grabbed = state.grab;
+  if (!grabbed) return;
+  for (const edit of [...edits].sort(
+    (left, right) => right.start - left.start,
+  )) {
+    const delta = edit.text.length - (edit.end - edit.start);
+    if (grabbed.start >= edit.end) {
+      grabbed.start += delta;
+      grabbed.end += delta;
     } else {
-      if (g.end >= e.end) g.end += delta;
-      else if (g.end > e.start) g.end = e.start;
-      if (g.start > e.start) g.start = e.start;
+      if (grabbed.end >= edit.end) grabbed.end += delta;
+      else if (grabbed.end > edit.start) grabbed.end = edit.start;
+      if (grabbed.start > edit.start) grabbed.start = edit.start;
     }
   }
-  if (g.end < g.start) g.end = g.start;
+  if (grabbed.end < grabbed.start) grabbed.end = grabbed.start;
 }
 
 function grab(ctx: Ctx): void {
@@ -79,10 +81,10 @@ function sync(ctx: Ctx): void {
 
 async function swap(ctx: Ctx): Promise<void> {
   if (Edits.blockedReadOnly(ctx)) return;
-  const { port, st } = ctx;
-  const g = st.grab;
+  const { port, state } = ctx;
+  const grabbed = state.grab;
   const sel = Sel.primary(ctx);
-  if (!g) {
+  if (!grabbed) {
     ctx.ui.hint('No grab');
     return;
   }
@@ -90,96 +92,103 @@ async function swap(ctx: Ctx): Promise<void> {
     ctx.ui.hint('meow-swap-grab needs a selection');
     return;
   }
-  const gs = g.start;
-  const ge = g.end;
-  const ss = Sel.lo(sel);
-  const se = Sel.hi(sel);
-  if (Math.max(gs, ss) < Math.min(ge, se) && !(gs === ss && ge === se)) {
+  const grabStart = grabbed.start;
+  const grabEnd = grabbed.end;
+  const selStart = Sel.lo(sel);
+  const selEnd = Sel.hi(sel);
+  const overlaps =
+    Math.max(grabStart, selStart) < Math.min(grabEnd, selEnd) &&
+    !(grabStart === selStart && grabEnd === selEnd);
+  if (overlaps) {
     ctx.ui.hint('Selection overlaps the grab');
     return;
   }
   const text = port.getText();
-  const grabText = text.slice(gs, ge);
-  const selText = text.slice(ss, se);
-  st.grab = null;
+  const grabText = text.slice(grabStart, grabEnd);
+  const selText = text.slice(selStart, selEnd);
+  state.grab = null;
   await port.edit([
-    { start: ss, end: se, text: grabText },
-    { start: gs, end: ge, text: selText },
+    { start: selStart, end: selEnd, text: grabText },
+    { start: grabStart, end: grabEnd, text: selText },
   ]);
-  if (gs <= ss) {
-    const delta = selText.length - (ge - gs);
-    set(ctx, gs, gs + selText.length);
-    const caret = ss + delta + grabText.length;
+  if (grabStart <= selStart) {
+    const delta = selText.length - (grabEnd - grabStart);
+    set(ctx, grabStart, grabStart + selText.length);
+    const caret = selStart + delta + grabText.length;
     port.setSelections([{ anchor: caret, active: caret }]);
   } else {
-    const delta = grabText.length - (se - ss);
-    set(ctx, gs + delta, gs + delta + selText.length);
-    const caret = ss + grabText.length;
+    const delta = grabText.length - (selEnd - selStart);
+    set(ctx, grabStart + delta, grabStart + delta + selText.length);
+    const caret = selStart + grabText.length;
     port.setSelections([{ anchor: caret, active: caret }]);
   }
-  st.selType = SelType.NONE;
+  state.selType = SelType.NONE;
 }
 
 export function pop(ctx: Ctx): boolean {
-  const g = ctx.st.grab;
-  if (!g) return false;
-  const { start, end } = g;
+  const grabbed = ctx.state.grab;
+  if (!grabbed) return false;
+  const { start, end } = grabbed;
   clear(ctx);
   Sel.select(ctx, SelType.TRANSIENT, start, end, false);
   return true;
 }
 
 export function beacon(ctx: Ctx): void {
-  const { port, st } = ctx;
-  const g = st.grab;
-  if (!g || g.end <= g.start) return;
+  const { port, state } = ctx;
+  const grabbed = state.grab;
+  if (!grabbed || grabbed.end <= grabbed.start) return;
   const sel = Sel.primary(ctx);
   if (!Sel.hasSelection(sel)) return;
-  const ss = Sel.lo(sel);
-  const se = Sel.hi(sel);
-  if (ss < g.start || se > g.end || se === ss) return;
+  const selStart = Sel.lo(sel);
+  const selEnd = Sel.hi(sel);
+  if (selStart < grabbed.start || selEnd > grabbed.end || selEnd === selStart)
+    return;
   const text = port.getText();
   const sels: SelRange[] = [];
-  switch (st.selType) {
+  switch (state.selType) {
     case SelType.WORD:
     case SelType.SYMBOL:
     case SelType.VISIT:
     case SelType.FIND:
     case SelType.TILL:
     case SelType.CHAR: {
-      const selText = text.slice(ss, se);
+      const selText = text.slice(selStart, selEnd);
       if (selText.trim() === '') return;
       const bounded =
-        st.selType === SelType.WORD || st.selType === SelType.SYMBOL;
+        state.selType === SelType.WORD || state.selType === SelType.SYMBOL;
       const re = new RegExp(
         bounded ? `\\b${escapeRegExp(selText)}\\b` : escapeRegExp(selText),
         'g',
       );
-      const region = text.slice(g.start, g.end);
+      const region = text.slice(grabbed.start, grabbed.end);
       let added = 0;
-      let m: RegExpExecArray | null;
-      while ((m = re.exec(region)) !== null) {
-        if (m[0].length === 0) {
+      let match: RegExpExecArray | null;
+      while ((match = re.exec(region)) !== null) {
+        if (match[0].length === 0) {
           re.lastIndex++;
           continue;
         }
-        const s0 = g.start + m.index;
-        const e0 = s0 + m[0].length;
-        if (s0 !== ss) {
-          sels.push({ anchor: s0, active: e0 });
+        const matchStart = grabbed.start + match.index;
+        const matchEnd = matchStart + match[0].length;
+        if (matchStart !== selStart) {
+          sels.push({ anchor: matchStart, active: matchEnd });
           if (++added >= MAX_GRAB_SYNC_MATCHES) break;
         }
       }
       if (sels.length === 0) return;
-      sels.unshift({ anchor: ss, active: se });
+      sels.unshift({ anchor: selStart, active: selEnd });
       break;
     }
     case SelType.LINE: {
-      const first = lineOfOffset(text, g.start);
-      const last = lineOfOffset(text, Math.max(g.end - 1, g.start));
+      const first = lineOfOffset(text, grabbed.start);
+      const last = lineOfOffset(text, Math.max(grabbed.end - 1, grabbed.start));
       if (last <= first) return;
-      for (let ln = first; ln <= last; ln++) {
-        sels.push({ anchor: lineStart(text, ln), active: lineEnd(text, ln) });
+      for (let line = first; line <= last; line++) {
+        sels.push({
+          anchor: lineStart(text, line),
+          active: lineEnd(text, line),
+        });
       }
       break;
     }

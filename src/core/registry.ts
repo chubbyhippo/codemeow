@@ -39,13 +39,13 @@ export const COMMANDS: Map<string, MeowCommand> = new Map([
   [
     'meow-negative-argument',
     (ctx: Ctx) => {
-      ctx.st.negative = true;
+      ctx.state.negative = true;
     },
   ],
   [
     'negative-argument',
     (ctx: Ctx) => {
-      ctx.st.negative = true;
+      ctx.state.negative = true;
     },
   ],
   ['meow-quit', (ctx: Ctx) => ctx.port.closeEditor()],

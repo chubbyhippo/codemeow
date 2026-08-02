@@ -36,7 +36,7 @@ export const Chords = {
   },
 
   async dispatch(ctx: Ctx, chord: Chord | null): Promise<boolean> {
-    if (!Chords.claims(ctx.st.mode, chord)) return false;
+    if (!Chords.claims(ctx.state.mode, chord)) return false;
     const binding = Chords.bindingFor(chord);
     if (binding === null) return false;
     await Engine.runBinding(ctx, binding);

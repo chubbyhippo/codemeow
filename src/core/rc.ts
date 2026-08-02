@@ -120,26 +120,26 @@ export const Rc = {
       merged.set(group, new Map(members));
     }
     for (const [group, members] of userConfig.repeat) {
-      const m = merged.get(group) ?? new Map<string, Binding>();
-      for (const [key, b] of members) m.set(key, b);
-      merged.set(group, m);
+      const groupMap = merged.get(group) ?? new Map<string, Binding>();
+      for (const [key, binding] of members) groupMap.set(key, binding);
+      merged.set(group, groupMap);
     }
     for (const [group, members] of merged) {
-      for (const [key, b] of members) {
-        if (b.command === 'ignore') members.delete(key);
+      for (const [key, binding] of members) {
+        if (binding.command === 'ignore') members.delete(key);
       }
       if (members.size === 0) merged.delete(group);
     }
     return merged;
   },
 
-  repeatMapFor(b: Binding): Map<string, Binding> | null {
+  repeatMapFor(target: Binding): Map<string, Binding> | null {
     for (const members of this.repeatGroups().values()) {
-      for (const m of members.values()) {
+      for (const member of members.values()) {
         if (
-          m.action === b.action &&
-          m.command === b.command &&
-          m.keys === b.keys
+          member.action === target.action &&
+          member.command === target.command &&
+          member.keys === target.keys
         ) {
           return members;
         }

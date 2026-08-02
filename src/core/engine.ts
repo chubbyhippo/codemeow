@@ -34,8 +34,8 @@ export function clearRepeat(): void {
 }
 
 export function enterKeypad(ctx: Ctx): void {
-  if (ctx.st.mode === MeowMode.KEYPAD) return;
-  ctx.st.keypadPreviousState = ctx.st.mode;
+  if (ctx.state.mode === MeowMode.KEYPAD) return;
+  ctx.state.keypadPreviousState = ctx.state.mode;
   setMode(ctx, MeowMode.KEYPAD);
   ctx.ui.scheduleWhichKey('keypad', '');
 }
@@ -43,74 +43,76 @@ export function enterKeypad(ctx: Ctx): void {
 export async function runEmacsMotion(ctx: Ctx, command: string): Promise<void> {
   const cmd = COMMANDS.get(command);
   if (cmd) await cmd(ctx);
-  ctx.ui.refresh(ctx.st);
+  ctx.ui.refresh(ctx.state);
 }
 
 export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
-  const st = ctx.st;
-  if (st.mode === MeowMode.KEYPAD) {
+  const state = ctx.state;
+  if (state.mode === MeowMode.KEYPAD) {
     await Keypad.key(ctx, c);
-    st.lastCommand = 'keypad';
-    ctx.ui.refresh(st);
+    state.lastCommand = 'keypad';
+    ctx.ui.refresh(state);
     return true;
   }
-  if (st.avy) {
+  if (state.avy) {
     await Avy.key(ctx, c);
-    st.lastCommand = 'avy';
-    ctx.ui.refresh(st);
+    state.lastCommand = 'avy';
+    ctx.ui.refresh(state);
     return true;
   }
-  if (st.mode === MeowMode.INSERT) return false;
+  if (state.mode === MeowMode.INSERT) return false;
 
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();
 
-  const pend = st.pending;
+  const pend = state.pending;
   const repeatBinding = pend === null ? (repeatMap?.get(c) ?? null) : null;
   if (pend === null && repeatBinding === null) repeatMap = null;
-  const motionish = st.mode === MeowMode.MOTION;
+  const motionish = state.mode === MeowMode.MOTION;
   const binding =
     pend === null ? (repeatBinding ?? resolve(ctx, c, motionish)) : null;
   const cmd = binding?.command;
 
-  if (!st.replaying && cmd !== 'repeat') {
-    if (pend === null && st.pendingCount === 0 && !st.negative) st.unit = [];
-    st.unit.push(c);
+  if (!state.replaying && cmd !== 'repeat') {
+    if (pend === null && state.pendingCount === 0 && !state.negative)
+      state.unit = [];
+    state.unit.push(c);
   }
 
   if (pend !== null) {
-    st.pending = null;
+    state.pending = null;
     await resolvePending(ctx, pend, c);
-    st.lastCommand = 'pending';
+    state.lastCommand = 'pending';
   } else if (binding) {
     await runBinding(ctx, binding);
-    st.lastCommand = cmd ?? binding.action ?? st.lastCommand;
+    state.lastCommand = cmd ?? binding.action ?? state.lastCommand;
   } else {
-    st.lastCommand = null;
+    state.lastCommand = null;
   }
 
   const prefixy =
-    st.pending !== null ||
-    (st.pendingCount !== 0 &&
+    state.pending !== null ||
+    (state.pendingCount !== 0 &&
       cmd !== undefined &&
       cmd.startsWith('meow-expand-')) ||
-    (st.negative && cmd === 'meow-negative-argument') ||
+    (state.negative && cmd === 'meow-negative-argument') ||
     cmd === 'meow-keypad';
-  if (!st.replaying && cmd !== 'repeat' && !prefixy) st.lastKeys = [...st.unit];
+  if (!state.replaying && cmd !== 'repeat' && !prefixy)
+    state.lastKeys = [...state.unit];
 
-  ctx.ui.refresh(st);
+  ctx.ui.refresh(state);
   return true;
 }
 
 function resolve(ctx: Ctx, c: string, motion: boolean): Binding | null {
   if (c === ' ') return KEYPAD_BINDING;
-  if (ctx.st.noremapDepth === 0) {
+  if (ctx.state.noremapDepth === 0) {
     const cfg = Rc.cfg();
     const user = motion ? cfg.motion.get(c) : cfg.normal.get(c);
     if (user) return user;
   }
-  const d = Rc.defaults();
-  return (motion ? d.motion.get(c) : d.normal.get(c)) ?? null;
+  const defaults = Rc.defaults();
+  return (motion ? defaults.motion.get(c) : defaults.normal.get(c)) ?? null;
 }
 
 async function resolvePending(ctx: Ctx, p: Pending, c: string): Promise<void> {
@@ -127,20 +129,20 @@ async function resolvePending(ctx: Ctx, p: Pending, c: string): Promise<void> {
 }
 
 export async function repeatLast(ctx: Ctx): Promise<void> {
-  const st = ctx.st;
-  const keys = st.lastKeys;
+  const state = ctx.state;
+  const keys = state.lastKeys;
   if (keys.length === 0) return;
-  st.replaying = true;
+  state.replaying = true;
   try {
-    for (const k of keys) await handleChar(ctx, k);
+    for (const key of keys) await handleChar(ctx, key);
   } finally {
-    st.replaying = false;
+    state.replaying = false;
   }
 }
 
-export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
-  await dispatch(ctx, b);
-  const map = Rc.repeatMapFor(b);
+export async function runBinding(ctx: Ctx, binding: Binding): Promise<void> {
+  await dispatch(ctx, binding);
+  const map = Rc.repeatMapFor(binding);
   if (!map) return;
   if (repeatMap === null) {
     ctx.ui.hint(`Repeat with ${[...map.keys()].join(', ')}`);
@@ -148,66 +150,66 @@ export async function runBinding(ctx: Ctx, b: Binding): Promise<void> {
   repeatMap = map;
 }
 
-async function dispatch(ctx: Ctx, b: Binding): Promise<void> {
-  const st = ctx.st;
-  if (b.command !== undefined) {
-    const cmd = COMMANDS.get(b.command);
+async function dispatch(ctx: Ctx, binding: Binding): Promise<void> {
+  const state = ctx.state;
+  if (binding.command !== undefined) {
+    const cmd = COMMANDS.get(binding.command);
     if (cmd) await cmd(ctx);
-    else ctx.ui.hint(`Unknown meow command: ${b.command}`);
+    else ctx.ui.hint(`Unknown meow command: ${binding.command}`);
     return;
   }
-  if (b.action !== undefined) {
+  if (binding.action !== undefined) {
     try {
-      await ctx.ui.runCommand(b.action);
+      await ctx.ui.runCommand(binding.action);
     } catch {
-      ctx.ui.hint(`Unknown command: ${b.action}`);
+      ctx.ui.hint(`Unknown command: ${binding.action}`);
     }
     return;
   }
-  if (b.keys === undefined) return;
-  if (st.replayDepth >= 8) {
+  if (binding.keys === undefined) return;
+  if (state.replayDepth >= 8) {
     ctx.ui.hint('codemeow: mapping recursion is too deep');
     return;
   }
-  const savedReplaying = st.replaying;
-  st.replaying = true;
-  st.replayDepth++;
-  if (!b.recursive) st.noremapDepth++;
+  const savedReplaying = state.replaying;
+  state.replaying = true;
+  state.replayDepth++;
+  if (!binding.recursive) state.noremapDepth++;
   try {
-    for (const k of b.keys) await handleChar(ctx, k);
+    for (const key of binding.keys) await handleChar(ctx, key);
   } finally {
-    if (!b.recursive) st.noremapDepth--;
-    st.replayDepth--;
-    st.replaying = savedReplaying;
+    if (!binding.recursive) state.noremapDepth--;
+    state.replayDepth--;
+    state.replaying = savedReplaying;
   }
 }
 
 export function escapeKey(ctx: Ctx): boolean {
-  const st = ctx.st;
-  if (st.avy) {
+  const state = ctx.state;
+  if (state.avy) {
     Avy.cancel(ctx);
-    ctx.ui.refresh(st);
+    ctx.ui.refresh(state);
     return true;
   }
-  const hadTransient = st.pending !== null || repeatMap !== null;
-  st.pending = null;
+  const hadTransient = state.pending !== null || repeatMap !== null;
+  state.pending = null;
   repeatMap = null;
   ctx.ui.hideWhichKey();
   ctx.ui.clearExpandHints();
-  if (st.mode === MeowMode.INSERT) {
+  if (state.mode === MeowMode.INSERT) {
     setMode(ctx, MeowMode.NORMAL);
-    ctx.ui.refresh(st);
+    ctx.ui.refresh(state);
     return true;
   }
-  if (st.mode === MeowMode.KEYPAD) {
+  if (state.mode === MeowMode.KEYPAD) {
     Keypad.exit(ctx);
-    ctx.ui.refresh(st);
+    ctx.ui.refresh(state);
     return true;
   }
   const sels = ctx.port.getSelections();
   if (sels.length > 1 || Sel.hasSelection(sels[0])) {
     Sel.cancelAll(ctx);
-    ctx.ui.refresh(st);
+    ctx.ui.refresh(state);
     return true;
   }
   return hadTransient;

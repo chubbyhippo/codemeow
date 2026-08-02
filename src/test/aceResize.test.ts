@@ -67,7 +67,7 @@ describe('AceResizeSpec', () => {
   it('given a session key then it runs its target in any state, and an unbound one does not', async () => {
     const s = freshSpec();
     s.given('a buffer', 'hello<caret>');
-    s.st.mode = MeowMode.INSERT;
+    s.state.mode = MeowMode.INSERT;
     assert.equal(await Resizes.dispatch(s.ctx, 'l'), true);
     assert.deepEqual(s.ui.ran, ['workbench.action.increaseViewWidth']);
     assert.equal(await Resizes.dispatch(s.ctx, 'z'), false);

@@ -37,12 +37,12 @@ export const commands: Map<string, MeowCommand> = new Map([
   [
     RECENTER_COMMAND,
     (ctx: Ctx) => {
-      ctx.st.recenterPhase = nextRecenterPhase(
-        ctx.st.lastCommand,
-        ctx.st.recenterPhase,
+      ctx.state.recenterPhase = nextRecenterPhase(
+        ctx.state.lastCommand,
+        ctx.state.recenterPhase,
       );
-      ctx.st.lastCommand = RECENTER_COMMAND;
-      return ctx.ui.revealCaret(recenterPosition(ctx.st.recenterPhase));
+      ctx.state.lastCommand = RECENTER_COMMAND;
+      return ctx.ui.revealCaret(recenterPosition(ctx.state.recenterPhase));
     },
   ],
 ]);

@@ -28,10 +28,11 @@ export const commands: Map<string, MeowCommand> = new Map([
   ['meow-visit', (ctx: Ctx) => visit(ctx)],
 ]);
 
-export function push(st: MeowState, pattern: string): void {
-  st.searchHistory = st.searchHistory.filter((p) => p !== pattern);
-  st.searchHistory.push(pattern);
-  while (st.searchHistory.length > SEARCH_RING_LIMIT) st.searchHistory.shift();
+export function push(state: MeowState, pattern: string): void {
+  state.searchHistory = state.searchHistory.filter((p) => p !== pattern);
+  state.searchHistory.push(pattern);
+  while (state.searchHistory.length > SEARCH_RING_LIMIT)
+    state.searchHistory.shift();
 }
 
 function fullyMatches(pattern: string, s: string): boolean {
@@ -55,21 +56,21 @@ function allMatches(text: string, pattern: string): Match[] {
     re = new RegExp(escapeRegExp(pattern), 'g');
   }
   const out: Match[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(text)) !== null) {
-    if (m[0].length === 0) {
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(text)) !== null) {
+    if (match[0].length === 0) {
       re.lastIndex++;
       continue;
     }
-    out.push({ start: m.index, end: m.index + m[0].length });
+    out.push({ start: match.index, end: match.index + match[0].length });
   }
   return out;
 }
 
 function search(ctx: Ctx): void {
-  const st = ctx.st;
+  const state = ctx.state;
   const sel = Sel.primary(ctx);
-  let pattern = st.searchHistory.at(-1) ?? null;
+  let pattern = state.searchHistory.at(-1) ?? null;
   if (Sel.hasSelection(sel)) {
     const selText = ctx.port.getText().slice(Sel.lo(sel), Sel.hi(sel));
     if (
@@ -77,18 +78,18 @@ function search(ctx: Ctx): void {
       (pattern === null || !fullyMatches(pattern, selText))
     ) {
       pattern = escapeRegExp(selText);
-      push(st, pattern);
+      push(state, pattern);
     }
   }
   if (pattern === null) {
     ctx.ui.hint('No search pattern');
     return;
   }
-  searchWith(ctx, pattern, st.takeCount(1) < 0 || Sel.backwardP(ctx));
+  searchWith(ctx, pattern, state.takeCount(1) < 0 || Sel.backwardP(ctx));
 }
 
 async function visit(ctx: Ctx): Promise<void> {
-  const backward = ctx.st.takeCount(1) < 0;
+  const backward = ctx.state.takeCount(1) < 0;
   const input = await ctx.ui.input('Visit (regexp):');
   if (input === undefined || input === '') return;
   let pattern = input;
@@ -97,7 +98,7 @@ async function visit(ctx: Ctx): Promise<void> {
   } catch {
     pattern = escapeRegExp(input);
   }
-  push(ctx.st, pattern);
+  push(ctx.state, pattern);
   searchWith(ctx, pattern, backward);
 }
 
@@ -105,17 +106,17 @@ function searchWith(ctx: Ctx, pattern: string, backward: boolean): void {
   const text = ctx.port.getText();
   const caret = Sel.primary(ctx).active;
   const matches = allMatches(text, pattern);
-  let m: Match | undefined;
+  let found: Match | undefined;
   if (!backward) {
-    m = matches.find((x) => x.start >= caret) ?? matches[0];
+    found = matches.find((m) => m.start >= caret) ?? matches[0];
   } else {
-    const before = matches.filter((x) => x.end <= caret);
-    m = before.at(-1) ?? matches.at(-1);
+    const before = matches.filter((m) => m.end <= caret);
+    found = before.at(-1) ?? matches.at(-1);
   }
-  if (!m) {
+  if (!found) {
     ctx.ui.hint(`No match: ${pattern}`);
     return;
   }
-  if (!backward) Sel.select(ctx, SelType.VISIT, m.start, m.end, false);
-  else Sel.select(ctx, SelType.VISIT, m.end, m.start, false);
+  if (!backward) Sel.select(ctx, SelType.VISIT, found.start, found.end, false);
+  else Sel.select(ctx, SelType.VISIT, found.end, found.start, false);
 }

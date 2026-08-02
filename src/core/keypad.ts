@@ -20,10 +20,10 @@ import { Rc } from './rc';
 import * as Engine from './engine';
 
 export async function key(ctx: Ctx, c: string): Promise<void> {
-  const st = ctx.st;
+  const state = ctx.state;
   ctx.ui.hideWhichKey();
   const keypad = Rc.keypad();
-  const buf = st.keypad;
+  const buf = state.keypad;
 
   if (buf === '/') {
     describe(ctx, c);
@@ -32,7 +32,7 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
   }
   if (buf === '') {
     if (c >= '0' && c <= '9') {
-      st.pendingCount = st.pendingCount * 10 + Number(c);
+      state.pendingCount = state.pendingCount * 10 + Number(c);
       exit(ctx);
       return;
     }
@@ -42,13 +42,13 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
       return;
     }
     if (c === '/') {
-      st.keypad += '/';
+      state.keypad += '/';
       return;
     }
   }
 
-  st.keypad += c;
-  const cur = st.keypad;
+  state.keypad += c;
+  const cur = state.keypad;
   const binding = keypad.get(cur);
   if (binding) {
     exit(ctx);
@@ -72,7 +72,7 @@ export async function key(ctx: Ctx, c: string): Promise<void> {
 
 export function exit(ctx: Ctx): void {
   ctx.ui.hideWhichKey();
-  setMode(ctx, ctx.st.keypadPreviousState);
+  setMode(ctx, ctx.state.keypadPreviousState);
 }
 
 function describe(ctx: Ctx, c: string): void {

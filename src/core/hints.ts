@@ -28,45 +28,52 @@ import {
 } from './text';
 
 export function expandHintPositions(ctx: Ctx, count = 10): number[] {
-  const { port, st } = ctx;
+  const { port, state } = ctx;
   const text = port.getText();
   const sel = port.getSelections()[0];
   if (sel.anchor === sel.active) return [];
   const caret = sel.active;
   const backward = caret < sel.anchor;
   const out: number[] = [];
-  switch (st.selType) {
+  switch (state.selType) {
     case SelType.WORD:
     case SelType.SYMBOL: {
-      const pred = charPred(st.selType === SelType.SYMBOL);
-      let i = caret;
-      for (let k = 0; k < count; k++) {
-        i = backward
-          ? Words.prevStart(text, i, 1, pred)
-          : Words.nextEnd(text, i, 1, pred);
-        if (backward ? i <= 0 : i >= text.length) break;
-        out.push(i);
+      const isWord = charPred(state.selType === SelType.SYMBOL);
+      let offset = caret;
+      for (let step = 0; step < count; step++) {
+        offset = backward
+          ? Words.prevStart(text, offset, 1, isWord)
+          : Words.nextEnd(text, offset, 1, isWord);
+        if (backward ? offset <= 0 : offset >= text.length) break;
+        out.push(offset);
       }
       break;
     }
     case SelType.LINE: {
-      let ln = lineOfOffset(text, caret);
-      for (let k = 0; k < count; k++) {
-        ln += backward ? -1 : 1;
-        if (ln < 0 || ln > lineCount(text) - 1) break;
-        out.push(backward ? lineStart(text, ln) : lineEnd(text, ln));
+      let line = lineOfOffset(text, caret);
+      for (let step = 0; step < count; step++) {
+        line += backward ? -1 : 1;
+        if (line < 0 || line > lineCount(text) - 1) break;
+        out.push(backward ? lineStart(text, line) : lineEnd(text, line));
       }
       break;
     }
     case SelType.FIND:
     case SelType.TILL: {
-      const c = st.lastFind;
-      if (c === null) return out;
-      const till = st.selType === SelType.TILL;
-      for (let k = 1; k <= count; k++) {
-        const t = nthCharTarget(text, c, caret, k, backward, till);
-        if (t < 0) break;
-        out.push(t);
+      const findChar = state.lastFind;
+      if (findChar === null) return out;
+      const till = state.selType === SelType.TILL;
+      for (let nth = 1; nth <= count; nth++) {
+        const target = nthCharTarget(
+          text,
+          findChar,
+          caret,
+          nth,
+          backward,
+          till,
+        );
+        if (target < 0) break;
+        out.push(target);
       }
       break;
     }

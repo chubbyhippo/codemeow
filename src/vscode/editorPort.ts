@@ -65,14 +65,14 @@ export class VscEditorPort implements EditorPort {
   async edit(edits: TextEdit[]): Promise<void> {
     await this.editor.edit(
       (builder) => {
-        for (const e of edits) {
+        for (const edit of edits) {
           const range = new vscode.Range(
-            this.doc.positionAt(e.start),
-            this.doc.positionAt(e.end),
+            this.doc.positionAt(edit.start),
+            this.doc.positionAt(edit.end),
           );
-          if (e.start === e.end) builder.insert(range.start, e.text);
-          else if (e.text === '') builder.delete(range);
-          else builder.replace(range, e.text);
+          if (edit.start === edit.end) builder.insert(range.start, edit.text);
+          else if (edit.text === '') builder.delete(range);
+          else builder.replace(range, edit.text);
         }
       },
       { undoStopBefore: true, undoStopAfter: true },
@@ -84,8 +84,10 @@ export class VscEditorPort implements EditorPort {
   }
 
   visibleLineRange(): { first: number; last: number } | null {
-    const v = this.editor.visibleRanges[0];
-    return v ? { first: v.start.line, last: v.end.line } : null;
+    const visible = this.editor.visibleRanges[0];
+    return visible
+      ? { first: visible.start.line, last: visible.end.line }
+      : null;
   }
 
   async undo(): Promise<void> {
@@ -112,10 +114,10 @@ export class VscEditorPort implements EditorPort {
       ]);
       let best: vscode.DocumentSymbol | null = null;
       const walk = (list: vscode.DocumentSymbol[]) => {
-        for (const s of list) {
-          if (s.range.contains(pos)) {
-            if (fnKinds.has(s.kind)) best = s;
-            walk(s.children);
+        for (const symbol of list) {
+          if (symbol.range.contains(pos)) {
+            if (fnKinds.has(symbol.kind)) best = symbol;
+            walk(symbol.children);
           }
         }
       };
@@ -134,8 +136,8 @@ export class VscEditorPort implements EditorPort {
 
 export class VscClipboard implements ClipboardPort {
   async read(): Promise<string | undefined> {
-    const t = await vscode.env.clipboard.readText();
-    return t === '' ? undefined : t;
+    const text = await vscode.env.clipboard.readText();
+    return text === '' ? undefined : text;
   }
 
   async write(text: string): Promise<void> {

@@ -41,21 +41,21 @@ export async function dispatch(
   noremap = false,
   depth = 0,
 ): Promise<void> {
-  const b =
+  const binding =
     (noremap ? undefined : Rc.cfg().motion.get(c)) ??
     Rc.defaults().motion.get(c);
-  if (!b) return;
-  if (b.command !== undefined) {
-    const listCommand = LIST_MOTIONS.get(b.command);
+  if (!binding) return;
+  if (binding.command !== undefined) {
+    const listCommand = LIST_MOTIONS.get(binding.command);
     if (listCommand !== undefined) await run(listCommand);
     return;
   }
-  if (b.action !== undefined) {
-    await run(b.action);
+  if (binding.action !== undefined) {
+    await run(binding.action);
     return;
   }
-  if (b.keys === undefined) return;
+  if (binding.keys === undefined) return;
   if (depth >= 8) return;
-  for (const k of b.keys)
-    await dispatch(run, k, noremap || !b.recursive, depth + 1);
+  for (const key of binding.keys)
+    await dispatch(run, key, noremap || !binding.recursive, depth + 1);
 }

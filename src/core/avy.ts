@@ -39,18 +39,18 @@ interface Branch {
 }
 type AvyNode = Leaf | Branch;
 
-export function subdiv(n: number, b: number): number[] {
-  const p = Math.floor(Math.log(n) / Math.log(b) + 1e-6) - 1;
-  let x1 = 1;
-  for (let i = 0; i < p; i++) x1 *= b;
-  const x2 = b * x1;
-  const delta = n - x2;
-  const n2 = Math.floor(delta / (x2 - x1));
-  const n1 = b - n2 - 1;
+export function subdiv(count: number, base: number): number[] {
+  const depth = Math.floor(Math.log(count) / Math.log(base) + 1e-6) - 1;
+  let shallowWidth = 1;
+  for (let level = 0; level < depth; level++) shallowWidth *= base;
+  const deepWidth = base * shallowWidth;
+  const overflow = count - deepWidth;
+  const deepBuckets = Math.floor(overflow / (deepWidth - shallowWidth));
+  const shallowBuckets = base - deepBuckets - 1;
   return [
-    ...Array<number>(n1).fill(x1),
-    n - n1 * x1 - n2 * x2,
-    ...Array<number>(n2).fill(x2),
+    ...Array<number>(shallowBuckets).fill(shallowWidth),
+    count - shallowBuckets * shallowWidth - deepBuckets * deepWidth,
+    ...Array<number>(deepBuckets).fill(deepWidth),
   ];
 }
 
@@ -116,22 +116,23 @@ export class AvySession {
 
 function startCharTimer(ctx: Ctx): void {
   cancel(ctx);
-  ctx.st.avy = new AvySession(false);
+  ctx.state.avy = new AvySession(false);
 }
 
 function startGotoLine(ctx: Ctx): void {
   cancel(ctx);
   const session = new AvySession(true);
-  ctx.st.avy = session;
+  ctx.state.avy = session;
   const text = ctx.port.getText();
   const { first, last } = visibleLines(ctx);
   const candidates: number[] = [];
-  for (let ln = first; ln <= last; ln++) candidates.push(lineStart(text, ln));
+  for (let line = first; line <= last; line++)
+    candidates.push(lineStart(text, line));
   toSelecting(ctx, session, candidates);
 }
 
 export async function key(ctx: Ctx, c: string): Promise<void> {
-  const session = ctx.st.avy;
+  const session = ctx.state.avy;
   if (!session) return;
   if (session.phase === 'collecting') collect(ctx, session, c);
   else await select(ctx, session, c);
@@ -148,7 +149,7 @@ function collect(ctx: Ctx, session: AvySession, c: string): void {
 }
 
 export function finishInput(ctx: Ctx): void {
-  const session = ctx.st.avy;
+  const session = ctx.state.avy;
   if (!session || session.phase !== 'collecting') return;
   if (session.timer !== null) clearTimeout(session.timer);
   session.timer = null;
@@ -181,11 +182,11 @@ async function select(ctx: Ctx, session: AvySession, c: string): Promise<void> {
     cancel(ctx);
     const input = await ctx.ui.input('Goto line:', c);
     if (input === undefined) return;
-    const n = parseInt(input.trim(), 10);
-    if (isNaN(n)) return;
+    const requested = parseInt(input.trim(), 10);
+    if (isNaN(requested)) return;
     const text = ctx.port.getText();
-    const ln = Math.min(Math.max(n - 1, 0), lineCount(text) - 1);
-    jump(ctx, lineStart(text, ln));
+    const line = Math.min(Math.max(requested - 1, 0), lineCount(text) - 1);
+    jump(ctx, lineStart(text, line));
     return;
   }
   const node = session.node;
@@ -212,13 +213,13 @@ function jump(ctx: Ctx, offset: number): void {
 }
 
 export function cancel(ctx: Ctx): void {
-  const session = ctx.st.avy;
+  const session = ctx.state.avy;
   if (session) {
     if (session.timer !== null) clearTimeout(session.timer);
     session.timer = null;
     ctx.ui.clearAvy();
   }
-  ctx.st.avy = null;
+  ctx.state.avy = null;
 }
 
 function visibleLines(ctx: Ctx): { first: number; last: number } {

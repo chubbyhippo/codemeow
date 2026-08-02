@@ -33,9 +33,9 @@ describe('ModesKeypadSpec', () => {
     const s = freshSpec();
     s.given('word', '<caret>hello');
     await s.whenKeys('f');
-    assert.notEqual(s.st.pending, null);
+    assert.notEqual(s.state.pending, null);
     s.pressEsc();
-    assert.equal(s.st.pending, null);
+    assert.equal(s.state.pending, null);
     await s.whenKeys('l');
     s.thenCaretAt(1);
   });
@@ -129,7 +129,7 @@ describe('ModesKeypadSpec', () => {
     s.given('word', '<caret>hello');
     await s.whenKeys(' x');
     s.thenMode(MeowMode.KEYPAD);
-    assert.equal(s.st.keypad, 'x');
+    assert.equal(s.state.keypad, 'x');
   });
 
   it('given an undefined keypad sequence then KEYPAD exits back to NORMAL', async () => {

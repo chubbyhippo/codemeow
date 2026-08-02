@@ -63,7 +63,7 @@ let avyLabelDecoration: vscode.TextEditorDecorationType;
 let decorationsBuilt = false;
 let whichKeyTimer: ReturnType<typeof setTimeout> | undefined;
 let whichKeyMenu:
-  { qp: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
+  { picker: vscode.QuickPick<WhichKeyItem>; closing: boolean } | undefined;
 let whichKeyCloseTimer: ReturnType<typeof setTimeout> | undefined;
 let whichKeyChain = false;
 let whichKeyDispatch: Promise<void> = Promise.resolve();
@@ -96,13 +96,13 @@ function stateFor(editor: vscode.TextEditor): MeowState | undefined {
   if (existing) return existing;
   const mode = attachMode(editor.document.uri.scheme);
   if (mode === null) return undefined;
-  const st = new MeowState();
-  st.mode = mode;
-  states.set(key, st);
-  return st;
+  const state = new MeowState();
+  state.mode = mode;
+  states.set(key, state);
+  return state;
 }
 
-function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
+function makeUi(editor: vscode.TextEditor, state: MeowState): UiPort {
   return {
     hint: (text) =>
       void vscode.window.setStatusBarMessage(
@@ -154,14 +154,14 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
         return;
       }
       if (whichKeyMenu) {
-        fillWhichKeyMenu(whichKeyMenu.qp, kind, buffer);
+        fillWhichKeyMenu(whichKeyMenu.picker, kind, buffer);
         return;
       }
       const delay = whichKeyChain ? 0 : Math.max(Rc.whichKeyDelayMs(), 0);
       whichKeyChain = false;
       whichKeyTimer = setTimeout(() => {
         whichKeyTimer = undefined;
-        openWhichKeyMenu(editor, st, kind, buffer);
+        openWhichKeyMenu(editor, state, kind, buffer);
       }, delay);
     },
 
@@ -230,18 +230,18 @@ function makeUi(editor: vscode.TextEditor, st: MeowState): UiPort {
       );
     },
 
-    modeChanged: () => applyMode(editor, st),
+    modeChanged: () => applyMode(editor, state),
 
-    refresh: () => refreshStatus(editor, st),
+    refresh: () => refreshStatus(editor, state),
   };
 }
 
-function makeCtx(editor: vscode.TextEditor, st: MeowState): Ctx {
+function makeCtx(editor: vscode.TextEditor, state: MeowState): Ctx {
   return {
     port: new VscEditorPort(editor),
     clipboard,
-    ui: makeUi(editor, st),
-    st,
+    ui: makeUi(editor, state),
+    state,
   };
 }
 
@@ -263,71 +263,71 @@ function closeWhichKeyMenu(): void {
   if (!menu) return;
   whichKeyMenu = undefined;
   menu.closing = true;
-  menu.qp.dispose();
+  menu.picker.dispose();
 }
 
 function openWhichKeyMenu(
   editor: vscode.TextEditor,
-  st: MeowState,
+  state: MeowState,
   kind: 'keypad' | 'things',
   buffer: string,
 ): void {
   if (kind === 'keypad' && keypadRows(buffer).length === 0) return;
   closeWhichKeyMenu();
-  const qp = vscode.window.createQuickPick<WhichKeyItem>();
-  const menu = { qp, closing: false };
+  const picker = vscode.window.createQuickPick<WhichKeyItem>();
+  const menu = { picker, closing: false };
   whichKeyMenu = menu;
-  qp.placeholder =
+  picker.placeholder =
     'keep typing the sequence — Enter or a click runs the highlighted key';
-  fillWhichKeyMenu(qp, kind, buffer);
-  qp.onDidChangeValue((v) => {
+  fillWhichKeyMenu(picker, kind, buffer);
+  picker.onDidChangeValue((v) => {
     if (v === '') return;
-    qp.value = '';
-    dispatchMenuKeys(editor, st, v);
+    picker.value = '';
+    dispatchMenuKeys(editor, state, v);
   });
-  qp.onDidAccept(() => {
-    const item = qp.activeItems[0];
-    if (item) dispatchMenuKeys(editor, st, item.meowKey);
+  picker.onDidAccept(() => {
+    const item = picker.activeItems[0];
+    if (item) dispatchMenuKeys(editor, state, item.meowKey);
   });
-  qp.onDidHide(() => {
+  picker.onDidHide(() => {
     const userHid = whichKeyMenu === menu && !menu.closing;
     if (whichKeyMenu === menu) whichKeyMenu = undefined;
-    qp.dispose();
+    picker.dispose();
     if (userHid) {
       whichKeyChain = false;
-      if (st.mode === MeowMode.KEYPAD || st.pending !== null) {
-        Engine.escapeKey(makeCtx(editor, st));
+      if (state.mode === MeowMode.KEYPAD || state.pending !== null) {
+        Engine.escapeKey(makeCtx(editor, state));
       }
     }
   });
-  qp.show();
+  picker.show();
 }
 
 function fillWhichKeyMenu(
-  qp: vscode.QuickPick<WhichKeyItem>,
+  picker: vscode.QuickPick<WhichKeyItem>,
   kind: 'keypad' | 'things',
   buffer: string,
 ): void {
   const rows = kind === 'things' ? THINGS : keypadRows(buffer);
-  qp.title =
+  picker.title =
     kind === 'things' ? 'thing' : `SPC ${buffer.split('').join(' ')}`.trimEnd();
-  qp.items = rows.map(([k, d]) => ({
+  picker.items = rows.map(([k, d]) => ({
     label: k,
     description: `→ ${d}`,
     meowKey: k === 'SPC' ? ' ' : k,
   }));
-  const [firstRow] = qp.items;
-  qp.activeItems = firstRow ? [firstRow] : [];
+  const [firstRow] = picker.items;
+  picker.activeItems = firstRow ? [firstRow] : [];
 }
 
 function dispatchMenuKeys(
   editor: vscode.TextEditor,
-  st: MeowState,
+  state: MeowState,
   keys: string,
 ): void {
   whichKeyDispatch = whichKeyDispatch
     .then(async () => {
-      const ctx = makeCtx(editor, st);
+      const ctx = makeCtx(editor, state);
       for (const ch of keys) await Engine.handleChar(ctx, ch);
     })
     .catch((e: unknown) =>
@@ -340,43 +340,45 @@ function clearExpandHints(editor: vscode.TextEditor): void {
   editor.setDecorations(hintDecoration, []);
 }
 
-function applyMode(editor: vscode.TextEditor, st: MeowState): void {
+function applyMode(editor: vscode.TextEditor, state: MeowState): void {
   editor.options = {
     cursorStyle:
-      st.mode === MeowMode.INSERT
+      state.mode === MeowMode.INSERT
         ? vscode.TextEditorCursorStyle.Line
         : vscode.TextEditorCursorStyle.Block,
   };
-  refreshStatus(editor, st);
+  refreshStatus(editor, state);
 }
 
-function statusText(st: MeowState, beacon: boolean): string {
-  if (st.mode === MeowMode.KEYPAD) {
-    return `MEOW KEYPAD  SPC ${st.keypad.split('').join(' ')}`;
+function statusText(state: MeowState, beacon: boolean): string {
+  if (state.mode === MeowMode.KEYPAD) {
+    return `MEOW KEYPAD  SPC ${state.keypad.split('').join(' ')}`;
   }
   if (beacon) {
-    return st.mode === MeowMode.INSERT ? 'MEOW BEACON-INSERT' : 'MEOW BEACON';
+    return state.mode === MeowMode.INSERT
+      ? 'MEOW BEACON-INSERT'
+      : 'MEOW BEACON';
   }
   if (Engine.repeatMap) {
-    return `MEOW ${st.mode} [repeat ${[...Engine.repeatMap.keys()].join(' ')}]`;
+    return `MEOW ${state.mode} [repeat ${[...Engine.repeatMap.keys()].join(' ')}]`;
   }
-  return `MEOW ${st.mode}`;
+  return `MEOW ${state.mode}`;
 }
 
-function refreshStatus(editor: vscode.TextEditor, st: MeowState): void {
+function refreshStatus(editor: vscode.TextEditor, state: MeowState): void {
   const beacon = editor.selections.length > 1;
-  statusBar.text = statusText(st, beacon);
+  statusBar.text = statusText(state, beacon);
   statusBar.show();
   void vscode.commands.executeCommand('setContext', 'codemeow.active', true);
   void vscode.commands.executeCommand(
     'setContext',
     'codemeow.normal',
-    st.mode === MeowMode.NORMAL,
+    state.mode === MeowMode.NORMAL,
   );
   void vscode.commands.executeCommand(
     'setContext',
     'codemeow.insert',
-    st.mode === MeowMode.INSERT,
+    state.mode === MeowMode.INSERT,
   );
 }
 
@@ -952,9 +954,9 @@ function aceResize(): void {
     if (key === '') return;
     const editor = vscode.window.activeTextEditor;
     if (!editor) return;
-    const st = stateFor(editor);
-    if (!st) return;
-    void Resizes.dispatch(makeCtx(editor, st), key).then((handled) => {
+    const state = stateFor(editor);
+    if (!state) return;
+    void Resizes.dispatch(makeCtx(editor, state), key).then((handled) => {
       if (!handled) {
         vscode.window.setStatusBarMessage(
           `No such resize key: ${key}`,
@@ -973,15 +975,15 @@ async function hostKey(key: unknown): Promise<void> {
   if (typeof key !== 'string') return;
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
-  const st = stateFor(editor);
-  if (!st) return;
-  const ctx = makeCtx(editor, st);
+  const state = stateFor(editor);
+  if (!state) return;
+  const ctx = makeCtx(editor, state);
   if (!(await Hosts.dispatch(ctx, key))) return;
-  ctx.ui.refresh(st);
+  ctx.ui.refresh(state);
   const pressedOutsideTheEditor =
     normalizeHostKey(key) === KEYPAD_SINK_HOST_KEY;
-  if (pressedOutsideTheEditor && st.mode === MeowMode.KEYPAD) {
-    openWhichKeyMenu(editor, st, 'keypad', '');
+  if (pressedOutsideTheEditor && state.mode === MeowMode.KEYPAD) {
+    openWhichKeyMenu(editor, state, 'keypad', '');
   }
 }
 
@@ -989,10 +991,10 @@ async function emacsChord(spelling: unknown): Promise<void> {
   if (typeof spelling !== 'string') return;
   const editor = vscode.window.activeTextEditor;
   if (!editor) return;
-  const st = stateFor(editor);
-  if (!st) return;
-  const ctx = makeCtx(editor, st);
-  if (await Chords.dispatch(ctx, Chord.parse(spelling))) ctx.ui.refresh(st);
+  const state = stateFor(editor);
+  if (!state) return;
+  const ctx = makeCtx(editor, state);
+  if (await Chords.dispatch(ctx, Chord.parse(spelling))) ctx.ui.refresh(state);
 }
 
 function userRcPath(): string {
@@ -1016,26 +1018,28 @@ function syncRcChanged(): void {
 }
 
 function loadUserRc(): Config {
-  const p = userRcPath();
-  const lines = fs.existsSync(p)
-    ? fs.readFileSync(p, 'utf8').split(/\r?\n/)
+  const rcPath = userRcPath();
+  const lines = fs.existsSync(rcPath)
+    ? fs.readFileSync(rcPath, 'utf8').split(/\r?\n/)
     : [];
-  const c = Rc.setUserLines(lines);
-  if (c.errors.length > 0) {
+  const config = Rc.setUserLines(lines);
+  if (config.errors.length > 0) {
     void vscode.window.showWarningMessage(
-      `codemeow: problem(s) in ~/${Rc.FILE_NAME} — ${c.errors.join('; ')}`,
+      `codemeow: problem(s) in ~/${Rc.FILE_NAME} — ${config.errors.join('; ')}`,
     );
   }
-  return c;
+  return config;
 }
 
 function loadDefaults(extensionPath: string): void {
-  const p = path.join(extensionPath, Rc.FILE_NAME);
+  const bundledPath = path.join(extensionPath, Rc.FILE_NAME);
   try {
-    const c = Rc.initDefaults(fs.readFileSync(p, 'utf8').split(/\r?\n/));
-    if (c.errors.length > 0) {
+    const config = Rc.initDefaults(
+      fs.readFileSync(bundledPath, 'utf8').split(/\r?\n/),
+    );
+    if (config.errors.length > 0) {
       void vscode.window.showErrorMessage(
-        `codemeow: broken bundled ${Rc.FILE_NAME} (extension bug) — ${c.errors.join('; ')}`,
+        `codemeow: broken bundled ${Rc.FILE_NAME} (extension bug) — ${config.errors.join('; ')}`,
       );
     }
   } catch {
@@ -1124,12 +1128,12 @@ export function activate(context: vscode.ExtensionContext): void {
         async (args: { text?: string }): Promise<void> => {
           const editor = vscode.window.activeTextEditor;
           const text = args?.text ?? '';
-          const st = editor && text !== '' ? stateFor(editor) : undefined;
-          if (!editor || !st || st.mode === MeowMode.INSERT) {
+          const state = editor && text !== '' ? stateFor(editor) : undefined;
+          if (!editor || !state || state.mode === MeowMode.INSERT) {
             await vscode.commands.executeCommand('default:type', args);
             return;
           }
-          const ctx = makeCtx(editor, st);
+          const ctx = makeCtx(editor, state);
           for (const ch of text) {
             if (!(await Engine.handleChar(ctx, ch))) {
               await vscode.commands.executeCommand('default:type', {
@@ -1150,16 +1154,16 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.escape', () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
-      const st = stateFor(editor);
-      if (st) Engine.escapeKey(makeCtx(editor, st));
+      const state = stateFor(editor);
+      if (state) Engine.escapeKey(makeCtx(editor, state));
     }),
 
     vscode.commands.registerCommand('codemeow.keypad', () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
-      const st = stateFor(editor);
-      if (st && st.mode !== MeowMode.KEYPAD) {
-        Engine.enterKeypad(makeCtx(editor, st));
+      const state = stateFor(editor);
+      if (state && state.mode !== MeowMode.KEYPAD) {
+        Engine.enterKeypad(makeCtx(editor, state));
       }
     }),
 
@@ -1217,38 +1221,40 @@ export function activate(context: vscode.ExtensionContext): void {
     ),
 
     vscode.commands.registerCommand('codemeow.reloadRc', async () => {
-      const rc = path.resolve(userRcPath());
+      const rcPath = path.resolve(userRcPath());
       const dirty = vscode.workspace.textDocuments.find(
-        (d) => d.isDirty && path.resolve(d.uri.fsPath) === rc,
+        (d) => d.isDirty && path.resolve(d.uri.fsPath) === rcPath,
       );
       if (dirty) {
         await dirty.save();
       }
-      const c = loadUserRc();
+      const config = loadUserRc();
       buildDecorations();
       syncTreeKeys();
       syncChordKeys();
       syncHostKeys();
       syncRcChanged();
       const problems =
-        c.errors.length === 0 ? '' : `, ${c.errors.length} problem(s)`;
+        config.errors.length === 0
+          ? ''
+          : `, ${config.errors.length} problem(s)`;
       void vscode.window.showInformationMessage(
-        `Reloaded ~/${Rc.FILE_NAME}: ${c.normal.size} normal map(s), ${c.motion.size} motion map(s), ` +
-          `${c.chords.size} chord(s), ${c.hosts.size} host key(s), ${c.resizes.size} resize key(s), ` +
-          `${c.keypad.size} keypad map(s), ` +
-          `${c.keypadDesc.size} description(s)${problems}`,
+        `Reloaded ~/${Rc.FILE_NAME}: ${config.normal.size} normal map(s), ${config.motion.size} motion map(s), ` +
+          `${config.chords.size} chord(s), ${config.hosts.size} host key(s), ${config.resizes.size} resize key(s), ` +
+          `${config.keypad.size} keypad map(s), ` +
+          `${config.keypadDesc.size} description(s)${problems}`,
       );
     }),
 
     vscode.commands.registerCommand('codemeow.editRc', async () => {
-      const p = userRcPath();
-      if (!fs.existsSync(p)) {
+      const rcPath = userRcPath();
+      if (!fs.existsSync(rcPath)) {
         const bundled = path.join(context.extensionPath, Rc.FILE_NAME);
         if (fs.existsSync(bundled)) {
-          fs.copyFileSync(bundled, p);
+          fs.copyFileSync(bundled, rcPath);
         } else {
           fs.writeFileSync(
-            p,
+            rcPath,
             [
               `" ~/${Rc.FILE_NAME} — codemeow configuration`,
               '" the bundled defaults (full meow layout + keypad table) stay',
@@ -1259,7 +1265,7 @@ export function activate(context: vscode.ExtensionContext): void {
           );
         }
       }
-      const doc = await vscode.workspace.openTextDocument(p);
+      const doc = await vscode.workspace.openTextDocument(rcPath);
       await vscode.window.showTextDocument(doc);
     }),
 
@@ -1268,9 +1274,9 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.commands.registerCommand('codemeow.cheatsheet', () => {
       const editor = vscode.window.activeTextEditor;
       if (!editor) return;
-      const st = stateFor(editor);
-      if (!st) return;
-      const ctx = makeCtx(editor, st);
+      const state = stateFor(editor);
+      if (!state) return;
+      const ctx = makeCtx(editor, state);
       void import('../core/keypad').then((k) =>
         ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET),
       );
@@ -1290,8 +1296,8 @@ export function activate(context: vscode.ExtensionContext): void {
         clearActiveContext();
         return;
       }
-      const st = stateFor(editor);
-      if (st) applyMode(editor, st);
+      const state = stateFor(editor);
+      if (state) applyMode(editor, state);
       else {
         statusBar.hide();
         clearActiveContext();
@@ -1299,16 +1305,16 @@ export function activate(context: vscode.ExtensionContext): void {
     }),
 
     vscode.workspace.onDidCloseTextDocument((doc) => {
-      const st = states.get(doc.uri.toString());
-      if (st) dropAvySession(st);
+      const state = states.get(doc.uri.toString());
+      if (state) dropAvySession(state);
       states.delete(doc.uri.toString());
     }),
   );
 
   const active = vscode.window.activeTextEditor;
   if (active) {
-    const st = stateFor(active);
-    if (st) applyMode(active, st);
+    const state = stateFor(active);
+    if (state) applyMode(active, state);
   }
 }
 
@@ -1323,14 +1329,14 @@ async function showCommandIds(): Promise<void> {
     iconPath: new vscode.ThemeIcon('output'),
     tooltip: 'Toggle the keystroke log (every keypress logs its command)',
   };
-  const qp = vscode.window.createQuickPick();
-  qp.title = 'command ids';
-  qp.placeholder =
+  const picker = vscode.window.createQuickPick();
+  picker.title = 'command ids';
+  picker.placeholder =
     'command id for <action>(...) rc mappings — Enter copies it to the clipboard';
-  qp.items = ids.map((id) => ({ label: id }));
-  qp.buttons = [recordButton, logButton];
-  qp.onDidTriggerButton((b) => {
-    qp.hide();
+  picker.items = ids.map((id) => ({ label: id }));
+  picker.buttons = [recordButton, logButton];
+  picker.onDidTriggerButton((b) => {
+    picker.hide();
     if (b === recordButton) {
       void vscode.commands
         .executeCommand('workbench.action.openGlobalKeybindings')
@@ -1343,9 +1349,9 @@ async function showCommandIds(): Promise<void> {
       );
     }
   });
-  qp.onDidAccept(async () => {
-    const picked = qp.activeItems[0]?.label;
-    qp.hide();
+  picker.onDidAccept(async () => {
+    const picked = picker.activeItems[0]?.label;
+    picker.hide();
     if (picked !== undefined) {
       await vscode.env.clipboard.writeText(picked);
       void vscode.window.setStatusBarMessage(
@@ -1354,15 +1360,15 @@ async function showCommandIds(): Promise<void> {
       );
     }
   });
-  qp.onDidHide(() => qp.dispose());
-  qp.show();
+  picker.onDidHide(() => picker.dispose());
+  picker.show();
 }
 
-function dropAvySession(st: MeowState): void {
-  const session = st.avy;
+function dropAvySession(state: MeowState): void {
+  const session = state.avy;
   if (session) {
     if (session.timer != null) clearTimeout(session.timer);
-    st.avy = null;
+    state.avy = null;
   }
 }
 
@@ -1370,8 +1376,8 @@ function dropHiddenAvySessions(): void {
   const visible = new Set(
     vscode.window.visibleTextEditors.map((e) => e.document.uri.toString()),
   );
-  for (const [uri, st] of states) {
-    if (st.avy && !visible.has(uri)) dropAvySession(st);
+  for (const [uri, state] of states) {
+    if (state.avy && !visible.has(uri)) dropAvySession(state);
   }
 }
 
@@ -1379,6 +1385,6 @@ export function deactivate(): void {
   sweepHintTimer();
   if (whichKeyTimer !== undefined) clearTimeout(whichKeyTimer);
   if (whichKeyCloseTimer !== undefined) clearTimeout(whichKeyCloseTimer);
-  for (const st of states.values()) dropAvySession(st);
+  for (const state of states.values()) dropAvySession(state);
   states.clear();
 }

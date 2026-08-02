@@ -39,36 +39,36 @@ export const commands: Map<string, MeowCommand> = new Map([
 ]);
 
 function pendThing(ctx: Ctx, p: Pending): void {
-  ctx.st.pending = p;
+  ctx.state.pending = p;
   ctx.ui.scheduleWhichKey('things', '');
 }
 
 export async function thingSelect(
   ctx: Ctx,
   kind: Pending,
-  ch: string,
+  thingChar: string,
 ): Promise<void> {
-  const off = Sel.primary(ctx).active;
-  const b =
+  const caret = Sel.primary(ctx).active;
+  const bounds =
     kind === Pending.BOUNDS
-      ? await Things.bounds(ctx, ch, off)
-      : await Things.inner(ctx, ch, off);
-  if (!b) {
-    ctx.ui.hint(`No thing '${ch}' here`);
+      ? await Things.bounds(ctx, thingChar, caret)
+      : await Things.inner(ctx, thingChar, caret);
+  if (!bounds) {
+    ctx.ui.hint(`No thing '${thingChar}' here`);
     return;
   }
   switch (kind) {
     case Pending.INNER:
-      Sel.select(ctx, SelType.TRANSIENT, b.start, b.end, false);
+      Sel.select(ctx, SelType.TRANSIENT, bounds.start, bounds.end, false);
       break;
     case Pending.BOUNDS:
-      Sel.select(ctx, SelType.TRANSIENT, b.end, b.start, false);
+      Sel.select(ctx, SelType.TRANSIENT, bounds.end, bounds.start, false);
       break;
     case Pending.BEGIN:
-      Sel.select(ctx, SelType.TRANSIENT, off, b.start, false);
+      Sel.select(ctx, SelType.TRANSIENT, caret, bounds.start, false);
       break;
     case Pending.END:
-      Sel.select(ctx, SelType.TRANSIENT, off, b.end, false);
+      Sel.select(ctx, SelType.TRANSIENT, caret, bounds.end, false);
       break;
     default:
       break;
@@ -80,41 +80,49 @@ interface PairRange {
   close: number;
 }
 
-function enclosingPair(text: string, s: number, e: number): PairRange | null {
+function enclosingPair(
+  text: string,
+  selStart: number,
+  selEnd: number,
+): PairRange | null {
   const opens = '([{';
   const closes = ')]}';
-  const stack: number[] = [];
+  const openOffsets: number[] = [];
   let best: PairRange | null = null;
   let i = 0;
   while (i < text.length) {
-    const c = text.charAt(i);
-    if (c === '"' || c === "'" || c === '`') {
+    const char = text.charAt(i);
+    if (char === '"' || char === "'" || char === '`') {
       let j = i + 1;
       while (
         j < text.length &&
-        text.charAt(j) !== c &&
+        text.charAt(j) !== char &&
         text.charAt(j) !== '\n'
       ) {
         if (text.charAt(j) === '\\') j++;
         j++;
       }
-      if (j < text.length && text.charAt(j) === c) {
+      if (j < text.length && text.charAt(j) === char) {
         i = j + 1;
         continue;
       }
     }
-    if (opens.includes(c)) {
-      stack.push(i);
-    } else if (closes.includes(c)) {
-      const kind = closes.indexOf(c);
-      for (let o = stack.pop(); o !== undefined; o = stack.pop()) {
-        if (opens.indexOf(text.charAt(o)) === kind) {
+    if (opens.includes(char)) {
+      openOffsets.push(i);
+    } else if (closes.includes(char)) {
+      const bracketKind = closes.indexOf(char);
+      for (
+        let open = openOffsets.pop();
+        open !== undefined;
+        open = openOffsets.pop()
+      ) {
+        if (opens.indexOf(text.charAt(open)) === bracketKind) {
           if (
-            o < s &&
-            i + 1 >= e &&
-            (best === null || i - o < best.close - best.open)
+            open < selStart &&
+            i + 1 >= selEnd &&
+            (best === null || i - open < best.close - best.open)
           ) {
-            best = { open: o, close: i };
+            best = { open, close: i };
           }
           break;
         }
@@ -128,67 +136,73 @@ function enclosingPair(text: string, s: number, e: number): PairRange | null {
 function block(ctx: Ctx): void {
   const text = ctx.port.getText();
   const sel = Sel.primary(ctx);
-  const active = ctx.st.selType === SelType.BLOCK && Sel.hasSelection(sel);
-  const back = Sel.backwardP(ctx) !== ctx.st.takeCount(1) < 0;
-  const s = active ? Sel.lo(sel) : sel.active;
-  const e = active ? Sel.hi(sel) : sel.active;
-  const p = enclosingPair(text, s, e);
-  if (!p) {
+  const active = ctx.state.selType === SelType.BLOCK && Sel.hasSelection(sel);
+  const back = Sel.backwardP(ctx) !== ctx.state.takeCount(1) < 0;
+  const selStart = active ? Sel.lo(sel) : sel.active;
+  const selEnd = active ? Sel.hi(sel) : sel.active;
+  const pair = enclosingPair(text, selStart, selEnd);
+  if (!pair) {
     ctx.ui.hint('No enclosing block');
     return;
   }
-  if (back) Sel.select(ctx, SelType.BLOCK, p.close + 1, p.open, true);
-  else Sel.select(ctx, SelType.BLOCK, p.open, p.close + 1, true);
+  if (back) Sel.select(ctx, SelType.BLOCK, pair.close + 1, pair.open, true);
+  else Sel.select(ctx, SelType.BLOCK, pair.open, pair.close + 1, true);
 }
 
 function toBlock(ctx: Ctx): void {
   const text = ctx.port.getText();
   const back =
-    (ctx.st.selType === SelType.BLOCK && Sel.backwardP(ctx)) ||
-    ctx.st.takeCount(1) < 0;
+    (ctx.state.selType === SelType.BLOCK && Sel.backwardP(ctx)) ||
+    ctx.state.takeCount(1) < 0;
   const caret = Sel.primary(ctx).active;
-  const p = enclosingPair(text, caret, caret);
-  if (!p) {
+  const pair = enclosingPair(text, caret, caret);
+  if (!pair) {
     ctx.ui.hint('No enclosing block');
     return;
   }
-  Sel.select(ctx, SelType.BLOCK, caret, back ? p.open : p.close + 1, true);
+  Sel.select(
+    ctx,
+    SelType.BLOCK,
+    caret,
+    back ? pair.open : pair.close + 1,
+    true,
+  );
 }
 
 function firstNonBlankOffset(text: string, line: number): number {
-  let p = lineStart(text, line);
+  let offset = lineStart(text, line);
   const eol = lineEnd(text, line);
-  while (p < eol && /\s/.test(text.charAt(p))) p++;
-  return p;
+  while (offset < eol && /\s/.test(text.charAt(offset))) offset++;
+  return offset;
 }
 
 function join(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;
-  const n = ctx.st.takeCount(1);
-  const blank = (l: number) => isBlankLine(text, l);
-  const ln = lineOfOffset(text, Sel.primary(ctx).active);
-  if (n >= 0) {
-    let pl = ln - 1;
-    while (pl >= 0 && blank(pl)) pl--;
-    if (pl < 0) return;
+  const count = ctx.state.takeCount(1);
+  const blank = (line: number) => isBlankLine(text, line);
+  const caretLine = lineOfOffset(text, Sel.primary(ctx).active);
+  if (count >= 0) {
+    let prevLine = caretLine - 1;
+    while (prevLine >= 0 && blank(prevLine)) prevLine--;
+    if (prevLine < 0) return;
     Sel.select(
       ctx,
       SelType.JOIN,
-      lineEnd(text, pl),
-      firstNonBlankOffset(text, ln),
+      lineEnd(text, prevLine),
+      firstNonBlankOffset(text, caretLine),
       true,
     );
   } else {
-    const last = lineCount(text) - 1;
-    let nl = ln + 1;
-    while (nl <= last && blank(nl)) nl++;
-    if (nl > last) return;
+    const lastLine = lineCount(text) - 1;
+    let nextLine = caretLine + 1;
+    while (nextLine <= lastLine && blank(nextLine)) nextLine++;
+    if (nextLine > lastLine) return;
     Sel.select(
       ctx,
       SelType.JOIN,
-      lineEnd(text, ln),
-      firstNonBlankOffset(text, nl),
+      lineEnd(text, caretLine),
+      firstNonBlankOffset(text, nextLine),
       true,
     );
   }

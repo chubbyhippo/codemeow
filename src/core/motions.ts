@@ -39,26 +39,41 @@ import * as Grab from './grab';
 import * as Search from './search';
 
 export const commands: Map<string, MeowCommand> = new Map([
-  ['meow-left', (ctx: Ctx) => moveChar(ctx, -ctx.st.takeCount(1))],
-  ['meow-right', (ctx: Ctx) => moveChar(ctx, ctx.st.takeCount(1))],
-  ['meow-next', (ctx: Ctx) => moveLine(ctx, ctx.st.takeCount(1))],
-  ['meow-prev', (ctx: Ctx) => moveLine(ctx, -ctx.st.takeCount(1))],
-  ['meow-left-expand', (ctx: Ctx) => moveExpand(ctx, -ctx.st.takeCount(1), 0)],
-  ['meow-right-expand', (ctx: Ctx) => moveExpand(ctx, ctx.st.takeCount(1), 0)],
-  ['meow-next-expand', (ctx: Ctx) => moveExpand(ctx, 0, ctx.st.takeCount(1))],
-  ['meow-prev-expand', (ctx: Ctx) => moveExpand(ctx, 0, -ctx.st.takeCount(1))],
-  ['meow-next-word', (ctx: Ctx) => wordMotion(ctx, false, ctx.st.takeCount(1))],
+  ['meow-left', (ctx: Ctx) => moveChar(ctx, -ctx.state.takeCount(1))],
+  ['meow-right', (ctx: Ctx) => moveChar(ctx, ctx.state.takeCount(1))],
+  ['meow-next', (ctx: Ctx) => moveLine(ctx, ctx.state.takeCount(1))],
+  ['meow-prev', (ctx: Ctx) => moveLine(ctx, -ctx.state.takeCount(1))],
+  [
+    'meow-left-expand',
+    (ctx: Ctx) => moveExpand(ctx, -ctx.state.takeCount(1), 0),
+  ],
+  [
+    'meow-right-expand',
+    (ctx: Ctx) => moveExpand(ctx, ctx.state.takeCount(1), 0),
+  ],
+  [
+    'meow-next-expand',
+    (ctx: Ctx) => moveExpand(ctx, 0, ctx.state.takeCount(1)),
+  ],
+  [
+    'meow-prev-expand',
+    (ctx: Ctx) => moveExpand(ctx, 0, -ctx.state.takeCount(1)),
+  ],
+  [
+    'meow-next-word',
+    (ctx: Ctx) => wordMotion(ctx, false, ctx.state.takeCount(1)),
+  ],
   [
     'meow-next-symbol',
-    (ctx: Ctx) => wordMotion(ctx, true, ctx.st.takeCount(1)),
+    (ctx: Ctx) => wordMotion(ctx, true, ctx.state.takeCount(1)),
   ],
   [
     'meow-back-word',
-    (ctx: Ctx) => wordMotion(ctx, false, -ctx.st.takeCount(1)),
+    (ctx: Ctx) => wordMotion(ctx, false, -ctx.state.takeCount(1)),
   ],
   [
     'meow-back-symbol',
-    (ctx: Ctx) => wordMotion(ctx, true, -ctx.st.takeCount(1)),
+    (ctx: Ctx) => wordMotion(ctx, true, -ctx.state.takeCount(1)),
   ],
   ['meow-mark-word', (ctx: Ctx) => markWord(ctx, false)],
   ['meow-mark-symbol', (ctx: Ctx) => markWord(ctx, true)],
@@ -67,29 +82,29 @@ export const commands: Map<string, MeowCommand> = new Map([
   [
     'meow-find',
     (ctx: Ctx) => {
-      ctx.st.pending = Pending.FIND;
+      ctx.state.pending = Pending.FIND;
     },
   ],
   [
     'meow-till',
     (ctx: Ctx) => {
-      ctx.st.pending = Pending.TILL;
+      ctx.state.pending = Pending.TILL;
     },
   ],
-  ['forward-char', (ctx: Ctx) => charOrExpand(ctx, ctx.st.takeCount(1))],
-  ['backward-char', (ctx: Ctx) => charOrExpand(ctx, -ctx.st.takeCount(1))],
+  ['forward-char', (ctx: Ctx) => charOrExpand(ctx, ctx.state.takeCount(1))],
+  ['backward-char', (ctx: Ctx) => charOrExpand(ctx, -ctx.state.takeCount(1))],
   [
     'next-line',
     (ctx: Ctx) => {
-      lineOrExpand(ctx, ctx.st.takeCount(1));
-      ctx.st.lastCommand = 'next-line';
+      lineOrExpand(ctx, ctx.state.takeCount(1));
+      ctx.state.lastCommand = 'next-line';
     },
   ],
   [
     'previous-line',
     (ctx: Ctx) => {
-      lineOrExpand(ctx, -ctx.st.takeCount(1));
-      ctx.st.lastCommand = 'previous-line';
+      lineOrExpand(ctx, -ctx.state.takeCount(1));
+      ctx.state.lastCommand = 'previous-line';
     },
   ],
   [
@@ -104,25 +119,25 @@ export const commands: Map<string, MeowCommand> = new Map([
     'back-to-indentation',
     (ctx: Ctx) => moveToOrExpand(ctx, SelType.CHAR, indentationTarget),
   ],
-  ['forward-word', (ctx: Ctx) => wordOrExpand(ctx, ctx.st.takeCount(1))],
-  ['backward-word', (ctx: Ctx) => wordOrExpand(ctx, -ctx.st.takeCount(1))],
+  ['forward-word', (ctx: Ctx) => wordOrExpand(ctx, ctx.state.takeCount(1))],
+  ['backward-word', (ctx: Ctx) => wordOrExpand(ctx, -ctx.state.takeCount(1))],
   [
     'forward-sentence',
-    (ctx: Ctx) => sentenceOrExpand(ctx, ctx.st.takeCount(1)),
+    (ctx: Ctx) => sentenceOrExpand(ctx, ctx.state.takeCount(1)),
   ],
   [
     'backward-sentence',
-    (ctx: Ctx) => sentenceOrExpand(ctx, -ctx.st.takeCount(1)),
+    (ctx: Ctx) => sentenceOrExpand(ctx, -ctx.state.takeCount(1)),
   ],
   ['beginning-of-buffer', (ctx: Ctx) => bufferBoundary(ctx, true)],
   ['end-of-buffer', (ctx: Ctx) => bufferBoundary(ctx, false)],
   [
     'forward-paragraph',
-    (ctx: Ctx) => paragraphOrExpand(ctx, ctx.st.takeCount(1)),
+    (ctx: Ctx) => paragraphOrExpand(ctx, ctx.state.takeCount(1)),
   ],
   [
     'backward-paragraph',
-    (ctx: Ctx) => paragraphOrExpand(ctx, -ctx.st.takeCount(1)),
+    (ctx: Ctx) => paragraphOrExpand(ctx, -ctx.state.takeCount(1)),
   ],
 ]);
 
@@ -154,7 +169,7 @@ const VERTICAL = new Set([
 ]);
 
 const charSelActive = (ctx: Ctx) =>
-  ctx.st.selType === SelType.CHAR && Sel.hasSelection(Sel.primary(ctx));
+  ctx.state.selType === SelType.CHAR && Sel.hasSelection(Sel.primary(ctx));
 
 function movedChar(
   len: number,
@@ -173,31 +188,31 @@ function movedLine(
   extend: boolean,
   goal: number | null,
 ): SelRange {
-  const ln = lineOfOffset(text, sel.active);
-  const target = ln + dy;
+  const caretLine = lineOfOffset(text, sel.active);
+  const target = caretLine + dy;
   let active: number;
   if (target < 0) active = 0;
   else if (target > lineCount(text) - 1) active = text.length;
   else {
-    const col = goal ?? sel.active - lineStart(text, ln);
+    const column = goal ?? sel.active - lineStart(text, caretLine);
     const bol = lineStart(text, target);
-    active = bol + Math.min(col, lineEnd(text, target) - bol);
+    active = bol + Math.min(column, lineEnd(text, target) - bol);
   }
   return { anchor: extend ? sel.anchor : active, active };
 }
 
 function goalColumn(ctx: Ctx): number {
-  const st = ctx.st;
+  const state = ctx.state;
   if (
-    st.goalColumn === null ||
-    st.lastCommand === null ||
-    !VERTICAL.has(st.lastCommand)
+    state.goalColumn === null ||
+    state.lastCommand === null ||
+    !VERTICAL.has(state.lastCommand)
   ) {
     const text = ctx.port.getText();
-    const p = Sel.primary(ctx).active;
-    st.goalColumn = p - lineStart(text, lineOfOffset(text, p));
+    const caret = Sel.primary(ctx).active;
+    state.goalColumn = caret - lineStart(text, lineOfOffset(text, caret));
   }
-  return st.goalColumn;
+  return state.goalColumn;
 }
 
 function moveChar(ctx: Ctx, dx: number): void {
@@ -243,8 +258,8 @@ function moveExpand(ctx: Ctx, dx: number, dy: number): void {
     true,
     before,
   );
-  ctx.st.selType = SelType.CHAR;
-  ctx.st.selExpand = true;
+  ctx.state.selType = SelType.CHAR;
+  ctx.state.selExpand = true;
   Grab.beacon(ctx);
 }
 
@@ -279,8 +294,8 @@ function moveToOrExpand(ctx: Ctx, type: SelType, target: OffsetTarget): void {
       true,
       before,
     );
-    ctx.st.selType = type;
-    ctx.st.selExpand = true;
+    ctx.state.selType = type;
+    ctx.state.selExpand = true;
     Grab.beacon(ctx);
   }
 }
@@ -307,12 +322,12 @@ function paragraphOrExpand(ctx: Ctx, n: number): void {
 }
 
 function bufferBoundary(ctx: Ctx, top: boolean): void {
-  const counted = ctx.st.pendingCount !== 0 || ctx.st.negative;
-  const n = ctx.st.takeCount(1);
+  const counted = ctx.state.pendingCount !== 0 || ctx.state.negative;
+  const count = ctx.state.takeCount(1);
   moveToOrExpand(ctx, SelType.CHAR, (text) => {
     const len = text.length;
     if (!counted) return top ? 0 : len;
-    const tenth = Math.trunc((len * n) / 10);
+    const tenth = Math.trunc((len * count) / 10);
     const raw = clamp(top ? tenth : len - tenth, 0, len);
     return nextLineStart(text, raw);
   });
@@ -320,48 +335,54 @@ function bufferBoundary(ctx: Ctx, top: boolean): void {
 
 function nextLineStart(text: string, offset: number): number {
   if (text.length === 0) return 0;
-  const ln = lineOfOffset(text, clamp(offset, 0, text.length));
-  return ln >= lineCount(text) - 1 ? text.length : lineStart(text, ln + 1);
+  const caretLine = lineOfOffset(text, clamp(offset, 0, text.length));
+  return caretLine >= lineCount(text) - 1
+    ? text.length
+    : lineStart(text, caretLine + 1);
 }
 
-function wordMotion(ctx: Ctx, symbol: boolean, n: number): void {
-  if (n === 0) return;
+function wordMotion(ctx: Ctx, symbol: boolean, count: number): void {
+  if (count === 0) return;
   const text = ctx.port.getText();
   const type = wordType(symbol);
   const sel = Sel.primary(ctx);
-  const lo = Sel.lo(sel);
-  const hi = Sel.hi(sel);
-  if (!(Sel.hasSelection(sel) && ctx.st.selType === type)) Sel.cancel(ctx);
+  const selStart = Sel.lo(sel);
+  const selEnd = Sel.hi(sel);
+  if (!(Sel.hasSelection(sel) && ctx.state.selType === type)) Sel.cancel(ctx);
   const extend =
-    ctx.st.selExpand && ctx.st.selType === type && Sel.hasSelection(sel);
-  const from = extend ? (n < 0 ? lo : hi) : sel.active;
+    ctx.state.selExpand && ctx.state.selType === type && Sel.hasSelection(sel);
+  const from = extend ? (count < 0 ? selStart : selEnd) : sel.active;
   const target =
-    n > 0
-      ? Words.nextEnd(text, from, n, charPred(symbol))
-      : Words.prevStart(text, from, -n, charPred(symbol));
+    count > 0
+      ? Words.nextEnd(text, from, count, charPred(symbol))
+      : Words.prevStart(text, from, -count, charPred(symbol));
   if (target === from) return;
   const anchor = extend
-    ? n < 0
-      ? hi
-      : lo
+    ? count < 0
+      ? selEnd
+      : selStart
     : Words.fixSelectionMark(text, target, from, charPred(symbol));
   Sel.select(ctx, type, anchor, target, extend);
 }
 
 function markWord(ctx: Ctx, symbol: boolean): void {
-  const neg = ctx.st.takeCount(1) < 0;
+  const reversed = ctx.state.takeCount(1) < 0;
   const text = ctx.port.getText();
-  const b = Words.boundsAt(text, Sel.primary(ctx).active, charPred(symbol));
-  if (!b) {
+  const bounds = Words.boundsAt(
+    text,
+    Sel.primary(ctx).active,
+    charPred(symbol),
+  );
+  if (!bounds) {
     ctx.ui.hint('No word here');
     return;
   }
-  const [s, e] = b;
-  if (neg) Sel.select(ctx, wordType(symbol), e, s, true);
-  else Sel.select(ctx, wordType(symbol), s, e, true);
-  const quoted = escapeRegExp(text.slice(s, e));
+  const [start, end] = bounds;
+  if (reversed) Sel.select(ctx, wordType(symbol), end, start, true);
+  else Sel.select(ctx, wordType(symbol), start, end, true);
+  const quoted = escapeRegExp(text.slice(start, end));
   Search.push(
-    ctx.st,
+    ctx.state,
     symbol ? `(?<![\\w$])${quoted}(?![\\w$])` : `\\b${quoted}\\b`,
   );
 }
@@ -369,40 +390,46 @@ function markWord(ctx: Ctx, symbol: boolean): void {
 function line(ctx: Ctx): void {
   const text = ctx.port.getText();
   if (text.length === 0) return;
-  const n = ctx.st.takeCount(1);
+  const count = ctx.state.takeCount(1);
   const lastLine = lineCount(text) - 1;
   if (
-    ctx.st.selType === SelType.LINE &&
-    ctx.st.selExpand &&
+    ctx.state.selType === SelType.LINE &&
+    ctx.state.selExpand &&
     Sel.hasSelection(Sel.primary(ctx))
   ) {
-    const caretLn = lineOfOffset(text, Sel.primary(ctx).active);
+    const caretLine = lineOfOffset(text, Sel.primary(ctx).active);
     if (Sel.backwardP(ctx)) {
-      const ln = Math.max(caretLn - Math.abs(n), 0);
-      Sel.select(ctx, SelType.LINE, Sel.mark(ctx), lineStart(text, ln), true);
+      const target = Math.max(caretLine - Math.abs(count), 0);
+      Sel.select(
+        ctx,
+        SelType.LINE,
+        Sel.mark(ctx),
+        lineStart(text, target),
+        true,
+      );
     } else {
-      const ln = Math.min(caretLn + Math.abs(n), lastLine);
-      Sel.select(ctx, SelType.LINE, Sel.mark(ctx), lineEnd(text, ln), true);
+      const target = Math.min(caretLine + Math.abs(count), lastLine);
+      Sel.select(ctx, SelType.LINE, Sel.mark(ctx), lineEnd(text, target), true);
     }
     return;
   }
-  const ln = lineOfOffset(text, Sel.primary(ctx).active);
-  if (n < 0) {
-    const startLn = Math.max(ln + n + 1, 0);
+  const caretLine = lineOfOffset(text, Sel.primary(ctx).active);
+  if (count < 0) {
+    const firstLine = Math.max(caretLine + count + 1, 0);
     Sel.select(
       ctx,
       SelType.LINE,
-      lineEnd(text, ln),
-      lineStart(text, startLn),
+      lineEnd(text, caretLine),
+      lineStart(text, firstLine),
       true,
     );
   } else {
-    const endLn = Math.min(ln + n - 1, lastLine);
+    const finalLine = Math.min(caretLine + count - 1, lastLine);
     Sel.select(
       ctx,
       SelType.LINE,
-      lineStart(text, ln),
-      lineEnd(text, endLn),
+      lineStart(text, caretLine),
+      lineEnd(text, finalLine),
       true,
     );
   }
@@ -415,19 +442,32 @@ async function gotoLine(ctx: Ctx): Promise<void> {
   if (text.length === 0) return;
   const parsed = parseInt(input.trim(), 10);
   if (Number.isNaN(parsed)) return;
-  const ln = clamp(parsed - 1, 0, lineCount(text) - 1);
-  Sel.select(ctx, SelType.LINE, lineStart(text, ln), lineEnd(text, ln), true);
+  const target = clamp(parsed - 1, 0, lineCount(text) - 1);
+  Sel.select(
+    ctx,
+    SelType.LINE,
+    lineStart(text, target),
+    lineEnd(text, target),
+    true,
+  );
 }
 
-export function findTill(ctx: Ctx, ch: string, till: boolean): void {
-  const n = ctx.st.takeCount(1);
+export function findTill(ctx: Ctx, char: string, till: boolean): void {
+  const count = ctx.state.takeCount(1);
   const text = ctx.port.getText();
   const caret = Sel.primary(ctx).active;
-  const target = nthCharTarget(text, ch, caret, Math.abs(n), n < 0, till);
+  const target = nthCharTarget(
+    text,
+    char,
+    caret,
+    Math.abs(count),
+    count < 0,
+    till,
+  );
   if (target < 0) {
-    ctx.ui.hint(`char not found: ${ch}`);
+    ctx.ui.hint(`char not found: ${char}`);
     return;
   }
-  ctx.st.lastFind = ch;
+  ctx.state.lastFind = char;
   Sel.select(ctx, till ? SelType.TILL : SelType.FIND, caret, target, false);
 }

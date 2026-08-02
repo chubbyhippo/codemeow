@@ -306,7 +306,7 @@ describe('RcSpec', () => {
     const s = freshSpec();
     s.given('three lines', '<caret>one\ntwo\nthree');
     s.givenRc('mmap n meow-next');
-    s.st.mode = MeowMode.MOTION;
+    s.state.mode = MeowMode.MOTION;
     await s.whenKeys('n');
     assert.equal(s.caretLine(), 1);
     await s.whenKeys('j');

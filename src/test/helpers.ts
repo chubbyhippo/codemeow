@@ -170,8 +170,8 @@ class FakeUi implements UiPort {
     return Promise.resolve();
   }
 
-  modeChanged(st: MeowState): void {
-    this.modes.push(st.mode);
+  modeChanged(state: MeowState): void {
+    this.modes.push(state.mode);
   }
 
   refresh(): void {}
@@ -181,7 +181,7 @@ export class Spec {
   editor = new FakeEditor();
   clip = new FakeClipboard();
   ui = new FakeUi();
-  st = new MeowState();
+  state = new MeowState();
   scenario = '';
 
   get ctx(): Ctx {
@@ -189,7 +189,7 @@ export class Spec {
       port: this.editor,
       clipboard: this.clip,
       ui: this.ui,
-      st: this.st,
+      state: this.state,
     };
   }
 
@@ -199,7 +199,7 @@ export class Spec {
     this.editor.text = textWithCaret.replace('<caret>', '');
     const off = at < 0 ? 0 : at;
     this.editor.sels = [{ anchor: off, active: off }];
-    this.st = new MeowState();
+    this.state = new MeowState();
   }
 
   givenRc(text: string): void {
@@ -312,11 +312,15 @@ export class Spec {
   }
 
   thenMode(expected: MeowMode): void {
-    assert.equal(this.st.mode, expected, this.inScenario('meow mode'));
+    assert.equal(this.state.mode, expected, this.inScenario('meow mode'));
   }
 
   thenSelType(expected: SelType): void {
-    assert.equal(this.st.selType, expected, this.inScenario('selection type'));
+    assert.equal(
+      this.state.selType,
+      expected,
+      this.inScenario('selection type'),
+    );
   }
 
   thenClipboard(expected: string): void {

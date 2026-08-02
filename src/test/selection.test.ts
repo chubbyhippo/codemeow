@@ -298,10 +298,10 @@ describe('SelectionSpec', () => {
     const s = freshSpec();
     s.given('two words', '<caret>hello world');
     await s.whenKeys('wG');
-    s.st.selectionHistory = [];
+    s.state.selectionHistory = [];
     await s.whenKeys('z');
     s.thenSelection('hello');
-    assert.equal(s.st.grab, null, 'grab is consumed by pop');
+    assert.equal(s.state.grab, null, 'grab is consumed by pop');
   });
 
   it('given g then the selection is cancelled', async () => {
