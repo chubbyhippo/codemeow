@@ -194,35 +194,33 @@ function expandOrCount(ctx: Ctx, digit: number): void {
   }
 }
 
-function expand(ctx: Ctx, count: number): void {
-  const state = ctx.state;
-  const text = ctx.port.getText();
-  const back = backwardP(ctx);
-  const caret = primary(ctx).active;
-  let target: number;
+function expandTarget(
+  state: MeowState,
+  text: string,
+  caret: number,
+  back: boolean,
+  count: number,
+): number | null {
   switch (state.selType) {
     case SelType.CHAR:
-      target = caret + (back ? -count : count);
-      break;
+      return caret + (back ? -count : count);
     case SelType.WORD:
     case SelType.SYMBOL: {
       const isWord = charPred(state.selType === SelType.SYMBOL);
-      target = back
+      return back
         ? Words.prevStart(text, caret, count, isWord)
         : Words.nextEnd(text, caret, count, isWord);
-      break;
     }
     case SelType.LINE: {
       const caretLine = lineOfOffset(text, caret);
-      target = back
+      return back
         ? lineStart(text, Math.max(caretLine - count, 0))
         : lineEnd(text, Math.min(caretLine + count, lineCount(text) - 1));
-      break;
     }
     case SelType.FIND:
     case SelType.TILL: {
       const findChar = state.lastFind;
-      if (findChar === null) return;
+      if (findChar === null) return null;
       const found = nthCharTarget(
         text,
         findChar,
@@ -231,12 +229,22 @@ function expand(ctx: Ctx, count: number): void {
         back,
         state.selType === SelType.TILL,
       );
-      if (found < 0) return;
-      target = found;
-      break;
+      return found < 0 ? null : found;
     }
     default:
-      return;
+      return null;
   }
+}
+
+function expand(ctx: Ctx, count: number): void {
+  const state = ctx.state;
+  const target = expandTarget(
+    state,
+    ctx.port.getText(),
+    primary(ctx).active,
+    backwardP(ctx),
+    count,
+  );
+  if (target === null) return;
   select(ctx, state.selType, mark(ctx), target, false);
 }

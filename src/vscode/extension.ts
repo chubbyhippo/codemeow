@@ -26,6 +26,7 @@ import { Chord } from '../core/chord';
 import { Chords } from '../core/chords';
 import { normalize as normalizeHostKey } from '../core/hostKey';
 import { Hosts } from '../core/hosts';
+import { CHEATSHEET } from '../core/keypad';
 import { Resizes } from '../core/resize';
 import * as Engine from '../core/engine';
 import { Ctx, UiPort } from '../core/port';
@@ -1277,9 +1278,7 @@ export function activate(context: vscode.ExtensionContext): void {
       const state = stateFor(editor);
       if (!state) return;
       const ctx = makeCtx(editor, state);
-      void import('../core/keypad').then((k) =>
-        ctx.ui.info('Meow Cheatsheet', k.CHEATSHEET),
-      );
+      ctx.ui.info('Meow Cheatsheet', CHEATSHEET);
     }),
 
     { dispose: closeWhichKeyMenu },

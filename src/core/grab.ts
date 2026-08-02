@@ -24,6 +24,8 @@ import * as Edits from './edits';
 
 const MAX_GRAB_SYNC_MATCHES = 500;
 
+type Span = { start: number; end: number };
+
 export const commands: Map<string, MeowCommand> = new Map([
   ['meow-grab', (ctx: Ctx) => grab(ctx)],
   ['meow-sync-grab', (ctx: Ctx) => sync(ctx)],
@@ -134,6 +136,73 @@ export function pop(ctx: Ctx): boolean {
   return true;
 }
 
+const literalPattern = (selText: string): RegExp =>
+  new RegExp(escapeRegExp(selText), 'g');
+
+const wordBoundedPattern = (selText: string): RegExp =>
+  new RegExp(`\\b${escapeRegExp(selText)}\\b`, 'g');
+
+function matchBeacons(
+  text: string,
+  region: Span,
+  sel: Span,
+  pattern: (selText: string) => RegExp,
+): SelRange[] {
+  const selText = text.slice(sel.start, sel.end);
+  if (selText.trim() === '') return [];
+  const re = pattern(selText);
+  const body = text.slice(region.start, region.end);
+  const sels: SelRange[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(body)) !== null) {
+    if (match[0].length === 0) {
+      re.lastIndex++;
+      continue;
+    }
+    const matchStart = region.start + match.index;
+    const matchEnd = matchStart + match[0].length;
+    if (matchStart !== sel.start) {
+      sels.push({ anchor: matchStart, active: matchEnd });
+      if (sels.length >= MAX_GRAB_SYNC_MATCHES) break;
+    }
+  }
+  if (sels.length === 0) return [];
+  return [{ anchor: sel.start, active: sel.end }, ...sels];
+}
+
+function lineBeacons(text: string, region: Span): SelRange[] {
+  const first = lineOfOffset(text, region.start);
+  const last = lineOfOffset(text, Math.max(region.end - 1, region.start));
+  if (last <= first) return [];
+  const sels: SelRange[] = [];
+  for (let line = first; line <= last; line++) {
+    sels.push({ anchor: lineStart(text, line), active: lineEnd(text, line) });
+  }
+  return sels;
+}
+
+function beaconsFor(
+  type: SelType,
+  text: string,
+  region: Span,
+  sel: Span,
+): SelRange[] {
+  switch (type) {
+    case SelType.WORD:
+    case SelType.SYMBOL:
+      return matchBeacons(text, region, sel, wordBoundedPattern);
+    case SelType.VISIT:
+    case SelType.FIND:
+    case SelType.TILL:
+    case SelType.CHAR:
+      return matchBeacons(text, region, sel, literalPattern);
+    case SelType.LINE:
+      return lineBeacons(text, region);
+    default:
+      return [];
+  }
+}
+
 export function beacon(ctx: Ctx): void {
   const { port, state } = ctx;
   const grabbed = state.grab;
@@ -144,56 +213,10 @@ export function beacon(ctx: Ctx): void {
   const selEnd = Sel.selEnd(sel);
   if (selStart < grabbed.start || selEnd > grabbed.end || selEnd === selStart)
     return;
-  const text = port.getText();
-  const sels: SelRange[] = [];
-  switch (state.selType) {
-    case SelType.WORD:
-    case SelType.SYMBOL:
-    case SelType.VISIT:
-    case SelType.FIND:
-    case SelType.TILL:
-    case SelType.CHAR: {
-      const selText = text.slice(selStart, selEnd);
-      if (selText.trim() === '') return;
-      const bounded =
-        state.selType === SelType.WORD || state.selType === SelType.SYMBOL;
-      const re = new RegExp(
-        bounded ? `\\b${escapeRegExp(selText)}\\b` : escapeRegExp(selText),
-        'g',
-      );
-      const region = text.slice(grabbed.start, grabbed.end);
-      let added = 0;
-      let match: RegExpExecArray | null;
-      while ((match = re.exec(region)) !== null) {
-        if (match[0].length === 0) {
-          re.lastIndex++;
-          continue;
-        }
-        const matchStart = grabbed.start + match.index;
-        const matchEnd = matchStart + match[0].length;
-        if (matchStart !== selStart) {
-          sels.push({ anchor: matchStart, active: matchEnd });
-          if (++added >= MAX_GRAB_SYNC_MATCHES) break;
-        }
-      }
-      if (sels.length === 0) return;
-      sels.unshift({ anchor: selStart, active: selEnd });
-      break;
-    }
-    case SelType.LINE: {
-      const first = lineOfOffset(text, grabbed.start);
-      const last = lineOfOffset(text, Math.max(grabbed.end - 1, grabbed.start));
-      if (last <= first) return;
-      for (let line = first; line <= last; line++) {
-        sels.push({
-          anchor: lineStart(text, line),
-          active: lineEnd(text, line),
-        });
-      }
-      break;
-    }
-    default:
-      return;
-  }
+  const sels = beaconsFor(state.selType, port.getText(), grabbed, {
+    start: selStart,
+    end: selEnd,
+  });
+  if (sels.length === 0) return;
   port.setSelections(sels);
 }

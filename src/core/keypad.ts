@@ -82,7 +82,8 @@ function describe(ctx: Ctx, c: string): void {
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
     .map(([seq, b]) => {
       const target = b.action ?? b.command ?? b.keys ?? '';
-      const desc = descs.has(seq) ? `  (${descs.get(seq)})` : '';
+      const described = descs.get(seq);
+      const desc = described === undefined ? '' : `  (${described})`;
       return `SPC ${seq.split('').join(' ')}  ->  ${target}${desc}`;
     })
     .join('\n');
