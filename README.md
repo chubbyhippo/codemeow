@@ -1,172 +1,174 @@
-# codemeow — meow modal editing for VS Code and VSCodium
+# codemeow
 
-If you love [meow](https://github.com/meow-edit/meow) in Emacs and sigh every
-time you open VS Code, this extension is for you. It implements meow's
-suggested **QWERTY layout** as a native modal editing engine — no vim
-emulation in the middle. Just meow: select first, then act.
+[meow](https://github.com/meow-edit/meow)-style modal editing for VS Code and
+VSCodium — meow's suggested **QWERTY layout** as a native modal engine, with no
+vim emulation in the middle. Select first, then act.
 
-It is the sibling of [ideameow](https://github.com/chubbyhippo/ideameow) (the
-same idea for IntelliJ): the two share their keymap format, their default
-layout, and a behavior-identical test suite, so your muscle memory transfers
-between editors unchanged.
+| | |
+|---|---|
+| Sibling | [ideameow](https://github.com/chubbyhippo/ideameow) — same idea for IntelliJ |
+| Shared with it | keymap format, default layout, a behavior-identical test suite |
+| Conflicts | disable VSCodeVim — two modal editors cannot share a keyboard |
 
-(Do disable VSCodeVim while this is enabled — both extensions intercept
-typing, and two modal editors cannot share a keyboard.)
+## States
 
-## What you get
+| State | What |
+|---|---|
+| **NORMAL** | keys are commands, block cursor; you start here |
+| **INSERT** | keys type text — `i a c I A` enter, `ESC` leaves |
+| **MOTION** | meow's reduced state, rebindable with `mmap`; what answers to it is the workbench trees |
+| **KEYPAD** | `SPC` as the leader, dispatching editor commands Emacs-style (`SPC x f` quick open, `SPC w v` split); a which-key menu pops up on a pause |
+| **BEACON** | meow's multi-edit on VS Code's native multiple cursors — grab with `G`, select inside it, a cursor lands on every similar range; `ESC` collapses |
 
-The states you know from meow:
+The status bar always shows the current state.
 
-- **NORMAL** — keys are commands, block cursor. You start here.
-- **INSERT** — keys type text. `i a c I A` get you in, `ESC` gets you out.
-- **MOTION** — meow's reduced state for special contexts, rebindable with
-  `mmap`. Read-only views do _not_ use it: like read-only buffers in Emacs
-  they stay in NORMAL — every motion, selection, search and avy jump works,
-  and the modify commands are simply inert (meow's `meow--allow-modify-p`).
-  What _does_ answer to it, like special buffers in Emacs: the workbench
-  trees — see below.
-- **KEYPAD** — `SPC` as the leader, dispatching editor commands Emacs-style
-  (`SPC x f` = quick open, `SPC w v` = split…). A which-key menu pops up
-  with your options whenever you pause on a prefix.
-- **BEACON** — meow's multi-edit, built on VS Code's native multiple cursors:
-  grab a region with `G`, select something inside it, and a cursor lands on
-  every similar range. Edit them all at once; `ESC` collapses.
+## Where meow attaches
 
-The status bar always tells you which state you're in. Meow runs in file
-buffers, in read-only views (a diff's git side, the output panel, the
-cheatsheet — full layout, edits blocked), and in the SCM commit message box;
-inputs that need their own keys (notebook REPLs, review comments) keep
-native editing.
+| Surface | Behavior |
+|---|---|
+| File buffers | full NORMAL editing |
+| Read-only views (a diff's git side, the output panel, the cheatsheet) | full layout, edits blocked |
+| The SCM commit message box | full meow editing |
+| Notebook REPLs, review comments | native editing |
 
-**Workbench trees** — the Explorer, outline, search results, problems,
-timeline, and every other sidebar or panel tree — answer to the MOTION map,
-like special buffers in Emacs: `j`/`k` move the selection, `h` collapses or
-goes to the parent, `l` expands or enters, `q` hides the side bar.
-Everything else stays native: `Enter` opens, and any _unmapped_ letter still
-starts the tree's type-to-find. Add your own tree keys with `mmap` lines in
-`~/.codemeowrc`, e.g. `mmap o <action>(filesExplorer.openFilePreserveFocus)`
-(open the file but keep navigating) or
-`mmap r <action>(workbench.files.action.refreshFilesExplorer)`;
-`mmap <key> ignore` gives a key back to the tree (so `mmap q ignore` makes
-`q` type into the find again). Meow commands other than the four motions
-have no tree meaning and are simply inert there.
+### Workbench trees
 
-**Double-ESC leaves any tool window** — press `ESC` twice quickly (within
-500 ms) in the terminal, a sidebar or panel view, and focus jumps back to
-the editor; a lone `ESC` keeps its native meaning (lists still clear their
-selection, the shell still receives its escape byte). One setting is needed
-for the terminal half — by default VS Code sends every unlisted key to the
-shell, so let the codemeow binding through:
+The Explorer, outline, search results, problems, timeline and every other
+sidebar or panel tree answer to the MOTION map.
+
+| Key | Does |
+|---|---|
+| `j` / `k` | move the selection |
+| `h` | collapse, or go to the parent |
+| `l` | expand, or enter |
+| `q` | hide the side bar |
+| `Enter`, any unmapped letter | native — the tree's type-to-find still starts |
+
+| rc line | Effect |
+|---|---|
+| `mmap o <action>(filesExplorer.openFilePreserveFocus)` | open the file but keep navigating |
+| `mmap r <action>(workbench.files.action.refreshFilesExplorer)` | refresh |
+| `mmap q ignore` | give `q` back to the tree, so it types into the find again |
+
+Meow commands other than the four motions have no tree meaning and are inert
+there.
+
+### Double-ESC leaves any tool window
+
+| Press | In | Result |
+|---|---|---|
+| `ESC` ×2 within 500 ms | the terminal, a sidebar or a panel view | focus jumps back to the editor |
+| a lone `ESC` | anywhere | keeps its native meaning — lists clear their selection, the shell receives its escape byte |
+
+The terminal half needs one setting, because VS Code sends every unlisted key
+to the shell:
 
 ```json
 "terminal.integrated.commandsToSkipShell": ["codemeow.toolWindowEscape"]
 ```
 
-Chat-style webview inputs are the one surface this can't reach generically —
-their extensions own their `when` contexts; add your own `escape` keybinding
-on `codemeow.toolWindowEscape` with that context if you want it there.
+| Surface | Note |
+|---|---|
+| Chat-style webview inputs | not reachable generically — their extensions own their `when` contexts; add your own `escape` keybinding on `codemeow.toolWindowEscape` with that context |
 
-**Windows** — `(windmove-default-keybindings)` from `init.el`, ported:
-`Shift+←→↑↓` select the editor window in that direction, and the same four
-commands live on `SPC w h/j/k/l`, mirroring init.el's `C-c w` window map.
-The "windows" are the editor groups _plus_ the two panes of a side-by-side
-diff, which plain group focus never crosses — `S-left` in the modified pane
-enters the original, `S-left` again leaves the diff toward the group on its
-left. No wrap-around, and where Emacs would complain, codemeow does too:
-"No window left from selected window" in the status bar. `SPC w b`
-balances the split sizes (init.el's `C-c w b`); `SPC w H/J/K/L` are the
-window swaps — VS Code cannot exchange two groups' contents, so they move
-THIS group to that side of the grid instead, which is the same rearrangement
-from the keyboard's point of view. The Shift+arrow
-chords live in the manifest keybindings (modifier chords never reach the
-modal engine) — rebind them under _Preferences → Keyboard Shortcuts →
-Windmove_ — and inside meow buffers they shadow shift-selection, the exact
-tradeoff the Emacs binding makes (select with meow instead; anywhere meow
-doesn't attach keeps native shift-select).
+## Windows
 
-**Ace-window** — `SPC w w` (and `SPC x o`, the `C-x o` slot) is an
-ace-window port over the editor groups: with three or more, every group
-showing a text editor gets a home-row label painted at its top
-(`a s d f g h j k l`, avy's colors) and the next key jumps to that group;
-with exactly two it hops straight to the other one, like `other-window`;
-`Esc` cancels. Groups whose active tab has no text editor (a webview, an
-image) can't take a label, and picks reach the first eight groups — the
-platform's own focus-group commands. The key prompt rides a quick-pick
-sink, the same trick the which-key menu uses.
+`(windmove-default-keybindings)` from `init.el`, ported.
 
-**Ace-click** — `SPC SPC` paints a hint on every clickable thing and one key
-clicks it. Two kinds of hint, both real paint, no lists:
+| Key | Does |
+|---|---|
+| `Shift+←→↑↓` | select the editor window in that direction |
+| `SPC w h/j/k/l` | the same four commands, mirroring init.el's `C-c w` window map |
+| `SPC w b` | balance the split sizes (init.el's `C-c w b`) |
+| `SPC w H/J/K/L` | the window swaps — VS Code cannot exchange two groups' contents, so they move THIS group to that side of the grid |
 
-- **every open tab** gets its label as a **badge on the tab** (and on the
-  file's Explorer row, for free) — the label activates that editor
-- **links, code lenses and quick-fix lightbulbs in view** get their label
-  painted in the text — the label follows the link, runs the lens, or opens the
-  fix menu right there
+| Fact | Value |
+|---|---|
+| What counts as a window | the editor groups *plus* the two panes of a side-by-side diff, which plain group focus never crosses — `S-left` in the modified pane enters the original, `S-left` again leaves the diff toward the group on its left |
+| Wrap-around | none |
+| At the edge | "No window left from selected window" in the status bar, as in Emacs |
+| Where the chords live | the manifest keybindings — modifier chords never reach the modal engine; rebind under *Preferences → Keyboard Shortcuts → Windmove* |
+| Tradeoff | inside meow buffers they shadow shift-selection, exactly as the Emacs binding does; anywhere meow does not attach keeps native shift-select |
 
-Editor panes are deliberately not targets: labelling panes is ace-window's job,
-`SPC w w`. Labels come from avy's own subdivision, so past nine targets they
-grow a second letter and the surviving hints narrow as you type; `Esc` cancels.
-Two platform notes: tab badges need `workbench.editor.decorations.badges` (on
-by default) and VS Code renders at most two badge characters, so with more than
-about seventy targets the deepest labels stop being distinguishable on tabs.
-Toolbar buttons and menu items stay unreachable — an extension runs outside the
-workbench's own process and cannot paint on them, which is why a full
-Vimium-style overlay is something only an in-page editor can offer. There is
-also no Shift-to-right-click, since VS Code exposes no per-target context
-menu.
+### Ace-window
 
-**Emacs chords** — `Ctrl+f/b/n/p/a/e` and `Alt+f/b/a/e` are the real
-Emacs point motions (`forward/backward-char`, `next/previous-line`,
-`move-beginning/end-of-line`, `forward/backward-word`,
-`backward/forward-sentence`), not meow commands: meow itself never rebinds
-these chords — its state keymaps hold only single printable keys, so every
-chord falls through to the vanilla Emacs keymap ("Compatible with the
-vanilla Emacs keymap", meow's own README) — and, because a meow
-selection is an active Emacs mark, that same point motion stretches an
-already-active selection for free, with no special-casing. codemeow ports
-that: with no selection the chord just moves the cursor, and with one active
-it extends it, anchored exactly like meow's own `H J K L` char/line expand —
-so `w` then `Ctrl+f Ctrl+f` grows the marked word one character at a time,
-and `;` (reverse) flips which end subsequent chords grow from. `Alt+n` /
-`Alt+p` are deliberately left unbound: stock Emacs has no default binding for
-them either (only the unrelated `M-g n` / `M-g p` error-navigation prefix) —
-verified against the GNU Emacs manual, not guessed.
+| Key | Does |
+|---|---|
+| `SPC w w`, `SPC x o` | ace-window over the editor groups: three or more, every group showing a text editor gets a home-row label (`a s d f g h j k l`, avy's colors) at the top and the next key jumps there; exactly two hops straight across, like `other-window`; `Esc` cancels |
 
-The same treatment covers the rest of the portable Emacs chord layer:
-`Alt+Shift+,` / `Alt+Shift+.` are `beginning/end-of-buffer` (Emacs `M-<` /
-`M->` — a count lands N/10 of the way in, snapping to the next line start,
-exactly the stock behavior), `Alt+Shift+[` / `Alt+Shift+]` are
-`backward/forward-paragraph` (Emacs `M-{` / `M-}` — paragraphs are
-blank-line-delimited; forward lands on the separator line, backward on the
-paragraph start with one adjacent empty line joining it), `Alt+u` /
-`Alt+l` / `Alt+c` are
-`upcase/downcase/capitalize-word` (from the cursor through the word's end; a
-negative count — `-` then the chord — reaches back without moving the
-cursor), and `Alt+d` is `kill-word` (into the clipboard; a negative count
-kills backward).
+| Limit | Detail |
+|---|---|
+| Groups whose active tab has no text editor (a webview, an image) | cannot take a label |
+| Reach | the first eight groups — the platform's own focus-group commands |
+| The key prompt | rides a quick-pick sink, the same trick the which-key menu uses |
 
-The stock-Emacs **edit** chords are here too — `Ctrl+/` and `Ctrl+_` undo,
-`Ctrl+d` delete, `Ctrl+k` / `Ctrl+w` kill, `Alt+w` save, `Ctrl+y` yank,
-`Ctrl+g` cancel, `Alt+m` back-to-indentation, `Ctrl+o` open-line, `Alt+\`
-and `Alt+Space` whitespace, `Alt+^` join — each one the meow command that IS
-the Emacs one, so `Ctrl+k` with no selection kills the line and `Ctrl+w`
-kills the region through the same command.
+### Ace-click
 
-**All thirty-one chords are rc lines**, one `cmap` each, in either spelling
-(`cmap C-f forward-char` or `cmap control F forward-char`) — so rebinding a
-chord is editing a line, not hunting through _Keyboard Shortcuts_. They fire
-in NORMAL and MOTION only, so `Ctrl+F` stays Find while you type. VS Code
-cannot register keybindings at runtime, so the manifest still decides WHICH
-chords are intercepted (it enumerates exactly those thirty-one) while the rc
-decides what each one does; `cmap C-f ignore` really does give `Ctrl+F` back
-to VS Code, because each binding is gated on a context key the extension
-switches off for the chords your rc leaves unbound.
+`SPC SPC` paints a hint on every clickable thing; one key clicks it. Both hint
+kinds are real paint, no lists.
 
-And one idea borrowed straight from meow itself: **the extension binds no
-keys in code.** The entire keymap — the NORMAL/MOTION layout _and_ the whole
-`SPC` keypad table — lives in a `.codemeowrc` file bundled inside the
-extension, and a `~/.codemeowrc` in your home directory overrides it entry by
-entry. Rebind anything; relayout everything.
+| Target | Hint | The label |
+|---|---|---|
+| every open tab | a badge on the tab, and on the file's Explorer row for free | activates that editor |
+| links, code lenses, quick-fix lightbulbs in view | painted in the text | follows the link, runs the lens, or opens the fix menu there |
+
+| Fact | Value |
+|---|---|
+| Labels | avy's own subdivision — past nine targets they grow a second letter, and the surviving hints narrow as you type; `Esc` cancels |
+| Editor panes | deliberately not targets — labelling panes is ace-window's job, `SPC w w` |
+| Tab badges need | `workbench.editor.decorations.badges` (on by default) |
+| Badge width | VS Code renders at most two badge characters, so past roughly seventy targets the deepest labels stop being distinguishable on tabs |
+| Toolbar buttons, menu items | unreachable — an extension runs outside the workbench's own process and cannot paint on them |
+| Shift-to-right-click | absent — VS Code exposes no per-target context menu |
+
+## Emacs chords
+
+| Behavior | Value |
+|---|---|
+| Bound to | the real Emacs point motions, not meow commands |
+| With no selection | the chord moves the cursor |
+| With one active | it extends it, anchored exactly like meow's own `H J K L` expand — `w` then `Ctrl+f Ctrl+f` grows the marked word one character at a time |
+| `;` (reverse) | flips which end subsequent chords grow from |
+
+| Chord | Command |
+|---|---|
+| `Ctrl+f` / `Ctrl+b` | `forward/backward-char` |
+| `Ctrl+n` / `Ctrl+p` | `next/previous-line` |
+| `Ctrl+a` / `Ctrl+e` | `move-beginning/end-of-line` |
+| `Alt+f` / `Alt+b` | `forward/backward-word` |
+| `Alt+a` / `Alt+e` | `backward/forward-sentence` |
+| `Alt+Shift+,` / `Alt+Shift+.` | `beginning/end-of-buffer` (`M-<` / `M->`) — a count lands N/10 of the way in, snapping to the next line start |
+| `Alt+Shift+[` / `Alt+Shift+]` | `backward/forward-paragraph` (`M-{` / `M-}`) — blank-line-delimited; forward lands on the separator line, backward on the paragraph start with one adjacent empty line joining it |
+| `Alt+u` / `Alt+l` / `Alt+c` | `upcase/downcase/capitalize-word` — from the cursor through the word's end; `-` then the chord reaches back without moving the cursor |
+| `Alt+d` | `kill-word` into the clipboard; a negative count kills backward |
+| `Ctrl+/`, `Ctrl+_` | undo |
+| `Ctrl+d` | delete |
+| `Ctrl+k` / `Ctrl+w` | kill — `Ctrl+k` with no selection kills the line, `Ctrl+w` kills the region, through the same command |
+| `Alt+w` | save |
+| `Ctrl+y` | yank |
+| `Ctrl+g` | cancel |
+| `Alt+m` | back-to-indentation |
+| `Ctrl+o` | open-line |
+| `Alt+\`, `Alt+Space` | whitespace |
+| `Alt+^` | join |
+
+| Chord | Why not bound |
+|---|---|
+| `Alt+n` / `Alt+p` | stock Emacs has no default binding either — only the unrelated `M-g n` / `M-g p` prefix |
+
+| Fact | Value |
+|---|---|
+| Config | all thirty-one are rc lines, one `cmap` each, in either spelling — `cmap C-f forward-char` or `cmap control F forward-char` |
+| Active in | NORMAL and MOTION only, so `Ctrl+F` stays Find while you type |
+| Which chords are intercepted | the manifest decides, enumerating exactly those thirty-one — VS Code cannot register keybindings at runtime; the rc decides what each one does |
+| `cmap C-f ignore` | really gives `Ctrl+F` back to VS Code — each binding is gated on a context key the extension switches off for the chords your rc leaves unbound |
+
+## No keys in code
+
+| Layer | What |
+|---|---|
+| Bundled `.codemeowrc` | the entire keymap — the NORMAL/MOTION layout *and* the whole `SPC` keypad table |
+| `~/.codemeowrc` | overrides it entry by entry |
 
 ## Build & install
 
@@ -179,233 +181,236 @@ cd codemeow
 npm test                    # typecheck + lint + format check + behavior suite
 ```
 
-The toolchain is pinned in `mise.toml` (node 24); `setup.sh` falls back to
-`mise exec` automatically when your PATH node is older. The extension is
-side-loaded as a plain folder under `<editor>/extensions/` — no marketplace
-account needed; restart the editor and you're in NORMAL mode.
+| Item | Value |
+|---|---|
+| Toolchain | node 24, pinned in `mise.toml`; `setup.sh` falls back to `mise exec` when the PATH node is older |
+| Install form | a plain folder under `<editor>/extensions/` — no marketplace account |
+| After restart | you are in NORMAL mode |
 
 ## The layout
 
-This is meow's suggested QWERTY layout, validated against
-[KEYBINDING_QWERTY.org](https://github.com/meow-edit/meow/blob/master/KEYBINDING_QWERTY.org)
-in meow's repository — not reconstructed from vim habits. The bundled
-`.codemeowrc` spells it out as one `nmap <key> <meow-command>` line per key,
-so the file doubles as the authoritative reference; what follows is the
-guided tour.
+| Item | Value |
+|---|---|
+| Layout | meow's suggested QWERTY layout, validated against [KEYBINDING_QWERTY.org](https://github.com/meow-edit/meow/blob/master/KEYBINDING_QWERTY.org) in meow's repository |
+| Authoritative reference | the bundled `.codemeowrc` — one `nmap <key> <meow-command>` line per key |
 
-**Moving and selecting.** `h j k l` move (a char-selection survives movement,
-any other selection is cancelled), and `H J K L` extend a char selection.
-`w`/`W` mark the word/symbol at point — and push it to the search ring, which
-is why `n` finds the next occurrence right afterwards. `e`/`E` and `b`/`B` go
-to the next/previous word or symbol, and after a `w` they _extend_ the
-selection instead of replacing it (meow's `(expand . word)` rule). `x` selects
-the line — repeat it or press digits to take more lines. `Q`/`X` go to a line,
-`f`/`t` find/till a character, `o`/`O` select the enclosing block / to its
-end, `m` selects the join region, and `,` `.` `[` `]` select inner/bounds/
-begin/end of a _thing_ (`r` round, `s` square, `c` curly, `g` string, `e`
-symbol, `w` window, `b` buffer, `p` paragraph, `l` line, `v` visual line, `d`
-defun, `.` sentence — meow's exact char-thing table). `;` reverses the
-selection, `z` pops back to the previous one, `v` visits a regexp, `n`
-continues the search (backward when the selection is reversed). Digits expand
-the selection by N units — little painted hints show you where each digit
-lands (`0` = 10) — or act as a count when nothing is selected. `-` is the
-negative argument.
+### Moving and selecting
 
-**Editing.** `i`/`a` insert at the selection's start/end, `I`/`A` open a line
-above/below, `c` change, `s` kill (cut), `d`/`D` delete forward/backward, `y`
-save (copy), `p` yank (paste), `r` replace the selection with the clipboard,
-`u` undo, `'` repeats the last command — counts and all, so `'` after `2fa`
-finds the second `a` again. `g` cancels, `q` closes the tab, `ESC` always
-brings you back to NORMAL.
+| Key | Does |
+|---|---|
+| `h j k l` | move — a char-selection survives, any other selection is cancelled |
+| `H J K L` | extend a char selection |
+| `w` / `W` | mark the word / symbol at point, and push it to the search ring, so `n` finds the next occurrence |
+| `e` / `E`, `b` / `B` | next / previous word or symbol; after a `w` they extend rather than replace (meow's `(expand . word)` rule) |
+| `x` | select the line — repeat or press digits to take more |
+| `Q` / `X` | go to a line |
+| `f` / `t` | find / till a character |
+| `o` / `O` | select the enclosing block / to its end |
+| `m` | select the join region |
+| `,` `.` `[` `]` | inner / bounds / begin / end of a *thing* |
+| `;` | reverse the selection |
+| `z` | pop back to the previous selection |
+| `v` | visit a regexp |
+| `n` | continue the search — backward when the selection is reversed |
+| `1`-`9`, `0` | expand by N units (`0` = 10), painted hints showing where each digit lands; a count when nothing is selected |
+| `-` | negative argument |
 
-**Grab and beacon.** `G` grabs the selection (you'll see it highlighted).
-While a grab is active, any selection you make inside it — `w`, `x`, `f`… —
-drops a cursor on every similar range: change them all, then `ESC`. `R`
-swap-grab exchanges the selection and grab texts; `Y` sync-grab re-stashes.
+| Thing | Char |
+|---|---|
+| round / square / curly | `r` / `s` / `c` |
+| string / symbol | `g` / `e` |
+| window / buffer | `w` / `b` |
+| paragraph / line / visual line | `p` / `l` / `v` |
+| defun / sentence | `d` / `.` |
 
-**Keypad.** `SPC x/c/m/w …` mirror the Emacs/meow keypad of the companion
-`init.el`/`.ideavimrc`/ideameow setups (quick open, save all, splits, font
-size…); `SPC b` is bookmarks via the `alefragnani.numbered-bookmarks`
-extension (`0-9` numbered set, `j` jump; `b` = MRU editors).
-`SPC 1-9` is a digit argument, `SPC ?` opens the cheatsheet, `SPC /`
-describes a key, and `SPC c m` / `SPC c M` edit / reload your config.
+meow's exact char-thing table.
 
-## ~/.codemeowrc — configuring everything
+### Editing
 
-codemeow reads an `.ideavimrc`-style file from your home directory:
-`~/.codemeowrc` on Linux/macOS, `C:\Users\<you>\.codemeowrc` on Windows.
+| Key | Does |
+|---|---|
+| `i` / `a` | insert at the selection's start / end |
+| `I` / `A` | open a line above / below |
+| `c` | change |
+| `s` | kill (cut) |
+| `d` / `D` | delete forward / backward |
+| `y` | save (copy) |
+| `p` | yank (paste) |
+| `r` | replace the selection with the clipboard |
+| `u` | undo |
+| `'` | repeat the last command, counts and all — `'` after `2fa` finds the second `a` again |
+| `g` | cancel |
+| `q` | close the tab |
+| `ESC` | back to NORMAL |
 
-**Getting started is two steps:**
+### Grab and beacon
 
-1. Press `SPC c m` in the editor — the first press creates `~/.codemeowrc`
-   as a full copy of the bundled defaults and opens it: the complete layout
-   and keypad table, ready to edit. (The bundled defaults also stay
-   underneath and overrides apply entry by entry, so deleting a line just
-   falls back to the default — bind `ignore` to disable a key — and a
-   pared-down file of only your overrides works exactly the same.)
-2. Edit, then reload — either with `SPC c M`, or with the **Reload** button
-   that appears in the rc editor's title bar whenever its content differs
-   from the loaded config (comment and formatting edits don't count — the
-   comparison is on the parsed config, IdeaVim-style). Unsaved edits are
-   saved for you. A message tells you how many mappings loaded — and lists
-   any parse problems with their line numbers.
+| Key | Does |
+|---|---|
+| `G` | grab the selection (highlighted) |
+| any selection inside a grab | drops a cursor on every similar range — change them all, then `ESC` |
+| `R` | swap-grab: exchange the selection and grab texts |
+| `Y` | sync-grab: re-stash |
 
-**Syntax reference**
+### Keypad
 
-| Line                                      | Meaning                                                                                                           |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `" text` or `# text`                      | comment (also at the end of a line: `nmap S <action>(X) " jump`)                                                  |
-| `nmap <key> <meow-command>`               | bind a NORMAL key to a named meow command, e.g. `nmap n meow-mark-word` — this is how you remap the layout itself |
-| `nmap <key> <action>(command.id)`         | NORMAL key runs a VS Code command                                                                                 |
-| `nmap <key> <keys>`                       | NORMAL key replays a meow key sequence, e.g. `nmap Z ,b`                                                          |
-| `nnoremap` / `noremap`                    | like `nmap`/`map`, but the replayed keys resolve through the bundled defaults, ignoring your other mappings       |
-| `mmap` / `mnoremap`                       | the same three target forms, for MOTION mode — the keymap of the workbench trees (read-only views stay in NORMAL) |
-| `cmap` / `cnoremap` `<chord>` `<target>`  | the Emacs modifier-chord layer: `cmap C-f forward-char` (or `cmap control F forward-char`); `ignore` gives the key back to VS Code |
-| `map <leader><seq> <action>(id)`          | keypad entry: `SPC` + sequence runs the command (yours override the bundled defaults)                             |
-| `map <leader><seq> <keys>`                | keypad entry replaying meow keys after the keypad closes                                                          |
-| `desc <leader><seq> <text>`               | which-key label for an entry (exact seq) or a group (prefix)                                                      |
-| `let g:WhichKeyDesc_x = "<leader>x text"` | same as `desc` — paste `.ideavimrc` lines unchanged                                                               |
-| `set timeoutlen=300`                      | which-key hint delay in milliseconds (the bundled default sets 300)                                               |
-| `set which-key` / `set nowhich-key`       | hint on/off (default on)                                                                                          |
-| `set overlay-color=#2ECC71`               | avy / ace-window label background — one `#RRGGBB` applied to both themes                                          |
-| `set overlay-text-color=#ffffff`          | that label's text color                                                                                          |
-| `set expand-hint-color=#d05c0a`           | the `0`–`9` expand-hint color (unset = a VS Code theme color)                                                    |
-| `set grab-color=#cde8cd`                  | the grab / beacon highlight (unset = a VS Code theme color)                                                      |
+| Sequence | Does |
+|---|---|
+| `SPC x/c/m/w …` | the Emacs/meow keypad of the companion `init.el` / `.ideavimrc` / ideameow setups — quick open, save all, splits, font size… |
+| `SPC b` | bookmarks via the `alefragnani.numbered-bookmarks` extension — `0-9` numbered set, `j` jump, `b` MRU editors |
+| `SPC 1-9` | digit argument |
+| `SPC ?` | the cheatsheet |
+| `SPC /` | describe a key |
+| `SPC c m` / `SPC c M` | edit / reload your config |
 
-Key notation: plain printable characters, plus `<Space>` and `<lt>`. To find
-a command's id, press `SPC i d` — a filterable list of every command id the
-editor knows: type to narrow, `Enter` copies the id to the clipboard. (This
-is the sibling of ideameow's `SPC i d` action-id tracking; VS Code's stable
-API has no "command executed" listener, so codemeow gives you a searchable
-directory instead of live tracking.) For tracking's other half — "what does
-this key run?" — the list's two title buttons hand you to the platform's own
-tools: one opens _Keyboard Shortcuts_ in record-keys mode (press the chord,
-see its commands, right-click → _Copy Command ID_), the other toggles the
-keystroke log (_Toggle Keyboard Shortcuts Troubleshooting_), which logs every
-keypress with the command it dispatched to the Window log until toggled off.
+## ~/.codemeowrc
 
-**Relayouting (Dvorak, Colemak, …).** The layout section of the bundled
-`.codemeowrc` IS the default keymap — an `nmap`/`mmap` line per key, exactly
-like a `meow-normal-define-key` block in Emacs. The command names are meow's
-own (`meow-next-word`, `meow-kill`, …) plus `repeat` and `ignore`, so that
-section doubles as the full command reference. A right-hand side that names a
-known command binds it; `ignore` disables a key; a misspelled `meow-*` name is
-reported as an error; anything else is replayed as keys. A key you don't
-mention keeps its bundled binding.
+| Item | Value |
+|---|---|
+| Path | `~/.codemeowrc` on Linux/macOS, `C:\Users\<you>\.codemeowrc` on Windows |
+| Format | `.ideavimrc`-style |
+| Precedence | the bundled defaults stay underneath; overrides apply entry by entry, so deleting a line falls back to the default |
+| Disable a key | bind it to `ignore` |
 
-**A few semantics worth knowing:**
+| Step | Do |
+|---|---|
+| 1 | `SPC c m` — the first press creates `~/.codemeowrc` as a full copy of the bundled defaults and opens it |
+| 2 | Edit, then `SPC c M`, or the **Reload** button in the rc editor's title bar |
 
-- Mapped keys work with `'` (repeat), and key-replay mappings are
-  recursion-guarded — a self-referencing map stops at depth 8 with a hint
-  instead of freezing your editor.
-- `repeat` is itself a bindable command, so even `'` can be reassigned.
-- Reserved: keypad `0-9` (digit argument), `?` (cheatsheet), `/` (describe
-  key); `SPC` is always the keypad key. Only printable keys reach the modal
-  engine through `nmap`/`mmap` — `<CR>` and `<Esc>` belong in VS Code's
-  keybindings.json, while modifier chords have their own rc layer, `cmap`
-  (see the Emacs chords above).
-- Unknown `set` options and `let` lines are ignored, so pasting a whole
-  `.ideavimrc` or `.ideameowrc` won't error; only the lines codemeow
-  understands take effect.
+| Reload detail | Value |
+|---|---|
+| When the button appears | whenever the file's content differs from the loaded config — comparison is on the parsed config, IdeaVim-style, so comment and formatting edits do not count |
+| Unsaved edits | saved for you |
+| Feedback | a message with the mapping count, and any parse problems with their line numbers |
 
-**which-key.** Pause on any pending prefix — a keypad `SPC` sequence, or the
-`,` `.` `[` `]` thing table — and after `timeoutlen` ms a menu pops up with
-the continuations (a native QuickPick, the familiar VS Code which-key UX).
-Keep typing the sequence into it: typed keys dispatch immediately — they
-never filter the list — so chains behave exactly as they do without the
-menu. Arrows plus `Enter`, or a click, run the highlighted key instead;
-`ESC` (or clicking away) cancels the chain like `ESC` in the editor. Deeper
-prefixes redraw the menu in place, it closes itself when the sequence ends,
-and fast chains finish before it ever appears. `SPC ?` still opens the full
-cheatsheet as a read-only document (`j`/`k` scroll it, `q`… well, `q` closes
-it, naturally).
+### Syntax reference
 
-**What the bundled default gives you.** The full meow QWERTY layout, the
-complete keypad table, and the same leader scheme as the companion
-`.ideavimrc`/ideameow configs, ported to VS Code commands where analogs exist
-(`SPC ;` settings, `SPC a` views, `SPC d/e/f/g/…` groups, `SPC .`/`SPC ,` for
-next/prev change, diff, and error). `S`/`Q` are avy jumps — a native port of
-avy 0.5.0's `avy-goto-char-timer` and `avy-goto-line`, nothing to install:
-`S`, type a few chars, pause 0.25 s, and home-row labels (`a s d f g h j k l`,
-avy's tree labeling) appear painted over the candidates; `Q` labels every
-visible line, and typing a digit switches to a plain goto-line prompt. A
-single candidate jumps immediately, a wrong label key just tells you and
-waits, `ESC` cancels, and jumping with an active selection extends it
-(avy-action-goto is a plain goto-char). Deviations from the Emacs original:
-it searches the current editor's visible area only (no `avy-all-windows`),
-and there is no `DEL` editing of the input — the pause ends it. Split
-resizing sits on `=` `_` `+`; `-` keeps meow's negative-argument (this engine
-has real negative counts, so it doesn't need vim's workaround). The file's
-footer lists what deliberately _isn't_ ported, with reasons. And since a
-later line for the same key wins, `Q` ends up on the avy line jump — put
-`nmap Q meow-goto-line` in your home rc if you want meow's own binding back
-(`X` has it regardless).
+| Line | Meaning |
+| --- | --- |
+| `" text` or `# text` | comment (also at the end of a line: `nmap S <action>(X) " jump`) |
+| `nmap <key> <meow-command>` | bind a NORMAL key to a named meow command, e.g. `nmap n meow-mark-word` — this is how you remap the layout itself |
+| `nmap <key> <action>(command.id)` | NORMAL key runs a VS Code command |
+| `nmap <key> <keys>` | NORMAL key replays a meow key sequence, e.g. `nmap Z ,b` |
+| `nnoremap` / `noremap` | like `nmap`/`map`, but the replayed keys resolve through the bundled defaults, ignoring your other mappings |
+| `mmap` / `mnoremap` | the same three target forms, for MOTION mode — the keymap of the workbench trees (read-only views stay in NORMAL) |
+| `cmap` / `cnoremap` `<chord>` `<target>` | the Emacs modifier-chord layer: `cmap C-f forward-char` (or `cmap control F forward-char`); `ignore` gives the key back to VS Code |
+| `map <leader><seq> <action>(id)` | keypad entry: `SPC` + sequence runs the command (yours override the bundled defaults) |
+| `map <leader><seq> <keys>` | keypad entry replaying meow keys after the keypad closes |
+| `desc <leader><seq> <text>` | which-key label for an entry (exact seq) or a group (prefix) |
+| `let g:WhichKeyDesc_x = "<leader>x text"` | same as `desc` — paste `.ideavimrc` lines unchanged |
+| `set timeoutlen=300` | which-key hint delay in milliseconds (the bundled default sets 300) |
+| `set which-key` / `set nowhich-key` | hint on/off (default on) |
+| `set overlay-color=#2ECC71` | avy / ace-window label background — one `#RRGGBB` applied to both themes |
+| `set overlay-text-color=#ffffff` | that label's text color |
+| `set expand-hint-color=#d05c0a` | the `0`–`9` expand-hint color (unset = a VS Code theme color) |
+| `set grab-color=#cde8cd` | the grab / beacon highlight (unset = a VS Code theme color) |
+
+| Item | Value |
+|---|---|
+| Key notation | plain printable characters, plus `<Space>` and `<lt>` |
+| Finding a command id | `SPC i d` — a filterable list of every command id the editor knows: type to narrow, `Enter` copies the id. (VS Code's stable API has no "command executed" listener, so this is a searchable directory rather than ideameow's live tracking) |
+| "What does this key run?" | the list's two title buttons: one opens *Keyboard Shortcuts* in record-keys mode (press the chord, see its commands, right-click → *Copy Command ID*), the other toggles *Toggle Keyboard Shortcuts Troubleshooting*, which logs every keypress with its command to the Window log until toggled off |
+
+### Relayouting (Dvorak, Colemak, …)
+
+The layout section of the bundled `.codemeowrc` IS the default keymap — an
+`nmap`/`mmap` line per key, like a `meow-normal-define-key` block in Emacs.
+
+| Right-hand side | Effect |
+|---|---|
+| a known command name | binds it — meow's own names (`meow-next-word`, `meow-kill`, …) plus `repeat` and `ignore` |
+| `ignore` | disables the key |
+| a misspelled `meow-*` name | reported as an error |
+| anything else | replayed as keys |
+| a key you do not mention | keeps its bundled binding |
+
+### Semantics worth knowing
+
+| Fact | Value |
+|---|---|
+| Repeat | mapped keys work with `'`; key-replay mappings are recursion-guarded — a self-referencing map stops at depth 8 with a hint |
+| `repeat` | itself a bindable command, so even `'` can be reassigned |
+| Reserved | keypad `0-9` (digit argument), `?` (cheatsheet), `/` (describe key); `SPC` is always the keypad key |
+| Reach | only printable keys reach the modal engine through `nmap`/`mmap` — `<CR>` and `<Esc>` belong in VS Code's `keybindings.json`, and modifier chords have their own rc layer, `cmap` |
+| Unknown `set` / `let` lines | ignored, so pasting a whole `.ideavimrc` or `.ideameowrc` will not error |
+
+### which-key
+
+| Fact | Value |
+|---|---|
+| Trigger | pause on any pending prefix — a keypad `SPC` sequence, or the `,` `.` `[` `]` thing table — for `timeoutlen` ms |
+| Appearance | a native QuickPick, the familiar VS Code which-key UX |
+| Typing into it | keys dispatch immediately and never filter the list, so chains behave exactly as they do without the menu |
+| Arrows + `Enter`, or a click | runs the highlighted key instead |
+| `ESC`, or clicking away | cancels the chain, like `ESC` in the editor |
+| Deeper prefixes | redraw the menu in place; it closes itself when the sequence ends, and fast chains finish before it appears |
+| `SPC ?` | the full cheatsheet as a read-only document — `j`/`k` scroll, `q` closes |
+
+### What the bundled default gives you
+
+| Item | Value |
+|---|---|
+| Layout | the full meow QWERTY layout and the complete keypad table |
+| Leader scheme | the companion `.ideavimrc`/ideameow scheme ported to VS Code commands where analogs exist — `SPC ;` settings, `SPC a` views, `SPC d/e/f/g/…` groups, `SPC .` / `SPC ,` next/prev change, diff and error |
+| `S` / `Q` | a native port of avy 0.5.0's `avy-goto-char-timer` and `avy-goto-line`, nothing to install: `S`, type a few chars, pause 0.25 s, and home-row labels (`a s d f g h j k l`, avy's tree labeling) appear over the candidates; `Q` labels every visible line, and a digit switches to a plain goto-line prompt |
+| avy details | a single candidate jumps immediately, a wrong label key reports and waits, `ESC` cancels, and jumping with an active selection extends it (`avy-action-goto` is a plain goto-char) |
+| avy deviations | the current editor's visible area only (no `avy-all-windows`), and no `DEL` editing of the input — the pause ends it |
+| Split resizing | `=` `_` `+` |
+| The rc footer | lists what deliberately is not ported, with reasons |
+
+| Divergence | Detail |
+|---|---|
+| `-` | keeps meow's negative argument — this engine has real negative counts, so it does not need vim's workaround |
+| `Q` | a later line for the same key wins, so `Q` ends up on the avy line jump; `nmap Q meow-goto-line` in your home rc restores meow's binding (`X` has it regardless) |
 
 ## Known deviations from meow
 
-All deliberate, none accidental:
+All deliberate, none accidental.
 
-- `U` (meow-undo-in-selection) falls back to plain undo — VS Code's undo
-  stack cannot be scoped to a region.
-- Beacon uses native multiple cursors instead of kmacro recording.
-- Block/string/defun "things" use a text scan (same-line strings skipped);
-  `d` (defun) asks the language's symbol provider first and falls back to the
-  outermost brace pair — close to, but not literally, Emacs' syntax-ppss.
-- The kill-ring is the system clipboard (`meow-use-clipboard` behavior);
-  `kill-line` does not append consecutive kills.
-- `I`/`A` open plain lines without language re-indent.
-- Windmove is composed, not geometric: VS Code exposes no window rectangles
-  to extensions, so `Shift+arrows` chain the editor's own directional group
-  focus with diff-pane crossing, and the caret-row rule from window.el
-  (with three stacked splits on the left, enter the one at your caret's
-  height) lives in ideameow only. Whether a diff renders side-by-side is
-  read from the `diffEditor.renderSideBySide` setting — a per-editor
-  inline toggle isn't visible to extensions.
-- VS Code doesn't expose whether an editor is read-only, so a list of known
-  read-only schemes (git views, output, the cheatsheet) feeds the gate
-  instead: those stay in NORMAL with modifications blocked like meow's
-  `meow--allow-modify-p` — kill / change / backspace / replace silently
-  inert, delete / yank / open / swap-grab answering "Buffer is read-only".
-  `i`/`a` still switch to INSERT (as in Emacs) but typing lands in a
-  read-only surface. No _editor_ attaches to MOTION by default — the
-  workbench trees answer to it instead (see above).
-- `ESC` in NORMAL is consumed while a meow buffer is focused (VS Code has no
-  "run the default escape" escape hatch); the usual widgets — suggest, find,
-  rename, snippets — are excluded in the keybinding's `when` clause and keep
-  their own `ESC`.
+| Deviation | Detail |
+|---|---|
+| `U` (meow-undo-in-selection) | falls back to plain undo — VS Code's undo stack cannot be scoped to a region |
+| Beacon | native multiple cursors instead of kmacro recording |
+| Block/string/defun "things" | a text scan (same-line strings skipped); `d` (defun) asks the language's symbol provider first and falls back to the outermost brace pair — close to, but not literally, Emacs' syntax-ppss |
+| The kill-ring | the system clipboard (`meow-use-clipboard` behavior); `kill-line` does not append consecutive kills |
+| `I` / `A` | open plain lines without language re-indent |
+| Windmove | composed, not geometric — VS Code exposes no window rectangles, so `Shift+arrows` chain the editor's own directional group focus with diff-pane crossing; the caret-row rule from window.el lives in ideameow only. Side-by-side is read from `diffEditor.renderSideBySide`, since a per-editor inline toggle is not visible to extensions |
+| Read-only detection | VS Code does not expose it, so a list of known read-only schemes (git views, output, the cheatsheet) feeds the gate — those stay in NORMAL with modifications blocked like `meow--allow-modify-p`: kill / change / backspace / replace silently inert, delete / yank / open / swap-grab answering "Buffer is read-only"; `i`/`a` still enter INSERT but typing lands in a read-only surface |
+| MOTION | no *editor* attaches to it by default — the workbench trees answer to it instead |
+| `ESC` in NORMAL | consumed while a meow buffer is focused (VS Code has no "run the default escape" escape hatch); suggest, find, rename and snippets are excluded in the keybinding's `when` clause and keep their own `ESC` |
 
 ## Hacking on it
 
-The code keeps one rule from meow: commands are data. Every command registers
-under its meow name, keys only ever resolve through rc bindings — and the
-engine never imports `vscode`, which is what makes the whole behavior suite
-run headless in milliseconds.
+| Rule | Value |
+|---|---|
+| Commands are data | every command registers under its meow name; keys only ever resolve through rc bindings |
+| The engine never imports `vscode` | which is what makes the behavior suite run headless in milliseconds |
 
-| Where                            | What                                                                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `src/core/engine.ts`             | the dispatcher: key → binding → command; repeat (`'`) and rc-replay bookkeeping                                                |
-| `src/core/registry.ts`           | the command registry every rc binding resolves against                                                                         |
-| `src/core/motions.ts`            | movement and the selections it creates: hjkl, words, lines, find/till, plus the Ctrl/Alt Emacs motion chords (region-expanding) |
-| `src/core/selections.ts`         | the selection primitive (meow's expand/select model), reverse/cancel/pop, digit expand                                         |
-| `src/core/search.ts`             | meow-search / meow-visit and the shared regexp ring                                                                            |
-| `src/core/structures.ts`         | the char-thing table dispatch, blocks, join                                                                                    |
-| `src/core/grab.ts`               | grab / swap / sync and the beacon (multi-cursor) reaction                                                                      |
-| `src/core/edits.ts`              | everything that mutates text: insert/change/delete/kill/yank/…                                                                 |
-| `src/core/things.ts`             | what a "thing" is: pairs, strings, paragraphs, defuns…                                                                         |
-| `src/core/rc.ts` / `rcParser.ts` | the two rc layers (bundled defaults + `~/.codemeowrc`) and the line syntax                                                     |
-| `src/core/chord.ts` / `chords.ts` | the modifier-chord layer: both spellings of a chord, and the `cmap` lookup that claims one in NORMAL/MOTION                    |
-| `src/core/treeMeow.ts`           | the tree surface: MOTION-map dispatch on workbench trees (`j k h l` → the `list.*` arrow commands)                             |
-| `src/core/windmove.ts`           | windmove's step decision: diff panes are windows, then directional group focus                                                 |
+| Where | What |
+| --- | --- |
+| `src/core/engine.ts` | the dispatcher: key → binding → command; repeat (`'`) and rc-replay bookkeeping |
+| `src/core/registry.ts` | the command registry every rc binding resolves against |
+| `src/core/motions.ts` | movement and the selections it creates: hjkl, words, lines, find/till, plus the Ctrl/Alt Emacs motion chords (region-expanding) |
+| `src/core/selections.ts` | the selection primitive (meow's expand/select model), reverse/cancel/pop, digit expand |
+| `src/core/search.ts` | meow-search / meow-visit and the shared regexp ring |
+| `src/core/structures.ts` | the char-thing table dispatch, blocks, join |
+| `src/core/grab.ts` | grab / swap / sync and the beacon (multi-cursor) reaction |
+| `src/core/edits.ts` | everything that mutates text: insert/change/delete/kill/yank/… |
+| `src/core/things.ts` | what a "thing" is: pairs, strings, paragraphs, defuns… |
+| `src/core/rc.ts` / `rcParser.ts` | the two rc layers (bundled defaults + `~/.codemeowrc`) and the line syntax |
+| `src/core/chord.ts` / `chords.ts` | the modifier-chord layer: both spellings of a chord, and the `cmap` lookup that claims one in NORMAL/MOTION |
+| `src/core/treeMeow.ts` | the tree surface: MOTION-map dispatch on workbench trees (`j k h l` → the `list.*` arrow commands) |
+| `src/core/windmove.ts` | windmove's step decision: diff panes are windows, then directional group focus |
 | `src/core/aceWindow.ts` / `aceClick.ts` | the two ace pickers' pure halves: how many windows mean self/other/labels, and the avy-subdivided labels a click session narrows through |
-| `src/core/port.ts`               | the editor/clipboard/UI interfaces the core sees — the seam that keeps `vscode` out                                            |
-| `src/vscode/`                    | the thin adapter: the `type` override, decorations, status bar, rc files on disk, the per-key tree keybindings (`treeKeys.ts`) |
-| `src/test/`                      | the behavior suite over a fake editor — a straight port of ideameow's specs                                                    |
+| `src/core/port.ts` | the editor/clipboard/UI interfaces the core sees — the seam that keeps `vscode` out |
+| `src/vscode/` | the thin adapter: the `type` override, decorations, status bar, rc files on disk, the per-key tree keybindings (`treeKeys.ts`) |
+| `src/test/` | the behavior suite over a fake editor — a straight port of ideameow's specs |
 
-Behavior is pinned by the specs in `src/test` (given/whenKeys/then…) — every
-assertion was cross-checked against meow's source, and the layout contract is
-validated against meow's `KEYBINDING_QWERTY.org`, so treat a red spec as "you
-changed meow's semantics", not "update the test". Run them with `npm test` —
-no VS Code download, no display server, under a second.
+| Item | Value |
+|---|---|
+| Specs | `src/test`, given/whenKeys/then…, every assertion cross-checked against meow's source; the layout contract is validated against meow's `KEYBINDING_QWERTY.org` |
+| A red spec means | "you changed meow's semantics", not "update the test" |
+| Run | `npm test` — no VS Code download, no display server, under a second |
 
 ## License
 
