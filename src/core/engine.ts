@@ -27,6 +27,8 @@ import * as Avy from './avy';
 
 const KEYPAD_BINDING: Binding = { command: 'meow-keypad', recursive: true };
 
+const MAX_REPLAY_DEPTH = 8;
+
 export let repeatMap: Map<string, Binding> | null = null;
 
 export function clearRepeat(): void {
@@ -38,12 +40,6 @@ export function enterKeypad(ctx: Ctx): void {
   ctx.state.keypadPreviousState = ctx.state.mode;
   setMode(ctx, MeowMode.KEYPAD);
   ctx.ui.scheduleWhichKey('keypad', '');
-}
-
-export async function runEmacsMotion(ctx: Ctx, command: string): Promise<void> {
-  const cmd = COMMANDS.get(command);
-  if (cmd) await cmd(ctx);
-  ctx.ui.refresh(ctx.state);
 }
 
 export async function handleChar(ctx: Ctx, c: string): Promise<boolean> {
@@ -167,7 +163,7 @@ async function dispatch(ctx: Ctx, binding: Binding): Promise<void> {
     return;
   }
   if (binding.keys === undefined) return;
-  if (state.replayDepth >= 8) {
+  if (state.replayDepth >= MAX_REPLAY_DEPTH) {
     ctx.ui.hint('codemeow: mapping recursion is too deep');
     return;
   }

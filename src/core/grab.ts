@@ -63,7 +63,7 @@ function grab(ctx: Ctx): void {
   clear(ctx);
   const sel = Sel.primary(ctx);
   if (Sel.hasSelection(sel)) {
-    set(ctx, Sel.lo(sel), Sel.hi(sel));
+    set(ctx, Sel.selStart(sel), Sel.selEnd(sel));
   }
   Sel.cancel(ctx);
 }
@@ -75,7 +75,7 @@ function sync(ctx: Ctx): void {
     return;
   }
   clear(ctx);
-  set(ctx, Sel.lo(sel), Sel.hi(sel));
+  set(ctx, Sel.selStart(sel), Sel.selEnd(sel));
   Sel.cancel(ctx);
 }
 
@@ -94,8 +94,8 @@ async function swap(ctx: Ctx): Promise<void> {
   }
   const grabStart = grabbed.start;
   const grabEnd = grabbed.end;
-  const selStart = Sel.lo(sel);
-  const selEnd = Sel.hi(sel);
+  const selStart = Sel.selStart(sel);
+  const selEnd = Sel.selEnd(sel);
   const overlaps =
     Math.max(grabStart, selStart) < Math.min(grabEnd, selEnd) &&
     !(grabStart === selStart && grabEnd === selEnd);
@@ -140,8 +140,8 @@ export function beacon(ctx: Ctx): void {
   if (!grabbed || grabbed.end <= grabbed.start) return;
   const sel = Sel.primary(ctx);
   if (!Sel.hasSelection(sel)) return;
-  const selStart = Sel.lo(sel);
-  const selEnd = Sel.hi(sel);
+  const selStart = Sel.selStart(sel);
+  const selEnd = Sel.selEnd(sel);
   if (selStart < grabbed.start || selEnd > grabbed.end || selEnd === selStart)
     return;
   const text = port.getText();

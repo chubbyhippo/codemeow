@@ -72,7 +72,9 @@ function search(ctx: Ctx): void {
   const sel = Sel.primary(ctx);
   let pattern = state.searchHistory.at(-1) ?? null;
   if (Sel.hasSelection(sel)) {
-    const selText = ctx.port.getText().slice(Sel.lo(sel), Sel.hi(sel));
+    const selText = ctx.port
+      .getText()
+      .slice(Sel.selStart(sel), Sel.selEnd(sel));
     if (
       selText.length > 0 &&
       (pattern === null || !fullyMatches(pattern, selText))

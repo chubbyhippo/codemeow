@@ -71,8 +71,8 @@ type CaretCompute = (sel: SelRange) => CaretEdit;
 async function editCarets(ctx: Ctx, compute: CaretCompute): Promise<void> {
   const sels = ctx.port.getSelections();
   const planned = sels
-    .map((sel, index) => ({ sel, index, lo: Sel.lo(sel) }))
-    .sort((a, b) => b.lo - a.lo)
+    .map((sel, index) => ({ sel, index, selStart: Sel.selStart(sel) }))
+    .sort((a, b) => b.selStart - a.selStart)
     .map(({ sel, index }) => ({ index, computed: compute(sel) }));
   const edits = planned.flatMap(({ computed }) =>
     computed.edit === null ? [] : [computed.edit],
@@ -95,7 +95,7 @@ async function editCarets(ctx: Ctx, compute: CaretCompute): Promise<void> {
 function insert(ctx: Ctx): void {
   ctx.port.setSelections(
     ctx.port.getSelections().map((sel) => {
-      const start = Sel.lo(sel);
+      const start = Sel.selStart(sel);
       return { anchor: start, active: start };
     }),
   );
@@ -107,7 +107,7 @@ function insert(ctx: Ctx): void {
 function append(ctx: Ctx): void {
   ctx.port.setSelections(
     ctx.port.getSelections().map((sel) => {
-      const end = Sel.hi(sel);
+      const end = Sel.selEnd(sel);
       return { anchor: end, active: end };
     }),
   );
@@ -169,11 +169,11 @@ async function openAbove(ctx: Ctx): Promise<void> {
 
 function deleteForwardEdit(text: string): CaretCompute {
   return (sel) => {
-    const start = Sel.lo(sel);
+    const start = Sel.selStart(sel);
     const collapsed = { anchor: start, active: start };
     if (Sel.hasSelection(sel))
       return {
-        edit: { start, end: Sel.hi(sel), text: '' },
+        edit: { start, end: Sel.selEnd(sel), text: '' },
         sel: collapsed,
       };
     if (start < text.length)
@@ -205,10 +205,10 @@ async function del(ctx: Ctx): Promise<void> {
 async function backwardDelete(ctx: Ctx): Promise<void> {
   if (!allowModify(ctx)) return;
   await editCarets(ctx, (sel) => {
-    const start = Sel.lo(sel);
+    const start = Sel.selStart(sel);
     if (Sel.hasSelection(sel))
       return {
-        edit: { start, end: Sel.hi(sel), text: '' },
+        edit: { start, end: Sel.selEnd(sel), text: '' },
         sel: { anchor: start, active: start },
       };
     if (start > 0)
@@ -226,8 +226,8 @@ function killRange(
   sel: SelRange,
   text: string,
 ): { start: number; end: number } {
-  const start = Sel.lo(sel);
-  let end = Sel.hi(sel);
+  const start = Sel.selStart(sel);
+  let end = Sel.selEnd(sel);
   if (
     ctx.state.selType === SelType.LINE &&
     sel.active >= sel.anchor &&
@@ -242,7 +242,7 @@ function killRange(
 function regionsInOrder(sels: SelRange[]): SelRange[] {
   return sels
     .filter((sel) => sel.anchor !== sel.active)
-    .sort((left, right) => Sel.lo(left) - Sel.lo(right));
+    .sort((left, right) => Sel.selStart(left) - Sel.selStart(right));
 }
 
 function joinedKillText(ctx: Ctx, text: string, regions: SelRange[]): string {
@@ -295,8 +295,8 @@ async function kill(ctx: Ctx): Promise<void> {
 async function joinKill(ctx: Ctx): Promise<void> {
   const text = ctx.port.getText();
   const prim = Sel.primary(ctx);
-  const start = Sel.lo(prim);
-  const end = Sel.hi(prim);
+  const start = Sel.selStart(prim);
+  const end = Sel.selEnd(prim);
   const before = start > 0 ? text.charAt(start - 1) : '\n';
   const after = end < text.length ? text.charAt(end) : '\n';
   const space =
@@ -350,10 +350,10 @@ async function replace(ctx: Ctx): Promise<void> {
   const clip = raw.replace(/\n+$/, '');
   await editCarets(ctx, (sel) => {
     if (!Sel.hasSelection(sel)) return { edit: null, sel };
-    const start = Sel.lo(sel);
+    const start = Sel.selStart(sel);
     const caret = start + clip.length;
     return {
-      edit: { start, end: Sel.hi(sel), text: clip },
+      edit: { start, end: Sel.selEnd(sel), text: clip },
       sel: { anchor: caret, active: caret },
     };
   });

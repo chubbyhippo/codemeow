@@ -139,7 +139,7 @@ if [ "$do_ext" -eq 1 ]; then
     for dir in $targets; do
         dest="$dir/$ext_id"
         mkdir -p "$dest"
-        rm -rf "$dest/out" "$dest/media"
+        rm -rf "${dest:?}/out" "${dest:?}/media"
         cp -R out "$dest/out"
         cp package.json .codemeowrc README.md LICENSE "$dest/"
         info "installed into $dest"

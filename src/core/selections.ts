@@ -59,11 +59,11 @@ export function hasSelection(sel: SelRange): boolean {
   return sel.anchor !== sel.active;
 }
 
-export function lo(sel: SelRange): number {
+export function selStart(sel: SelRange): number {
   return Math.min(sel.anchor, sel.active);
 }
 
-export function hi(sel: SelRange): number {
+export function selEnd(sel: SelRange): number {
   return Math.max(sel.anchor, sel.active);
 }
 

@@ -138,8 +138,8 @@ function block(ctx: Ctx): void {
   const sel = Sel.primary(ctx);
   const active = ctx.state.selType === SelType.BLOCK && Sel.hasSelection(sel);
   const back = Sel.backwardP(ctx) !== ctx.state.takeCount(1) < 0;
-  const selStart = active ? Sel.lo(sel) : sel.active;
-  const selEnd = active ? Sel.hi(sel) : sel.active;
+  const selStart = active ? Sel.selStart(sel) : sel.active;
+  const selEnd = active ? Sel.selEnd(sel) : sel.active;
   const pair = enclosingPair(text, selStart, selEnd);
   if (!pair) {
     ctx.ui.hint('No enclosing block');
