@@ -28,10 +28,16 @@ const IN_EDITOR = 'editorTextFocus && codemeow.active';
 const IN_TREE =
   'listFocus && !inputFocus && !editorTextFocus && !terminalFocus && ' +
   'codemeow.active';
+const IN_EDITOR_OUTSIDE_NORMAL = `${IN_EDITOR} && !codemeow.normal`;
 
 export const HOST_KEY_TABLE: HostKeyBinding[] = [
   { host: 'space', key: 'space', ctx: 'space', when: IN_TREE },
-  { host: 'alt+;', key: 'alt+;', ctx: 'altSemicolon', when: IN_EDITOR },
+  {
+    host: 'alt+;',
+    key: 'alt+;',
+    ctx: 'altSemicolon',
+    when: IN_EDITOR_OUTSIDE_NORMAL,
+  },
   { host: 'shift+left', key: 'shift+left', ctx: 'shiftLeft', when: IN_EDITOR },
   {
     host: 'shift+right',

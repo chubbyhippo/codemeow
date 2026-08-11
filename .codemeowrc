@@ -203,7 +203,9 @@ cmap C-g meow-cancel-selection
 " ----------------------------------------------------------------------------
 " These fire in EVERY meow state, including INSERT, which is why they cannot be
 " cmap lines (the chord layer is NORMAL/MOTION only). Both spellings work:
-" the Emacs one (SPC, M-;, S-left) or the host one (space, alt+;, shift+left).
+" the Emacs one (SPC, S-left) or the host one (space, shift+left). M-; is the
+" one exception: it is ALSO a cmap chord (ace-window) now, so this hostmap's
+" own manifest binding fires only in INSERT/KEYPAD — the cmap claims NORMAL.
 " Map one to `ignore` to hand the key back to VS Code — e.g.
 " `hostmap S-left ignore` restores Shift+Left's select-one-character-left, and
 " `hostmap SPC ignore` gives the trees their own Space back.
@@ -250,6 +252,20 @@ cmap C-o open-line
 cmap M-\ delete-horizontal-space
 cmap M-SPC just-one-space
 cmap M-^ ms
+
+" Tranche 2, ported from ideameow: no core isearch command exists, so C-s/
+" C-r are host action chords, like C-l before it went core. actions.find /
+" editor.action.previousMatchFindAction are real VS Code commands (F3 /
+" Shift+F3's own bindings); C-; and M-; reuse the module commands the
+" keypad's SPC SPC / SPC w w already dispatch. M-; splits by mode exactly
+" like ideameow's own M-; did: ace-window claims it in NORMAL (the only mode
+" a cmap ever claims a chord in), the keypad-from-INSERT hostmap below keeps
+" it everywhere else. M-y (PasteMultiple / clipboard history) has no VS Code
+" equivalent — declined, not guessed.
+cmap C-s <action>(actions.find)
+cmap C-r <action>(editor.action.previousMatchFindAction)
+cmap C-; <action>(codemeow.aceClick)
+cmap M-; <action>(codemeow.aceWindow)
 
 " ============================================================================
 " The keypad (SPC) table — every entry an rc line, like the layout above

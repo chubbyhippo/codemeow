@@ -56,6 +56,10 @@ export const CHORD_KEYS: ChordKey[] = [
   { spelling: 'M-\\', key: 'alt+\\', ctx: 'altBackslash' },
   { spelling: 'M-SPC', key: 'alt+space', ctx: 'altSpace' },
   { spelling: 'M-^', key: 'alt+shift+6', ctx: 'altCaret' },
+  { spelling: 'C-s', key: 'ctrl+s', ctx: 'ctrlS' },
+  { spelling: 'C-r', key: 'ctrl+r', ctx: 'ctrlR' },
+  { spelling: 'C-;', key: 'ctrl+;', ctx: 'ctrlSemicolon' },
+  { spelling: 'M-;', key: 'alt+;', ctx: 'altSemicolon' },
 ];
 
 export function chordKeybindings(): Array<{

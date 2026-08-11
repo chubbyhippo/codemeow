@@ -129,7 +129,7 @@
         "key": "alt+;",
         "command": "codemeow.hostKey",
         "args": "alt+;",
-        "when": "editorTextFocus && codemeow.active && codemeow.host.altSemicolon"
+        "when": "editorTextFocus && codemeow.active && !codemeow.normal && codemeow.host.altSemicolon"
       },
       {
         "key": "shift+left",
@@ -364,6 +364,30 @@
         "command": "codemeow.chord",
         "args": "M-^",
         "when": "editorTextFocus && codemeow.normal && codemeow.chord.altCaret"
+      },
+      {
+        "key": "ctrl+s",
+        "command": "codemeow.chord",
+        "args": "C-s",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlS"
+      },
+      {
+        "key": "ctrl+r",
+        "command": "codemeow.chord",
+        "args": "C-r",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlR"
+      },
+      {
+        "key": "ctrl+;",
+        "command": "codemeow.chord",
+        "args": "C-;",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.ctrlSemicolon"
+      },
+      {
+        "key": "alt+;",
+        "command": "codemeow.chord",
+        "args": "M-;",
+        "when": "editorTextFocus && codemeow.normal && codemeow.chord.altSemicolon"
       },
       {
         "key": "a",

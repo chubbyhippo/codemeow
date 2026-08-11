@@ -158,6 +158,18 @@ describe('ChordSpec', () => {
     assert.equal(chords.get(keyOf('M-^') ?? '')?.keys, 'ms');
   });
 
+  it('given the bundled defaults then the ported tranche-2 chords resolve to their verified action ids', () => {
+    freshSpec();
+    const chords = Rc.chordBindings();
+    assert.equal(chords.get(keyOf('C-s') ?? '')?.action, 'actions.find');
+    assert.equal(
+      chords.get(keyOf('C-r') ?? '')?.action,
+      'editor.action.previousMatchFindAction',
+    );
+    assert.equal(chords.get(keyOf('C-;') ?? '')?.action, 'codemeow.aceClick');
+    assert.equal(chords.get(keyOf('M-;') ?? '')?.action, 'codemeow.aceWindow');
+  });
+
   it('given a home cmap override then it wins over the bundled default', () => {
     const spec = freshSpec();
     spec.givenRc('cmap C-f meow-kill');

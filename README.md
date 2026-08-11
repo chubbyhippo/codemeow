@@ -158,9 +158,9 @@ kinds are real paint, no lists.
 
 | Fact | Value |
 |---|---|
-| Config | all thirty-one are rc lines, one `cmap` each, in either spelling — `cmap C-f forward-char` or `cmap control F forward-char` |
+| Config | all thirty-six are rc lines, one `cmap` each, in either spelling — `cmap C-f forward-char` or `cmap control F forward-char` |
 | Active in | NORMAL and MOTION only, so `Ctrl+F` stays Find while you type |
-| Which chords are intercepted | the manifest decides, enumerating exactly those thirty-one — VS Code cannot register keybindings at runtime; the rc decides what each one does |
+| Which chords are intercepted | the manifest decides, enumerating exactly those thirty-six — VS Code cannot register keybindings at runtime; the rc decides what each one does |
 | `cmap C-f ignore` | really gives `Ctrl+F` back to VS Code — each binding is gated on a context key the extension switches off for the chords your rc leaves unbound |
 
 ## No keys in code
