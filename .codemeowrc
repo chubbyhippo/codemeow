@@ -485,6 +485,9 @@ map <leader>ak <action>(workbench.action.toggleScreencastMode)
 map <leader>an <action>(notifications.showList)
 map <leader>ap <action>(workbench.view.explorer)
 map <leader>aP <action>(workbench.actions.view.problems)
+" aI (ideameow's InspectCode, a project-wide batch analysis run) is declined,
+" not guessed: VS Code core has no run-analysis-now command — only extensions
+" (ESLint etc.) provide that, and aP above already opens the Problems view.
 map <leader>ar <action>(workbench.view.debug)
 map <leader>as <action>(outline.focus)
 map <leader>at <action>(workbench.action.terminal.toggleTerminal)
@@ -507,6 +510,9 @@ map <leader>eR <action>(workbench.action.debug.configure)
 map <leader>eS <action>(workbench.action.openSettings)
 map <leader>ea <action>(editor.unfoldAll)
 map <leader>ec <action>(editor.action.refactor)
+" second slot for smartSelect.expand, ideameow's EditorSelectWord parity —
+" joins the same expand repeat group as ce / mr below
+map <leader>ee <action>(editor.action.smartSelect.expand)
 map <leader>ef <action>(editor.action.refactor)
 map <leader>ei <action>(editor.action.refactor)
 map <leader>em <action>(editor.action.refactor)
